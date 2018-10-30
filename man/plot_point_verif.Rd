@@ -10,8 +10,8 @@ plot_point_verif(verif_data, score, x_axis = leadtime,
 }
 \arguments{
 \item{verif_data}{Output from \link[harpPoint]{ens_verif},
-\link[harpPoint]{det_verif}, or a \link[harpPoint] verification function
-for individual scores.}
+\link[harpPoint]{det_verif}, or a harpPoint verification function for
+individual scores.}
 
 \item{score}{The score to plot. Should be the name of one of the columns in
 the verification tables or the name of a dervived score, such as
@@ -30,12 +30,12 @@ same colour.}
 
 \item{facet_by}{The column(s) to facet the plot by. Faceting is a term used
 for generating plot panels. The argument must be wrapped inside the
-\code[dplyr]{vars} function - e.g. \code{facet_by = vars(threshold)}.}
+\link[dplyr]{vars} function - e.g. \code{facet_by = vars(threshold)}.}
 
 \item{linetype_by}{The column to set the line types of the plot by.}
 
 \item{filter_by}{Filter the data before plotting. Must be wrapped inside the
-\code[dplyr]{vars} function. This can be useful for making a single plot
+\link[dplyr]{vars} function. This can be useful for making a single plot
 where there are many groups. For example, for reliability there should be
 one plot for each lead time and threshold, so the data can be filtered with
 e.g. \code{filter_by = vars(leadtime == 12, threshold == 280)}.}
@@ -49,7 +49,7 @@ functions from the harpPoint package. The function uses non standard
 evaluation (NSE) meaning that none of the arguments should be quoted. For
 arguments that can take more than one value, (\code{facet_by} and
 \code{filter_by}), the arguments should be wrapped inside the
-\code[dplyr]{vars} function.
+\link[dplyr]{vars} function.
 }
 \examples{
 plot_point_verif(ens_verif_data, crps)
