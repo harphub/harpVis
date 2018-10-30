@@ -5,8 +5,13 @@
 \title{Plot verification scores}
 \usage{
 plot_point_verif(verif_data, score, x_axis = leadtime,
-  y_axis = rlang::enquo(score), colour_by = mname, facet_by = NULL,
-  linetype_by = NULL, filter_by = NULL)
+  y_axis = rlang::enquo(score), colour_by = mname,
+  extend_y_to_zero = TRUE, facet_by = NULL, num_facet_cols = 3,
+  linetype_by = NULL, line_width = 1.1, point_size = 2,
+  filter_by = NULL, plot_title = "auto", plot_subtitle = "auto",
+  plot_caption = "auto", x_label = "auto", y_label = "auto",
+  legend_position = "bottom", num_legend_rows = 3, log_scale_x = FALSE,
+  log_scale_y = FALSE, ...)
 }
 \arguments{
 \item{verif_data}{Output from \link[harpPoint]{ens_verif},
@@ -16,7 +21,7 @@ individual scores.}
 \item{score}{The score to plot. Should be the name of one of the columns in
 the verification tables or the name of a dervived score, such as
 \code{spread_skill}, \code{spread_skill_ratio}, or
-\code{brier_score_decomposition}.}
+\code{decomposed_brier_score}.}
 
 \item{x_axis}{The x-axis for the plot. The default is leadtime, but could
 also be threshold. For some scores this is overrided.}
@@ -28,17 +33,58 @@ score input, and for most scores this is overrided.}
 is mname, for the model name. Set to NULL for all lines / bars to have the
 same colour.}
 
+\item{extend_y_to_zero}{Logical. Whether to extend the y-axis to include
+zero.}
+
 \item{facet_by}{The column(s) to facet the plot by. Faceting is a term used
 for generating plot panels. The argument must be wrapped inside the
 \link[dplyr]{vars} function - e.g. \code{facet_by = vars(threshold)}.}
 
+\item{num_facet_cols}{Number of columns in the faceted plot.}
+
 \item{linetype_by}{The column to set the line types of the plot by.}
+
+\item{line_width}{The width of lines to plot. The default is 1.1.}
+
+\item{point_size}{The size of points to plot. Set to 0 for no points. The
+default is 2.}
 
 \item{filter_by}{Filter the data before plotting. Must be wrapped inside the
 \link[dplyr]{vars} function. This can be useful for making a single plot
 where there are many groups. For example, for reliability there should be
 one plot for each lead time and threshold, so the data can be filtered with
 e.g. \code{filter_by = vars(leadtime == 12, threshold == 280)}.}
+
+\item{plot_title}{Title for the plot. Set to "auto" to automatically generate
+the title. Set to "none" for no title. Anything else inside quotes will be
+used as the plot title.}
+
+\item{plot_subtitle}{Subtitle for the plot. Set to "auto" to automatically
+generate the subtitle. Set to "none" for no subtitle. Anything else inside
+quotes will be used as the plot subtitle.}
+
+\item{plot_caption}{Caption for the plot. Set to "auto" to automatically
+generate the caption Set to "none" for no caption. Anything else inside
+quotes will be used as the plot caption.}
+
+\item{x_label}{Label for the x-axis. Set to "auto" to automatically generate
+the label from the data. Set to "none" for no label. Anything else inside
+quotes will be used as the x-axis label.}
+
+\item{y_label}{Label for the y-axis. Set to "auto" to automatically generate
+the label from the data. Set to "none" for no label. Anything else inside
+quotes will be used as the y-axis label.}
+
+\item{legend_position}{The position of legends ("none", "left", "right",
+"bottom", "top", or two-element numeric vector).}
+
+\item{num_legend_rows}{The maximum number of rows in the legend.}
+
+\item{log_scale_x}{Logical - whether to plot the x-axis on a log scale.}
+
+\item{log_scale_y}{Logical - whether to plot the y-axis on a log scale.}
+
+\item{...}{Arguments to \link[ggplot2]{theme}}
 }
 \value{
 A plot. Can be saved with \link[ggplot2]{ggsave}.
