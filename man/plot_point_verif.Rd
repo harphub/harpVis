@@ -101,6 +101,6 @@ arguments that can take more than one value, (\code{facet_by} and
 plot_point_verif(ens_verif_data, crps)
 plot_point_verif(ens_verif_data, spread_skill)
 plot_point_verif(det_verif_data, equitable_threat_score, facet_by = vars(threshold))
-plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 280))
+plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
 }
 

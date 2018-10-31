@@ -65,7 +65,7 @@
 #' plot_point_verif(ens_verif_data, crps)
 #' plot_point_verif(ens_verif_data, spread_skill)
 #' plot_point_verif(det_verif_data, equitable_threat_score, facet_by = vars(threshold))
-#' plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 280))
+#' plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
 
 plot_point_verif <- function(
   verif_data,
@@ -249,7 +249,8 @@ plot_point_verif <- function(
       plot_geom       <- "bar"
     },
     "reliability" = {
-      plot_data       <- tidyr::unnest(plot_data, !! score_quo)
+      plot_data       <- tidyr::unnest(plot_data, !! score_quo) %>%
+        dplyr::mutate(no_skill = (.data$forecast_probability - .data$climatology) / 2 + .data$climatology)
       x_axis_quo      <- rlang::quo(forecast_probability)
       y_axis_quo      <- rlang::quo(observed_frequency)
     },
@@ -352,7 +353,10 @@ plot_point_verif <- function(
     gg <- gg + ggplot2::scale_y_log10()
   }
   if (aspect1_score) {
-    gg <- gg + ggplot2::coord_fixed(1, c(0, 1), c(0, 1))
+    gg <- gg +
+      ggplot2::scale_x_continuous(limits = c(0, 1)) +
+      ggplot2::scale_y_continuous(limits = c(0, 1)) +
+      ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
   }
 
   y_values <- dplyr::pull(plot_data, !! y_axis_quo)
@@ -379,6 +383,32 @@ plot_point_verif <- function(
 
   if (plot_geom == "line") {
 
+    if (plot_diagonal) {
+      gg <- gg + ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey80", size = line_width * 0.8)
+    }
+
+    if (plot_attributes) {
+      gg <- gg +
+        ggplot2::geom_smooth(
+          ggplot2::aes(y = .data$climatology),
+          method = "lm",
+          se = FALSE,
+          fullrange = TRUE,
+          colour = "grey80",
+          size = line_width * 0.8,
+          lty = 2
+        ) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(y = .data$no_skill),
+          method = "lm",
+          se = FALSE,
+          fullrange = TRUE,
+          colour = "grey80",
+          size = line_width * 0.8,
+          lty = 3
+        )
+    }
+
     if (linetyping) {
       gg <- gg + ggplot2::geom_line(ggplot2::aes(lty = !! linetype_by_quo), size = line_width)
     } else {
@@ -388,12 +418,6 @@ plot_point_verif <- function(
     if (point_size > 0) {
       gg <- gg + ggplot2::geom_point(size = point_size)
     }
-
-    if (plot_diagonal) {
-      gg <- gg + ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey70", lty = 3)
-    }
-
-    #if (plot_attributes)
 
   } else if (plot_geom == "bar") {
 
