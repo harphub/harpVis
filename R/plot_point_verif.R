@@ -74,6 +74,7 @@ plot_point_verif <- function(
   y_axis           = rlang::enquo(score),
   colour_by        = mname,
   extend_y_to_zero = TRUE,
+  plot_num_cases   = TRUE,
   facet_by         = NULL,
   num_facet_cols   = 3,
   linetype_by      = NULL,
@@ -86,7 +87,7 @@ plot_point_verif <- function(
   x_label          = "auto",
   y_label          = "auto",
   legend_position  = "bottom",
-  num_legend_rows  = 3,
+  num_legend_rows  = 1,
   log_scale_x      = FALSE,
   log_scale_y      = FALSE,
   ...
@@ -208,9 +209,11 @@ plot_point_verif <- function(
   }
 
   if (is.element(score_name, c(summary_scores, derived_summary_scores))) {
-    plot_data <- summary_table
+    plot_data  <- summary_table
+    score_type <- "summary"
   } else if (is.element(score_name, c(thresh_scores, derived_thresh_scores))) {
-    plot_data <- thresh_table
+    plot_data  <- thresh_table
+    score_type <- "thresh"
   } else {
     stop("score: ", score_name, " not found in data. Note that arguments are case sensitive.", call. = FALSE)
   }
@@ -256,13 +259,13 @@ plot_point_verif <- function(
     },
     "economic_value" = {
       plot_data       <- tidyr::unnest(plot_data, !! score_quo)
-      x_axis_quo      <- rlang::quo(cl)
+      x_axis_quo      <- rlang::quo(cost_loss_ratio)
       y_axis_quo      <- rlang::quo(value)
     },
     "roc" = {
       plot_data       <- tidyr::unnest(plot_data, !! score_quo)
-      x_axis_quo      <- rlang::quo(FAR)
-      y_axis_quo      <- rlang::quo(HR)
+      x_axis_quo      <- rlang::quo(false_alarm_rate)
+      y_axis_quo      <- rlang::quo(hit_rate)
     },
     "decomposed_brier_score" = {
       plot_data       <- tidyr::gather(
@@ -337,9 +340,6 @@ plot_point_verif <- function(
     fill     = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     linetype = ggplot2::guide_legend(title = NULL)
   )
-  if (nchar(plot_title) > 0)    gg <- gg + ggplot2::labs(title    = plot_title)
-  if (nchar(plot_subtitle) > 0) gg <- gg + ggplot2::labs(subtitle = plot_subtitle)
-  if (nchar(plot_caption) > 0)  gg <- gg + ggplot2::labs(caption  = plot_caption)
 
   # Axes
   if (log_scale_x) {
@@ -354,8 +354,8 @@ plot_point_verif <- function(
   }
   if (aspect1_score) {
     gg <- gg +
-      ggplot2::scale_x_continuous(limits = c(0, 1)) +
-      ggplot2::scale_y_continuous(limits = c(0, 1)) +
+      ggplot2::scale_x_continuous(limits = c(-0.1, 1.1)) +
+      ggplot2::scale_y_continuous(limits = c(-0.1, 1.1)) +
       ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
   }
 
@@ -380,6 +380,21 @@ plot_point_verif <- function(
   ###########################################################################
   # GEOMS
   ###########################################################################
+
+  if (score_type == "summary" & plot_num_cases) {
+    if (legend_position  == "bottom") gg <- gg + ggplot2::theme(legend.position = "none")
+    hh <- gg
+    gg <- gg + ggplot2::theme(
+      axis.title.x = ggplot2::element_blank(),
+      axis.text.x  = ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_blank(),
+      plot.margin  = ggplot2::unit(c(5.5, 5.5, 0.5, 5.5), "pt")
+    )
+  }
+
+  if (nchar(plot_title) > 0)    gg <- gg + ggplot2::labs(title    = plot_title)
+  if (nchar(plot_subtitle) > 0) gg <- gg + ggplot2::labs(subtitle = plot_subtitle)
+  if (nchar(plot_caption) > 0 & !plot_num_cases)  gg <- gg + ggplot2::labs(caption  = plot_caption)
 
   if (plot_geom == "line") {
 
@@ -419,6 +434,23 @@ plot_point_verif <- function(
       gg <- gg + ggplot2::geom_point(size = point_size)
     }
 
+    if (score_type == "summary" & plot_num_cases) {
+      hh <- hh +
+        ggplot2::geom_line(ggplot2::aes(y = .data$num_cases), size = line_width) +
+        ggplot2::coord_cartesian() +
+        ggplot2::ylab("Num Cases") +
+        ggplot2::theme(plot.margin = ggplot2::unit(c(0.5, 5.5, 5.5, 5.5), "pt"))
+      if (legend_position == "bottom") {
+        hh <- hh + ggplot2::theme(legend.position = "bottom")
+        if (nchar(plot_caption > 0)) hh <- hh + ggplot2::labs(caption = plot_caption)
+        height_ratio <- c(2.25, 1)
+      } else {
+        hh <- hh + ggplot2::theme(legend.position = "none")
+        height_ratio <- c(3, 1)
+      }
+      gg <- cowplot::plot_grid(gg, hh, nrow = 2, rel_heights = height_ratio, align = "v", axis = "lr")
+    }
+
   } else if (plot_geom == "bar") {
 
     gg <- gg + ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(), colour = "grey30")
@@ -433,7 +465,7 @@ plot_point_verif <- function(
     gg <- gg + ggplot2::facet_wrap(facet_by, ncol = num_facet_cols)
   }
 
-  print(gg)
+  gg
 
 }
 
@@ -442,5 +474,10 @@ totitle <- function(s, strict = FALSE) {
   cap <- function(s) paste(toupper(substring(s, 1, 1)),
     {s <- substring(s, 2); if(strict) tolower(s) else s},
     sep = "", collapse = " " )
-  sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
+  res <- sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
+  special_names <- c("Roc", "Crps", "Rmse", "Stde", "Mae")
+  for (special_name in special_names) {
+    res <- gsub(special_name, toupper(special_name), res)
+  }
+  res
 }
