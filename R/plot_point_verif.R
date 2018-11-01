@@ -73,6 +73,7 @@ plot_point_verif <- function(
   x_axis           = leadtime,
   y_axis           = rlang::enquo(score),
   colour_by        = mname,
+  colour_table     = NULL,
   extend_y_to_zero = TRUE,
   plot_num_cases   = TRUE,
   facet_by         = NULL,
@@ -202,7 +203,7 @@ plot_point_verif <- function(
   thresh_scores      <- names(thresh_table)
   if (fcst_type == "ens") {
     derived_summary_scores <- c("spread_skill", "spread_skill_ratio")
-    derived_thresh_scores  <- c("decomposed_brier_score")
+    derived_thresh_scores  <- c("decomposed_brier_score", "sharpness")
   } else {
     derived_summary_scores <- ""
     derived_thresh_scores  <- ""
@@ -256,6 +257,13 @@ plot_point_verif <- function(
         dplyr::mutate(no_skill = (.data$forecast_probability - .data$climatology) / 2 + .data$climatology)
       x_axis_quo      <- rlang::quo(forecast_probability)
       y_axis_quo      <- rlang::quo(observed_frequency)
+    },
+    "sharpness" = {
+      data_column     <- rlang::sym("reliability")
+      plot_data       <- tidyr::unnest(plot_data, !! data_column)
+      x_axis_quo      <- rlang::quo(forecast_probability)
+      y_axis_quo      <- rlang::quo(proportion_occurred)
+      plot_geom       <- "bar"
     },
     "economic_value" = {
       plot_data       <- tidyr::unnest(plot_data, !! score_quo)
@@ -378,10 +386,69 @@ plot_point_verif <- function(
   }
 
   ###########################################################################
+  # COLOURS
+  ###########################################################################
+
+  models               <- unique(plot_data$mname)
+  num_models           <- length(models)
+  num_colours          <- num_models
+  if (num_colours < 3) {
+    num_colours <- 3
+  }
+  colours = RColorBrewer::brewer.pal(num_colours, "Set2")
+  default_colour_table <- data.frame(
+    mname  = models,
+    colour = colours[1:num_models]
+  )
+
+  if (is.null(colour_table)) {
+
+    colour_table <- default_colour_table
+
+  } else {
+
+    if (!all(c("mname", "colour") %in% tolower(names(colour_table)))) {
+      warning(paste0(
+        "colour_table must include columns with names `mname` and `colour`.\n",
+        "  Assigning colours automatically."
+      ))
+      colour_table <- default_colour_table
+    }
+
+    colour_table <- dplyr::filter(colour_table, .data$mname %in% unique(plot_data$mname))
+
+    if (!all(as.character(plot_data$mname) %in% as.character(colour_table$mname))){
+      warning(paste0(
+        "Not all mname entries in data have been assigned colours in colour_table.\n",
+        "  Assigning colours automatically"
+      ))
+      colour_table <- default_colour_table
+    } else if (!is.character(colour_table$colour) & !is.factor(colour_table$colour)) {
+      warning(paste0(
+        "Colours in colour_table must be strings - e.g. \"red\" or \"#FF6542\".\n",
+        "  Assigning colours automatcally."
+      ))
+      colour_table <- default_colour_table
+    }
+
+  }
+
+  colour_table$mname  <- factor(colour_table$mname)
+  colour_table$colour <- as.character(colour_table$colour)
+  plot_data$mname     <- factor(plot_data$mname, levels = levels(colour_table$mname))
+
+  if (plot_geom == "line") {
+    gg                <- gg + ggplot2::scale_colour_manual(values = colour_table$colour)
+  } else {
+    gg                <- gg + ggplot2::scale_fill_manual(values = colour_table$colour)
+  }
+
+
+  ###########################################################################
   # GEOMS
   ###########################################################################
 
-  if (score_type == "summary" & plot_num_cases) {
+  if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
     if (legend_position  == "bottom") gg <- gg + ggplot2::theme(legend.position = "none")
     hh <- gg
     gg <- gg + ggplot2::theme(
@@ -434,7 +501,7 @@ plot_point_verif <- function(
       gg <- gg + ggplot2::geom_point(size = point_size)
     }
 
-    if (score_type == "summary" & plot_num_cases) {
+    if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
       hh <- hh +
         ggplot2::geom_line(ggplot2::aes(y = .data$num_cases), size = line_width) +
         ggplot2::coord_cartesian() +
