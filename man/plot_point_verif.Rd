@@ -5,13 +5,13 @@
 \title{Plot verification scores}
 \usage{
 plot_point_verif(verif_data, score, x_axis = leadtime,
-  y_axis = rlang::enquo(score), colour_by = mname,
-  extend_y_to_zero = TRUE, facet_by = NULL, num_facet_cols = 3,
-  linetype_by = NULL, line_width = 1.1, point_size = 2,
-  filter_by = NULL, plot_title = "auto", plot_subtitle = "auto",
-  plot_caption = "auto", x_label = "auto", y_label = "auto",
-  legend_position = "bottom", num_legend_rows = 3, log_scale_x = FALSE,
-  log_scale_y = FALSE, ...)
+  y_axis = rlang::enquo(score), colour_by = mname, colour_table = NULL,
+  extend_y_to_zero = TRUE, plot_num_cases = TRUE, facet_by = NULL,
+  num_facet_cols = 3, linetype_by = NULL, line_width = 1.1,
+  point_size = 2, filter_by = NULL, plot_title = "auto",
+  plot_subtitle = "auto", plot_caption = "auto", x_label = "auto",
+  y_label = "auto", legend_position = "bottom", num_legend_rows = 1,
+  log_scale_x = FALSE, log_scale_y = FALSE, ...)
 }
 \arguments{
 \item{verif_data}{Output from \link[harpPoint]{ens_verif},

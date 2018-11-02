@@ -2,6 +2,7 @@
 
 export("%>%")
 export(plot_point_verif)
+export(plot_scatter)
 export(vars)
 importFrom(dplyr,vars)
 importFrom(magrittr,"%>%")
