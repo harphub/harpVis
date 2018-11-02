@@ -254,7 +254,7 @@ plot_point_verif <- function(
     },
     "reliability" = {
       plot_data       <- tidyr::unnest(plot_data, !! score_quo) %>%
-        dplyr::mutate(no_skill = (.data$forecast_probability - .data$climatology) / 2 + .data$climatology)
+        dplyr::mutate(no_skill = (.data$forecast_probability - .data$bss_ref_climatology) / 2 + .data$bss_ref_climatology)
       x_axis_quo      <- rlang::quo(forecast_probability)
       y_axis_quo      <- rlang::quo(observed_frequency)
     },
@@ -472,22 +472,22 @@ plot_point_verif <- function(
     if (plot_attributes) {
       gg <- gg +
         ggplot2::geom_smooth(
-          ggplot2::aes(y = .data$climatology),
-          method = "lm",
-          se = FALSE,
+          ggplot2::aes(y = .data$bss_ref_climatology),
+          method    = "lm",
+          se        = FALSE,
           fullrange = TRUE,
-          colour = "grey80",
-          size = line_width * 0.8,
-          lty = 2
+          colour    = "grey80",
+          size      = line_width * 0.8,
+          lty       = 2
         ) +
         ggplot2::geom_smooth(
           ggplot2::aes(y = .data$no_skill),
-          method = "lm",
-          se = FALSE,
+          method    = "lm",
+          se        = FALSE,
           fullrange = TRUE,
-          colour = "grey80",
-          size = line_width * 0.8,
-          lty = 3
+          colour    = "grey80",
+          size      = line_width * 0.8,
+          lty       = 3
         )
     }
 
