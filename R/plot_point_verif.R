@@ -99,42 +99,44 @@ plot_point_verif <- function(
   ###########################################################################
 
   # Score to plot
-  score_quo_exists <- try(exists(score, envir = sys.frame()), silent = TRUE)
-  if (inherits(score_quo_exists, "try-error")) {
-    score_quo  <- rlang::enquo(score)
-    score_name <- rlang::quo_name(score_quo)
-  } else {
-    stop ("score badly formed - it must not be quoted.", call. = FALSE)
+  y_axis_done <- FALSE
+  score_quo   <- rlang::enquo(score)
+  score_expr  <- rlang::quo_get_expr(score_quo)
+  if (is.character(score_expr)) {
+    score_quo  <- rlang::sym(score)
+    if (rlang::is_quosure(y_axis)) {
+      y_axis_name <- rlang::quo_name(y_axis)
+      y_axis_quo  <- rlang::sym(y_axis_name)
+      y_axis_done <- TRUE
+    }
   }
+  score_name <- rlang::quo_name(score_quo)
 
   # x axis - the default is lead time
-  x_axis_exists <- try(exists(x_axis, envir = sys.frame()), silent = TRUE)
-  if (inherits(x_axis_exists, "try-error")) {
-    x_axis_quo  <- rlang::enquo(x_axis)
-    x_axis_name <- rlang::quo_name(x_axis_quo)
-  } else {
-    stop ("x_axis badly formed - it must not be quoted.", call. = FALSE)
+  x_axis_quo  <- rlang::enquo(x_axis)
+  x_axis_expr <- rlang::quo_get_expr(x_axis_quo)
+  if (is.character(x_axis_expr)) {
+    x_axis_quo <- rlang::sym(x_axis)
   }
+  x_axis_name <- rlang::quo_name(x_axis_quo)
 
   # y axis - the defualt is the score, but depending on the score this can change later
-  is_y_axis_quo <- try(rlang::is_quosure(y_axis), silent = TRUE)
-  if (inherits(is_y_axis_quo, "try-error")) {
-    y_axis_quo <- rlang::enquo(y_axis)
-  } else if (is_y_axis_quo) {
-    y_axis_quo <- y_axis
-  } else {
-    stop ("y_axis badly formed - it must not be quoted.", call. = FALSE)
+  if (!y_axis_done) {
+    y_axis_quo  <- rlang::enquo(y_axis)
+    y_axis_expr <- rlang::quo_get_expr(y_axis_quo)
+    if (is.character(y_axis_expr)) {
+      y_axis_quo <- rlang::sym(y_axis)
+    }
+    y_axis_name <- rlang::quo_name(y_axis_quo)
   }
-  y_axis_name <- rlang::quo_name(y_axis_quo)
 
   # the column to colour lines by - the default is mname
-  colour_exists <- try(exists(colour_by, envir = sys.frame()), silent = TRUE)
-  if (inherits(colour_exists, "try-error")) {
-    colour_by_quo  <- rlang::enquo(colour_by)
-    colour_by_name <- rlang::quo_name(colour_by_quo)
-  } else {
-    stop ("colour_by badly formed - it must not be quoted.", call. = FALSE)
+  colour_by_quo  <- rlang::enquo(colour_by)
+  colour_by_expr <- rlang::quo_get_expr(colour_by_quo)
+  if (is.character(colour_by_expr)) {
+    colour_by_quo <- rlang::sym(colour_by)
   }
+  colour_by_name <- rlang::quo_name(colour_by_quo)
 
   # the column(s) to facet the plot by. Default is null.
   facet_by_err  <- "facet_by must be wrapped in vars and unquoted, e.g. facet_by = vars(a, b, c)."
@@ -172,15 +174,17 @@ plot_point_verif <- function(
   }
 
   # The column to control the linetype. Default is null.
-  linetype_by_null <- try(is.null(linetype_by), silent = TRUE)
-  if (inherits(linetype_by_null, "try-error")) {
-    linetyping       <- TRUE
-    linetype_by_quo  <- rlang::enquo(linetype_by)
+  linetype_by_quo  <- rlang::enquo(linetype_by)
+  linetype_by_expr <- rlang::quo_get_expr(linetype_by_quo)
+  if (is.null(linetype_by_expr)) {
+    linetyping <- FALSE
+  } else if (is.character(linetype_by_expr)) {
+    linetype_by_quo  <- rlang::sym(linetype_by)
     linetype_by_name <- rlang::quo_name(linetype_by_quo)
-  } else if (linetype_by_null) {
-    linetyping       <- FALSE
+    linetyping       <- TRUE
   } else {
-    stop ("linetype_by badly formed - it must not be quoted.", call. = FALSE)
+    linetype_by_name <- rlang::quo_name(linetype_by_quo)
+    linetyping       <- TRUE
   }
 
   ###########################################################################
@@ -232,51 +236,52 @@ plot_point_verif <- function(
 
   switch(score_name,
     "spread_skill" = {
-      plot_data       <- tidyr::gather(plot_data, .data$rmse, .data$spread, key = "component", value = "spread ; skill")
-      y_axis_name     <- "spread ; skill"
-      y_axis_quo      <- rlang::sym(y_axis_name)
-      linetype_by_quo <- rlang::quo(component)
-      linetyping      <- TRUE
+      plot_data        <- tidyr::gather(plot_data, .data$rmse, .data$spread, key = "component", value = "spread ; skill")
+      y_axis_name      <- "spread ; skill"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
     },
     "spread_skill_ratio" = {
       plot_data       <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$rmse)
     },
     "rank_histogram" = {
-      plot_data       <- tidyr::unnest(plot_data, !! score_quo)
+      plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       if (!faceting & !filtering) {
-        plot_data     <- dplyr::group_by(plot_data, .data$mname, .data$rank) %>%
+        plot_data      <- dplyr::group_by(plot_data, .data$mname, .data$rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       }
-      plot_data       <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
-      x_axis_quo      <- rlang::quo(rank)
-      y_axis_quo      <- rlang::quo(rank_count)
-      plot_geom       <- "bar"
+      plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
+      x_axis_quo       <- rlang::quo(rank)
+      y_axis_quo       <- rlang::quo(rank_count)
+      plot_geom        <- "bar"
     },
     "reliability" = {
-      plot_data       <- tidyr::unnest(plot_data, !! score_quo) %>%
+      plot_data        <- tidyr::unnest(plot_data, !! score_quo) %>%
         dplyr::mutate(no_skill = (.data$forecast_probability - .data$bss_ref_climatology) / 2 + .data$bss_ref_climatology)
-      x_axis_quo      <- rlang::quo(forecast_probability)
-      y_axis_quo      <- rlang::quo(observed_frequency)
+      x_axis_quo       <- rlang::quo(forecast_probability)
+      y_axis_quo       <- rlang::quo(observed_frequency)
     },
     "sharpness" = {
-      data_column     <- rlang::sym("reliability")
-      plot_data       <- tidyr::unnest(plot_data, !! data_column)
-      x_axis_quo      <- rlang::quo(forecast_probability)
-      y_axis_quo      <- rlang::quo(proportion_occurred)
-      plot_geom       <- "bar"
+      data_column      <- rlang::sym("reliability")
+      plot_data        <- tidyr::unnest(plot_data, !! data_column)
+      x_axis_quo       <- rlang::quo(forecast_probability)
+      y_axis_quo       <- rlang::quo(proportion_occurred)
+      plot_geom        <- "bar"
     },
     "economic_value" = {
-      plot_data       <- tidyr::unnest(plot_data, !! score_quo)
-      x_axis_quo      <- rlang::quo(cost_loss_ratio)
-      y_axis_quo      <- rlang::quo(value)
+      plot_data        <- tidyr::unnest(plot_data, !! score_quo)
+      x_axis_quo       <- rlang::quo(cost_loss_ratio)
+      y_axis_quo       <- rlang::quo(value)
     },
     "roc" = {
-      plot_data       <- tidyr::unnest(plot_data, !! score_quo)
-      x_axis_quo      <- rlang::quo(false_alarm_rate)
-      y_axis_quo      <- rlang::quo(hit_rate)
+      plot_data        <- tidyr::unnest(plot_data, !! score_quo)
+      x_axis_quo       <- rlang::quo(false_alarm_rate)
+      y_axis_quo       <- rlang::quo(hit_rate)
     },
     "decomposed_brier_score" = {
-      plot_data       <- tidyr::gather(
+      plot_data        <- tidyr::gather(
         plot_data,
         .data$brier_score_reliability,
         .data$brier_score_resolution,
@@ -285,12 +290,73 @@ plot_point_verif <- function(
         value = "contribution_to_brier_score"
       ) %>%
         dplyr::mutate(component = gsub("brier_score_", "", .data$component))
-      y_axis_quo      <- rlang::quo(contribution_to_brier_score)
-      linetype_by_quo <- rlang::quo(component)
-      linetyping      <- TRUE
+      y_axis_quo       <- rlang::quo(contribution_to_brier_score)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
     }
 
   )
+
+  if (linetyping) {
+    if (is.numeric(plot_data[[linetype_by_name]])) {
+      plot_data[[linetype_by_name]] <- factor(plot_data[[linetype_by_name]])
+    }
+  }
+
+  ###########################################################################
+  # COLOURS
+  ###########################################################################
+
+  col_factors          <- unique(plot_data[[colour_by_name]])
+  num_factors          <- length(col_factors)
+  num_colours          <- num_factors
+  if (num_colours < 3) {
+    num_colours <- 3
+  }
+  colours <- RColorBrewer::brewer.pal(num_colours, "Set2")
+  colour_by_sym <- rlang::sym(colour_by_name)
+  default_colour_table <- data.frame(
+    col_factor        = col_factors,
+    colour            = colours[1:num_factors]
+  )
+  colnames(default_colour_table) <- c(colour_by_name, "colour")
+
+  if (is.null(colour_table)) {
+
+    colour_table <- default_colour_table
+
+  } else {
+
+    if (!all(c(colour_by_name, "colour") %in% tolower(names(colour_table)))) {
+      warning(paste0(
+        "colour_table must include columns with names `", colour_by_name, "` and `colour`.\n",
+        "  Assigning colours automatically."
+      ))
+      colour_table <- default_colour_table
+    }
+
+    colour_table <- dplyr::filter(colour_table, !! colour_by_quo %in% col_factors)
+
+    if (!all(as.character(plot_data[[colour_by_name]]) %in% as.character(colour_table[[colour_by_name]]))){
+      warning(paste0(
+        "Not all ", colour_by_name, " entries in data have been assigned colours in colour_table.\n",
+        "  Assigning colours automatically"
+      ))
+      colour_table <- default_colour_table
+    } else if (!is.character(colour_table$colour) & !is.factor(colour_table$colour)) {
+      warning(paste0(
+        "Colours in colour_table must be strings - e.g. \"red\" or \"#FF6542\".\n",
+        "  Assigning colours automatcally."
+      ))
+      colour_table <- default_colour_table
+    }
+
+  }
+
+  colour_table[[colour_by_name]] <- factor(colour_table[[colour_by_name]])
+  colour_table$colour            <- as.character(colour_table$colour)
+  plot_data[[colour_by_name]]    <- factor(plot_data[[colour_by_name]], levels = levels(colour_table[[colour_by_name]]))
 
   ###########################################################################
   # SET UP THE BASIC PLOT SPACE
@@ -386,67 +452,14 @@ plot_point_verif <- function(
   }
 
   ###########################################################################
-  # COLOURS
+  # GEOMS
   ###########################################################################
-
-  models               <- unique(plot_data$mname)
-  num_models           <- length(models)
-  num_colours          <- num_models
-  if (num_colours < 3) {
-    num_colours <- 3
-  }
-  colours = RColorBrewer::brewer.pal(num_colours, "Set2")
-  default_colour_table <- data.frame(
-    mname  = models,
-    colour = colours[1:num_models]
-  )
-
-  if (is.null(colour_table)) {
-
-    colour_table <- default_colour_table
-
-  } else {
-
-    if (!all(c("mname", "colour") %in% tolower(names(colour_table)))) {
-      warning(paste0(
-        "colour_table must include columns with names `mname` and `colour`.\n",
-        "  Assigning colours automatically."
-      ))
-      colour_table <- default_colour_table
-    }
-
-    colour_table <- dplyr::filter(colour_table, .data$mname %in% unique(plot_data$mname))
-
-    if (!all(as.character(plot_data$mname) %in% as.character(colour_table$mname))){
-      warning(paste0(
-        "Not all mname entries in data have been assigned colours in colour_table.\n",
-        "  Assigning colours automatically"
-      ))
-      colour_table <- default_colour_table
-    } else if (!is.character(colour_table$colour) & !is.factor(colour_table$colour)) {
-      warning(paste0(
-        "Colours in colour_table must be strings - e.g. \"red\" or \"#FF6542\".\n",
-        "  Assigning colours automatcally."
-      ))
-      colour_table <- default_colour_table
-    }
-
-  }
-
-  colour_table$mname  <- factor(colour_table$mname)
-  colour_table$colour <- as.character(colour_table$colour)
-  plot_data$mname     <- factor(plot_data$mname, levels = levels(colour_table$mname))
 
   if (plot_geom == "line") {
     gg                <- gg + ggplot2::scale_colour_manual(values = colour_table$colour)
   } else {
     gg                <- gg + ggplot2::scale_fill_manual(values = colour_table$colour)
   }
-
-
-  ###########################################################################
-  # GEOMS
-  ###########################################################################
 
   if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
     if (legend_position  == "bottom") gg <- gg + ggplot2::theme(legend.position = "none")

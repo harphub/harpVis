@@ -21,19 +21,28 @@
 #' @examples
 plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", binwidth = NULL, colours = NULL, ...) {
 
-  fcst_model <- rlang::quo_name(rlang::enquo(fcst_model))
+  fcst_model_quo   <- rlang::enquo(fcst_model)
+  fcst_model_expr  <- rlang::quo_get_expr(fcst_model_quo)
+  if (is.character(fcst_model_expr)) {
+    fcst_model_quo <- rlang::sym(fcst_model)
+  }
+  fcst_model_name  <- rlang::quo_name(fcst_model_quo)
 
-  if (!fcst_model %in% names(.fcst)) {
-    stop (fcst_model, " not found in .fcst.", call. = FALSE)
+  if (!fcst_model_name %in% names(.fcst)) {
+    stop (fcst_model_name, " not found in .fcst.", call. = FALSE)
   }
 
-  parameter_quo  <- rlang::enquo(parameter)
-  parameter_name <- rlang::quo_name(parameter_quo)
+  parameter_quo   <- rlang::enquo(parameter)
+  parameter_expr  <- rlang::quo_get_expr(parameter_quo)
+  if (is.character(parameter_expr)) {
+    parameter_quo <- rlang::sym(parameter)
+  }
+  parameter_name  <- rlang::quo_name(parameter_quo)
 
-  plot_data <- .fcst[[fcst_model]]
+  plot_data <- .fcst[[fcst_model_name]]
 
   if (!parameter_name %in% names(plot_data)) {
-    stop (parameter_name, " observations not found in .fcst[['", fcst_model, "']]", call. = FALSE)
+    stop (parameter_name, " observations not found in .fcst[['", fcst_model_name, "']]", call. = FALSE)
   }
 
   if (any(grepl("_mbr", names(plot_data)))) {
