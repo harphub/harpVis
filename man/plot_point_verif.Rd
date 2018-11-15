@@ -11,7 +11,7 @@ plot_point_verif(verif_data, score, x_axis = leadtime,
   point_size = 2, filter_by = NULL, plot_title = "auto",
   plot_subtitle = "auto", plot_caption = "auto", x_label = "auto",
   y_label = "auto", legend_position = "bottom", num_legend_rows = 1,
-  log_scale_x = FALSE, log_scale_y = FALSE, ...)
+  log_scale_x = FALSE, log_scale_y = FALSE, colour_theme = "bw", ...)
 }
 \arguments{
 \item{verif_data}{Output from \link[harpPoint]{ens_verif},
@@ -21,7 +21,7 @@ individual scores.}
 \item{score}{The score to plot. Should be the name of one of the columns in
 the verification tables or the name of a dervived score, such as
 \code{spread_skill}, \code{spread_skill_ratio}, or
-\code{decomposed_brier_score}.}
+\code{brier_score_decomposition}.}
 
 \item{x_axis}{The x-axis for the plot. The default is leadtime, but could
 also be threshold. For some scores this is overrided.}
@@ -83,6 +83,10 @@ quotes will be used as the y-axis label.}
 \item{log_scale_x}{Logical - whether to plot the x-axis on a log scale.}
 
 \item{log_scale_y}{Logical - whether to plot the y-axis on a log scale.}
+
+\item{colour_theme}{The colour theme for the plot - can be any ggplot2 theme
+(see \link[ggplo2]{theme_grey}), or "theme_harp_grey",
+"theme_harp_midnight", or "theme_harp_black".}
 
 \item{...}{Arguments to \link[ggplot2]{theme}}
 }
