@@ -13,7 +13,7 @@
 #' @param score The score to plot. Should be the name of one of the columns in
 #'   the verification tables or the name of a dervived score, such as
 #'   \code{spread_skill}, \code{spread_skill_ratio}, or
-#'   \code{decomposed_brier_score}.
+#'   \code{brier_score_decomposition}.
 #' @param x_axis The x-axis for the plot. The default is leadtime, but could
 #'   also be threshold. For some scores this is overrided.
 #' @param y_axis The y-axis for the plot. The default is to take the same as the
@@ -56,9 +56,13 @@
 #' @param num_legend_rows The maximum number of rows in the legend.
 #' @param log_scale_x Logical - whether to plot the x-axis on a log scale.
 #' @param log_scale_y Logical - whether to plot the y-axis on a log scale.
+#' @param colour_theme The colour theme for the plot - can be any ggplot2 theme
+#'   (see \link[ggplo2]{theme_grey}), or "theme_harp_grey",
+#'   "theme_harp_midnight", or "theme_harp_black".
 #' @param ... Arguments to \link[ggplot2]{theme}
 #'
 #' @return A plot. Can be saved with \link[ggplot2]{ggsave}.
+#' @import ggplot2
 #' @export
 #'
 #' @examples
@@ -91,6 +95,7 @@ plot_point_verif <- function(
   num_legend_rows  = 1,
   log_scale_x      = FALSE,
   log_scale_y      = FALSE,
+  colour_theme     = "bw",
   ...
 ) {
 
@@ -122,7 +127,11 @@ plot_point_verif <- function(
 
   # y axis - the defualt is the score, but depending on the score this can change later
   if (!y_axis_done) {
-    y_axis_quo  <- rlang::enquo(y_axis)
+    if (rlang::is_quosure(y_axis)) {
+      y_axis_quo  <- y_axis
+    } else {
+      y_axis_quo  <- rlang::enquo(y_axis)
+    }
     y_axis_expr <- rlang::quo_get_expr(y_axis_quo)
     if (is.character(y_axis_expr)) {
       y_axis_quo <- rlang::sym(y_axis)
@@ -207,7 +216,7 @@ plot_point_verif <- function(
   thresh_scores      <- names(thresh_table)
   if (fcst_type == "ens") {
     derived_summary_scores <- c("spread_skill", "spread_skill_ratio")
-    derived_thresh_scores  <- c("decomposed_brier_score", "sharpness")
+    derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
     derived_summary_scores <- ""
     derived_thresh_scores  <- ""
@@ -280,7 +289,7 @@ plot_point_verif <- function(
       x_axis_quo       <- rlang::quo(false_alarm_rate)
       y_axis_quo       <- rlang::quo(hit_rate)
     },
-    "decomposed_brier_score" = {
+    "brier_score_decomposition" = {
       plot_data        <- tidyr::gather(
         plot_data,
         .data$brier_score_reliability,
@@ -314,7 +323,7 @@ plot_point_verif <- function(
   if (num_colours < 3) {
     num_colours <- 3
   }
-  colours <- RColorBrewer::brewer.pal(num_colours, "Set2")
+  colours <- RColorBrewer::brewer.pal(num_colours, "Dark2")
   colour_by_sym <- rlang::sym(colour_by_name)
   default_colour_table <- data.frame(
     col_factor        = col_factors,
@@ -404,7 +413,19 @@ plot_point_verif <- function(
     gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, colour = !! colour_by_quo, fill = !! colour_by_quo))
   }
 
-  gg <- gg + ggplot2::theme_bw()
+  if (is.function(colour_theme)) {
+    theme_func <- colour_theme
+  } else {
+    if (!grepl("^theme_[[:alpha:]]", colour_theme)) colour_theme <- paste0("theme_", colour_theme)
+    if (grepl("harp", colour_theme)) {
+      function_env <- "harpVis"
+    } else {
+      function_env <- "ggplot2"
+    }
+    theme_func <- get(colour_theme, envir = asNamespace(function_env))
+  }
+
+  gg <- gg + theme_func()
   gg <- gg + ggplot2::xlab(x_label)
   gg <- gg + ggplot2::ylab(y_label)
   gg <- gg + ggplot2::theme(legend.position = legend_position, ...)
@@ -479,7 +500,7 @@ plot_point_verif <- function(
   if (plot_geom == "line") {
 
     if (plot_diagonal) {
-      gg <- gg + ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey80", size = line_width * 0.8)
+      gg <- gg + ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey80", size = line_width * 0.5)
     }
 
     if (plot_attributes) {
@@ -490,7 +511,7 @@ plot_point_verif <- function(
           se        = FALSE,
           fullrange = TRUE,
           colour    = "grey80",
-          size      = line_width * 0.8,
+          size      = line_width * 0.5,
           lty       = 2
         ) +
         ggplot2::geom_smooth(
@@ -499,7 +520,7 @@ plot_point_verif <- function(
           se        = FALSE,
           fullrange = TRUE,
           colour    = "grey80",
-          size      = line_width * 0.8,
+          size      = line_width * 0.5,
           lty       = 3
         )
     }

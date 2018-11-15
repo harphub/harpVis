@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.0.0.9007
+Version: 0.0.0.9008
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
@@ -9,7 +9,8 @@ Description: Functions for visualising data such as verification scores,
   visualisation has a corresponding interactive shiny app. 
 License: MIT + file LICENSE
 Depends:
-    R (>= 3.3.1)
+    R (>= 3.3.1),
+    shiny
 Imports:
     dplyr,
     ggplot2 (>= 3.0.0),
