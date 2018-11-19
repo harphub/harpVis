@@ -5,9 +5,11 @@ body {
   color: #D5D5D5;
 }
 
+
 .form-control {
   font-size: 12px;
-  background-color: #6D8292;
+  /* background-color: #6D8292; */
+  background-color: #0A0A2C;
   color: #D5D5D5;
 }
 
@@ -34,6 +36,30 @@ body {
   float: right;
 }
 
+.selectize-dropdown {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+.selectize-dropdown-content .active {
+  background-color: #062F4F;
+  color: #D5D5D5;
+}
+
+.selectize-dropdown-content .selected {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+
+.selectize-input {
+  color: #D5D5D5;
+  background-color: #0A0A2C !important;
+}
+
+.selectize-input.full {
+  background-color: #0A0A2C;
+}
 .shiny-input-container {
   width: 100%;
 }

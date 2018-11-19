@@ -3,6 +3,7 @@
 export("%>%")
 export(plot_point_verif)
 export(plot_scatter)
+export(shiny_plot_point_verif)
 export(theme_harp_black)
 export(theme_harp_grey)
 export(theme_harp_midnight)
