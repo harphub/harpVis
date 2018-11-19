@@ -5,7 +5,14 @@ body {
   color: #D5D5D5;
 }
 
-
+.dashboard-panel {
+  height: 275px;
+/*  background-color: #081D3E; */
+  background-color: #0A0A2C;
+  margin-right: 5px;
+  margin-top: 5px;
+  padding: 1% 2% 2% 1%;
+}
 .form-control {
   font-size: 12px;
   /* background-color: #6D8292; */
@@ -19,6 +26,7 @@ body {
   height: 80px;
   width: 100%;
   margin: 0;
+  border-collapse: collapse;
 }
 
 .harp_page_title {
@@ -28,6 +36,7 @@ body {
   font-size: 2em;
   padding-left: 30px;
   font-weight: bold;
+  width: 325px;
 }
 
 .harp_logo {
@@ -63,6 +72,30 @@ body {
 .shiny-input-container {
   width: 100%;
 }
+
+.tab_buttons {
+  display: table-cell;
+  vertical-align: middle
+}
+
+#dashboard {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+#dashboard:hover {
+  background-color: #081D3E;
+}
+
+#interactive {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+#interactive:hover {
+  background-color: #081D3E;
+}
+
 
 #data_dir {
   margin-top: 21px;
