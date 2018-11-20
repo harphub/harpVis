@@ -48,10 +48,10 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", binwidth
   if (any(grepl("_mbr", names(plot_data)))) {
     attr(plot_data, "dataframe_format") <- "wide"
     plot_data <- harpPoint::gather_members(plot_data)
-    if (is.numeric(member)) {
-      members   <- paste0("mbr", formatC(member, width = 3, flag = "0"))
+    if (is.numeric(members)) {
+      members   <- paste0("mbr", formatC(members, width = 3, flag = "0"))
       plot_data <- dplyr::filter(plot_data, .data$member %in% members)
-    } else if (member != "all") {
+    } else if (members != "all") {
       stop("'member' must be a numeric vector or 'all'.", call. = FALSE)
     }
   } else {
@@ -60,7 +60,7 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", binwidth
       if (length(det_names) > 1) {
         stop("Yo! We ain't having you have more than 1 deterministic model, fool!", call. = FALSE)
       }
-      plot_data <- dplyr::rename(plot_data, forecast = .data$det_names)
+      plot_data <- dplyr::rename(plot_data, forecast = .data[[det_names]])
     }
   }
 
