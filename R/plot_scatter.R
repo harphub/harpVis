@@ -82,6 +82,11 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", binwidth
     gg <- gg + ggplot2::scale_fill_viridis_c(option = "C")
   }
 
+  num_members <- length(unique(plot_data$member))
+  if (num_members > 1) {
+    gg <- gg + ggplot2::facet_wrap("member", ncol = ceiling(sqrt(num_members)))
+  }
+
   gg
 
 }
