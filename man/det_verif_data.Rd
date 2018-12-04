@@ -20,4 +20,3 @@ operational MEPS and operational Arome Arctic. The scores are based on
 stations that are common to the two domains for September 2018.
 }
 \keyword{datasets}
-

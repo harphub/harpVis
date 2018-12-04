@@ -9,4 +9,3 @@ shiny_plot_point_verif()
 \description{
 Start shiny app to plot point verification
 }
-

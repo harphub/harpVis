@@ -77,7 +77,8 @@ theme_harp_midnight <- function (base_size = 11, base_family = "", base_line_siz
       panel.border      = ggplot2::element_rect(fill = NA, colour = "grey92"),
       panel.grid        = ggplot2::element_line(colour = "grey30"),
       panel.grid.minor  = ggplot2::element_line(size = ggplot2:::rel(0.5)),
-      strip.background  = ggplot2::element_rect(fill = "#0A0A2C", colour = "grey92"),
+      strip.background  = ggplot2::element_rect(fill = "#4E5C68", colour = "grey92"),
+      strip.text        = ggplot2::element_text(colour = "grey92"),
       legend.key        = ggplot2::element_rect(fill = "#0A0A2C", colour = NA),
       legend.background = ggplot2::element_rect(fill = "#0A0A2C", colour = NA),
       complete          = TRUE
