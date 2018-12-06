@@ -4,11 +4,17 @@
 \alias{plot_station_eps}
 \title{Title}
 \usage{
-plot_station_eps(.fcst, SID, fcdate, quantiles = c(0.05, 0.25, 0.75,
-  0.95), tz = "", control_member = "mbr000")
+plot_station_eps(.fcst, SID, fcdate, type = c("ribbon", "boxplot",
+  "violin", "stacked_prob", "ridge"), x_axis = c("leadtime",
+  "validtime"), quantiles = c(0.05, 0.25, 0.75, 0.95),
+  stack_quantiles = c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1), tz = "",
+  control_member = "mbr000", best_guess_line = ens_median,
+  ribbon_colours = NULL, line_colour = "black",
+  quantile_colours = NULL, stack_type = c("column", "area"),
+  bar_width = 5, ...)
 }
 \arguments{
-\item{quantiles}{}
+\item{...}{}
 }
 \description{
 Title
