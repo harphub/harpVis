@@ -27,9 +27,11 @@ plot_station_eps <- function(
   fcdate,
   type             = c("ribbon", "boxplot", "violin", "stacked_prob", "ridge"),
   x_axis           = c("leadtime", "validtime"),
+  parameter        = "",
   quantiles        = c(0.05, 0.25, 0.75, 0.95),
   stack_quantiles  = c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1),
   tz               = "",
+  obs_column       = NULL,
   control_member   = "mbr000",
   best_guess_line  = ens_median,
   ribbon_colours   = NULL,
@@ -37,12 +39,16 @@ plot_station_eps <- function(
   quantile_colours = NULL,
   stack_type       = c("column", "area"),
   bar_width        = 5,
+  ncol             = NULL,
   ...
 ) {
 
   # Check inputs
-  SID_quo    <- rlang::enquo(SID)
-  fcdate_quo <- rlang::enquo(fcdate)
+  SID_quo     <- rlang::enquo(SID)
+  fcdate_quo  <- rlang::enquo(fcdate)
+  fcdate_expr <- rlang::quo_get_expr(fcdate_quo)
+  fcdate      <- suppressMessages(harpIO::str_datetime_to_unixtime(fcdate_expr))
+  fcdate_quo  <- rlang::quo(fcdate)
 
   best_guess_quo  <- rlang::enquo(best_guess_line)
   best_guess_expr <- rlang::quo_get_expr(best_guess_quo)
@@ -52,9 +58,24 @@ plot_station_eps <- function(
   best_guess_name <- rlang::quo_name(best_guess_quo)
 
   type       <- match.arg(type)
+  stack_type <- match.arg(stack_type)
+
   x_axis     <- match.arg(x_axis)
   x_axis_sym <- rlang::ensym(x_axis)
-  stack_type <- match.arg(stack_type)
+
+  parameter_quo <- rlang::enquo(parameter)
+  parameter     <- rlang::quo_name(parameter)
+
+  obs_column_quo <- rlang::enquo(obs_column)
+  if (rlang::quo_is_null(obs_column_quo)) {
+    plot_obs <- FALSE
+  } else {
+    plot_obs <- TRUE
+    obs_column_expr <- rlang::quo_get_expr(obs_column_quo)
+    if (is.character(obs_column_expr)) {
+      obs_column_quo <- rlang::sym(obs_column_expr)
+    }
+  }
 
   # Filter the data
   plot_data <- purrr::map(
@@ -66,7 +87,7 @@ plot_station_eps <- function(
   if (any(check_rows(plot_data) == 0)) {
     missing_fcst <- which(check_rows(plot_data) == 0)
     for (fcst_model in names(.fcst)[missing_fcst]) {
-      warning("SID = ", SID, ", fcdate = ", fcdate, " not found for forecast model: ", fcst_model, call. = FALSE, immediate. = TRUE)
+      warning("SID = ", SID, ", fcdate = ", fcdate_expr, " not found for forecast model: ", fcst_model, call. = FALSE, immediate. = TRUE)
     }
   }
   if (all(check_rows(plot_data) == 0)) {
@@ -86,7 +107,7 @@ plot_station_eps <- function(
     dplyr::rename(x = !! x_axis_sym)
 
   # Run the plot function
-  switch(type,
+  eps_plot <- switch(type,
     "ribbon" = eps_ribbon_plot(
       plot_data,
       quantiles,
@@ -118,6 +139,26 @@ plot_station_eps <- function(
       ...
     )
   )
+
+  if (plot_obs) {
+    func_args <- list(...)
+    geom_args <- intersect(names(func_args), c(std_aes(), names(formals(geom_point))))
+    ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$x, y = .data$forecast, group = .data$x)) +
+      do.call(geom_func, func_args[geom_args])
+  }
+
+  if (is.null(ncol)) {
+    if (type == "ridge") {
+      eps_plot <- eps_plot + ggplot2::facet_wrap("mname", nrow = 1)
+    } else {
+      eps_plot <- eps_plot + ggplot2::facet_wrap("mname", ncol = 1)
+    }
+  }
+
+  eps_plot +
+    ggplot2::xlab(x_axis) +
+    ggplot2::ylab(parameter) +
+    ggplot2::theme_bw()
 
 }
 
@@ -204,8 +245,8 @@ eps_ribbon_plot <- function(
       fill = ribbon_colours[ribbon_number])
   }
 
-  gg <- gg + ggalt::geom_xspline(ggplot2::aes(y = !! best_guess_quo), colour = line_colour)
-  gg + ggplot2::theme_bw() + ggplot2::facet_wrap("mname", ncol = 1)
+  gg + ggalt::geom_xspline(ggplot2::aes(y = !! best_guess_quo), colour = line_colour)
+
 
 }
 
@@ -215,9 +256,7 @@ eps_dist_plot <- function(plot_data, dist, ...) {
   geom_func <- get(paste0("geom_", dist), envir = asNamespace("ggplot2"))
   geom_args <- intersect(names(func_args), c(std_aes(), names(formals(geom_func))))
   ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$x, y = .data$forecast, group = .data$x)) +
-    do.call(geom_func, func_args[geom_args]) +
-    ggplot2::facet_wrap("mname", ncol = 1) +
-    ggplot2::theme_bw()
+    do.call(geom_func, func_args[geom_args])
 }
 
 # Function for stacked probability plots
@@ -261,7 +300,7 @@ eps_stacked_prob_plot <- function(
     tidyr::drop_na()
 
   # Make the plot
-  gg <- switch(stack_type,
+  switch(stack_type,
     "column" = ggplot2::ggplot(
         plot_data, ggplot2::aes(factor(.data$x), .data$forecast, colour = quantile_label)
       ) +
@@ -271,18 +310,13 @@ eps_stacked_prob_plot <- function(
       ) +
       ggplot2::geom_area(position = "identity")
   )
-  gg +
-    ggplot2::facet_wrap("mname", ncol = 1) +
-    ggplot2::theme_bw()
 }
 
 # Function for ridge plots
 eps_ridge_plot <- function(plot_data, ...) {
   ggplot2::ggplot(plot_data, ggplot2::aes(.data$forecast, factor(.data$x), fill = ..x..)) +
     ggridges::geom_density_ridges_gradient() +
-    ggplot2::scale_fill_viridis_c(option = "C") +
-    ggplot2::facet_wrap("mname") +
-    ggplot2::theme_bw()
+    ggplot2::scale_fill_viridis_c(option = "C")
 }
 
 # Standard aesthetics for most ggplot2 geoms

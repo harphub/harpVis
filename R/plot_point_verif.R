@@ -27,6 +27,8 @@
 #'   for generating plot panels. The argument must be wrapped inside the
 #'   \link[dplyr]{vars} function - e.g. \code{facet_by = vars(threshold)}.
 #' @param num_facet_cols Number of columns in the faceted plot.
+#' @param facet_scales Should facet scales be fixed ("fixed", the default), free
+#'   ("free"), or free in one dimension ("free_x", "free_y")?
 #' @param linetype_by The column to set the line types of the plot by.
 #' @param line_width The width of lines to plot. The default is 1.1.
 #' @param point_size The size of points to plot. Set to 0 for no points. The
@@ -82,6 +84,7 @@ plot_point_verif <- function(
   plot_num_cases   = TRUE,
   facet_by         = NULL,
   num_facet_cols   = 3,
+  facet_scales     = "fixed",
   linetype_by      = NULL,
   line_width       = 1.1,
   point_size       = 2,
@@ -563,7 +566,11 @@ plot_point_verif <- function(
   }
 
   if (faceting) {
-    gg <- gg + ggplot2::facet_wrap(facet_by, ncol = num_facet_cols)
+    gg <- gg + ggplot2::facet_wrap(
+      facet_by,
+      ncol   = num_facet_cols,
+      scales = facet_scales
+    )
   }
 
   gg
