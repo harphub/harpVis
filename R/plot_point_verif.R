@@ -366,6 +366,7 @@ plot_point_verif <- function(
 
   }
 
+  colour_table <- dplyr::arrange(colour_table, !! colour_by_quo)
   colour_table[[colour_by_name]] <- factor(colour_table[[colour_by_name]])
   colour_table$colour            <- as.character(colour_table$colour)
   plot_data[[colour_by_name]]    <- factor(plot_data[[colour_by_name]], levels = levels(colour_table[[colour_by_name]]))
