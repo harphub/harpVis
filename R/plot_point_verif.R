@@ -467,7 +467,7 @@ plot_point_verif <- function(
   range_y  <- range(y_values, na.rm = TRUE)
   min_y    <- range_y[1]
   max_y    <- range_y[2]
-  if (extend_y_to_zero & plot_geom == "line" & !aspect1_score) {
+  if (extend_y_to_zero & !aspect1_score) { #& plot_geom == "line"
     if (range_y[1] > 0) {
       min_y <- 0
       max_y <- ifelse(grepl("ratio", score_name), max(1, range_y[2]), range_y[2])
