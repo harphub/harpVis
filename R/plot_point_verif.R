@@ -265,7 +265,7 @@ plot_point_verif <- function(
     "rank_histogram" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
-        grouping_vars  <- rlang::syms(c("mname", facet_vars))
+        grouping_vars  <- rlang::syms(c("mname", facet_vars[nchar(facet_vars) > 0]))
         plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       }
