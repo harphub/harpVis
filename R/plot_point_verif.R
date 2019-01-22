@@ -153,6 +153,7 @@ plot_point_verif <- function(
   # the column(s) to facet the plot by. Default is null.
   facet_by_err  <- "facet_by must be wrapped in vars and unquoted, e.g. facet_by = vars(a, b, c)."
   facet_by_null <- try(is.null(facet_by), silent = TRUE)
+  facet_vars    <- ""
   if (inherits(facet_by_null, "try-error")) {
     stop(facet_by_err, call. = FALSE)
   } else {
@@ -161,6 +162,7 @@ plot_point_verif <- function(
     } else {
       if (inherits(facet_by, "quosures")) {
         faceting <- TRUE
+        facet_vars <- purrr::map_chr(rlang::eval_tidy(facet_by), rlang::quo_name)
       } else {
         stop(facet_by_err, call. = FALSE)
       }
@@ -171,6 +173,7 @@ plot_point_verif <- function(
   filter_by_err  <- paste("filter_by must be wrapped in vars and unquoted,\n",
     "e.g. filter_by = vars(leadtime == 12, threshold == 280).")
   filter_by_null <- try(is.null(filter_by), silent = TRUE)
+  filter_vars    <- ""
   if (inherits(filter_by_null, "try-error")) {
     stop(filter_by_err, call. = FALSE)
   } else {
@@ -179,6 +182,7 @@ plot_point_verif <- function(
     } else {
       if (inherits(filter_by, "quosures")) {
         filtering <- TRUE
+        filter_vars <- names(purrr::map_chr(rlang::eval_tidy(filter_by), rlang::quo_name))
       } else {
         stop(filter_by_err, call. = FALSE)
       }
@@ -260,8 +264,9 @@ plot_point_verif <- function(
     },
     "rank_histogram" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
-      if (!faceting & !filtering) {
-        plot_data      <- dplyr::group_by(plot_data, .data$mname, .data$rank) %>%
+      if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
+        grouping_vars  <- rlang::syms(c("mname", facet_vars))
+        plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       }
       plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
