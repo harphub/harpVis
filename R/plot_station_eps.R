@@ -25,7 +25,7 @@ plot_station_eps <- function(
   .fcst,
   SID,
   fcdate,
-  type             = c("ribbon", "boxplot", "violin", "stacked_prob", "ridge"),
+  type             = c("ribbon", "boxplot", "violin", "stacked_prob", "ridge", "spaghetti"),
   x_axis           = c("leadtime", "validtime"),
   parameter        = "",
   quantiles        = c(0.05, 0.25, 0.75, 0.95),
@@ -36,6 +36,7 @@ plot_station_eps <- function(
   best_guess_line  = ens_median,
   ribbon_colours   = NULL,
   line_colour      = "black",
+  smooth_line      = FALSE,
   quantile_colours = NULL,
   stack_type       = c("column", "area"),
   bar_width        = 5,
@@ -136,6 +137,12 @@ plot_station_eps <- function(
     ),
     "ridge" = eps_ridge_plot(
       plot_data,
+      ...
+    ),
+    "spaghetti" = eps_spaghetti_plot(
+      plot_data,
+      line_colour,
+      smooth_line,
       ...
     )
   )
@@ -317,6 +324,19 @@ eps_ridge_plot <- function(plot_data, ...) {
   ggplot2::ggplot(plot_data, ggplot2::aes(.data$forecast, factor(.data$x), fill = ..x..)) +
     ggridges::geom_density_ridges_gradient() +
     ggplot2::scale_fill_viridis_c(option = "C")
+}
+
+# Function for spghetti plots
+eps_spaghetti_plot <- function(plot_data, line_colour, smooth_line, ...) {
+  gg = ggplot2::ggplot(plot_data, ggplot2::aes(.data$x, .data$forecast, group = .data$member))
+  if (smooth_line) {
+    if (!requireNamespace("ggalt", quietly = TRUE)) {
+      stop("You need to install the ggalt package to use smooth_line = TRUE", call. = FALSE)
+    }
+    gg + ggalt::geom_xspline(colour = line_colour)
+  } else {
+    gg + ggplot2::geom_line(colour = line_colour)
+  }
 }
 
 # Standard aesthetics for most ggplot2 geoms

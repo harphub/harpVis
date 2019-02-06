@@ -5,13 +5,14 @@
 \title{Title}
 \usage{
 plot_station_eps(.fcst, SID, fcdate, type = c("ribbon", "boxplot",
-  "violin", "stacked_prob", "ridge"), x_axis = c("leadtime",
+  "violin", "stacked_prob", "ridge", "spaghetti"), x_axis = c("leadtime",
   "validtime"), parameter = "", quantiles = c(0.05, 0.25, 0.75, 0.95),
   stack_quantiles = c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1), tz = "",
   obs_column = NULL, control_member = "mbr000",
   best_guess_line = ens_median, ribbon_colours = NULL,
-  line_colour = "black", quantile_colours = NULL,
-  stack_type = c("column", "area"), bar_width = 5, ncol = NULL, ...)
+  line_colour = "black", smooth_line = FALSE,
+  quantile_colours = NULL, stack_type = c("column", "area"),
+  bar_width = 5, ncol = NULL, ...)
 }
 \arguments{
 \item{...}{}
