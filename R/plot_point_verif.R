@@ -162,6 +162,14 @@ plot_point_verif <- function(
     } else {
       if (inherits(facet_by, "quosures")) {
         faceting <- TRUE
+        if (plot_num_cases) {
+          warning(
+            "plot_num_cases = TRUE cannot be used with facet_by. ",
+            "plot_num_cases set to FALSE.",
+            call. = FALSE
+          )
+          plot_num_cases = FALSE
+        }
         facet_vars <- purrr::map_chr(rlang::eval_tidy(facet_by), rlang::quo_name)
       } else {
         stop(facet_by_err, call. = FALSE)
@@ -331,8 +339,11 @@ plot_point_verif <- function(
   if (num_colours < 3) {
     num_colours <- 3
   }
-  colours <- RColorBrewer::brewer.pal(num_colours, "Dark2")
   colour_by_sym <- rlang::sym(colour_by_name)
+  if (num_colours > 8) {
+    num_colours <- 8
+  }
+  colours <- rep(RColorBrewer::brewer.pal(num_colours, "Dark2"), 7)
   default_colour_table <- data.frame(
     col_factor        = col_factors,
     colour            = colours[1:num_factors]
@@ -341,6 +352,9 @@ plot_point_verif <- function(
 
   if (is.null(colour_table)) {
 
+    if (num_factors > 8) {
+      warning("The default colour table has 8 colours. Recycling colours.", call. = FALSE)
+    }
     colour_table <- default_colour_table
 
   } else {
@@ -350,6 +364,9 @@ plot_point_verif <- function(
         "colour_table must include columns with names `", colour_by_name, "` and `colour`.\n",
         "  Assigning colours automatically."
       ))
+      if (num_factors > 8) {
+        warning("The default colour table has 8 colours. Recycling colours.", call. = FALSE)
+      }
       colour_table <- default_colour_table
     }
 
