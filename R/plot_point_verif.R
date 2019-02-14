@@ -14,6 +14,9 @@
 #'   the verification tables or the name of a dervived score, such as
 #'   \code{spread_skill}, \code{spread_skill_ratio}, or
 #'   \code{brier_score_decomposition}.
+#' @param verif_type The type of verification to plot for ensemble verification
+#'   data. The default is "ens", but set to "det" to plot verification scores
+#'   for members. If set to "det", you should also set colour_by = member.
 #' @param x_axis The x-axis for the plot. The default is leadtime, but could
 #'   also be threshold. For some scores this is overrided.
 #' @param y_axis The y-axis for the plot. The default is to take the same as the
@@ -76,6 +79,7 @@
 plot_point_verif <- function(
   verif_data,
   score,
+  verif_type       = c("ens", "det"),
   x_axis           = leadtime,
   y_axis           = rlang::enquo(score),
   colour_by        = mname,
@@ -85,6 +89,7 @@ plot_point_verif <- function(
   facet_by         = NULL,
   num_facet_cols   = 3,
   facet_scales     = "fixed",
+  facet_labeller   = "label_value",
   linetype_by      = NULL,
   line_width       = 1.1,
   point_size       = 2,
@@ -215,17 +220,20 @@ plot_point_verif <- function(
   # CHECK IF SCORE IS VALID
   ###########################################################################
 
-  score_tables       <- names(verif_data)
-  if (any(grepl("det_", score_tables))) {
+  verif_type <- match.arg(verif_type)
+
+  score_tables <- names(verif_data)
+
+  if (all(grepl("det_", score_tables))) {
     fcst_type <- "det"
   } else if (any(grepl("ens_", score_tables))) {
-    fcst_type <- "ens"
+    fcst_type <- ifelse(verif_type == "det", "det", "ens")
   } else {
     stop("Input does not look like a harpPoint verification.", call. = FALSE)
   }
 
-  summary_table      <- verif_data[[score_tables[grep("summary", score_tables)]]]
-  thresh_table       <- verif_data[[score_tables[grep("threshold", score_tables)]]]
+  summary_table      <- purrr::pluck(verif_data, paste0(fcst_type, "_summary_scores"))
+  thresh_table       <- purrr::pluck(verif_data, paste0(fcst_type, "_threshold_scores"))
 
   summary_scores     <- names(summary_table)
   thresh_scores      <- names(thresh_table)
@@ -592,7 +600,8 @@ plot_point_verif <- function(
     gg <- gg + ggplot2::facet_wrap(
       facet_by,
       ncol   = num_facet_cols,
-      scales = facet_scales
+      scales = facet_scales,
+      labeller = facet_labeller
     )
   }
 
