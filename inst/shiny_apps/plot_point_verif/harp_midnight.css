@@ -79,6 +79,21 @@ body {
   vertical-align: middle
 }
 
+.modal-content {
+  background-color: #0A0A2C;
+}
+
+.btn-harp {
+  background-color: #0A0A2C;
+  border: 1px solid #CCCCCC;
+}
+
+.btn-harp:hover {
+  background-color: #062F4F;
+  color: #CCCCCC;
+  font-weight: 700;
+}
+
 #dashboard {
   background-color: #0A0A2C;
   color: #D5D5D5;
@@ -98,13 +113,12 @@ body {
 }
 
 
-#data_dir {
+#options_bar-data_dir {
   margin-top: 21px;
 }
 
-#load_data {
+#options_bar-load_data {
   margin-top: 21px;
-  float: right;
   color: #D5D5D5;
   background-color: green;
 }

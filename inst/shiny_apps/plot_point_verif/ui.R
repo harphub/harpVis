@@ -31,33 +31,9 @@ ui <- tags$html(
       title = "harp",
 
       shiny::includeCSS("harp_midnight.css"),
-      # shiny::includeCSS("harp_midnight.css"),
 
+      harpVis::options_barUI("options_bar"),
 
-      fluidRow(id = "options_bar",
-        column(3,
-          shiny::textInput(
-            "data_dir",
-            label = NULL,
-            value = "/lustre/storeB/users/andrewts/HarpResults/verification",
-            placeholder = "Data directory",
-            width = "500px"
-          )
-        ),
-        column(2,
-          shiny::selectInput("parameter", "Parameter", "Waiting for valid directory", width = "200px")
-        ),
-        column(3,
-          shiny::selectInput("dates", "Dates", "Waiting for valid directory", width = "250px")
-        ),
-        column(3,
-          shiny::selectInput("models", "Model combination", "Waiting for valid directory", width = "500px")
-        ),
-        #classButton("load_data", "Load", icon = icon("upload"), class = "btn btn-primary action-button btn-block")
-        column(1,
-          shiny::actionButton("load_data", "Load", icon = icon("upload"))
-        )
-      ),
       shiny::tabsetPanel(id = "tab_panel",
         shiny::tabPanel("Dashboard",
           fluidRow(

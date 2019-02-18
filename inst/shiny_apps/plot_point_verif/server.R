@@ -5,90 +5,8 @@ server <- function(input, output, session) {
   # bg_colour = "#D5D5D5"
   bg_colour = "#0A0A2C"
 
+  verif_data <- callModule(harpVis::options_bar, "options_bar")
 
-  ############################################################
-  # FILE HANDLING                                            #
-  ############################################################
-
-  data_dir <- reactiveVal()
-
-  shiny::observeEvent(input$data_dir, {
-    data_dir(input$data_dir)
-  })
-
-  data_files <- shiny::reactiveValues(
-    filenames  = NULL,
-    parameters = NULL,
-    dates      = NULL,
-    models     = NULL
-  )
-
-  shiny::observeEvent(data_dir(), {
-    shiny::req(data_dir())
-    data_files$filenames  <- dir(data_dir(), pattern = "harpPointVerif*[[:graph:]]*.rds")
-    harp_files            <- strsplit(data_files$filenames, ".harp.")
-    data_files$parameters <- unique(unlist(lapply(harp_files, `[`, 2)))
-
-    shiny::updateSelectInput(session, "parameter", choices = "Waiting for valid directory")
-    shiny::updateSelectInput(session, "parameter", choices = data_files$parameters)
-  })
-
-  shiny::observeEvent(input$parameter, {
-    shiny::req(input$parameter)
-    harp_files        <- strsplit(grep(input$parameter, data_files$filenames, value = TRUE), ".harp.")
-    data_files$dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
-
-    shiny::updateSelectInput(session, "dates", choices = "Waiting for valid directory")
-    shiny::updateSelectInput(session, "dates", choices = data_files$dates)
-  })
-
-  shiny::observeEvent(list(input$parameter, input$dates), {
-    shiny::req(input$dates)
-    regexp            <- paste(input$parameter, input$dates, sep = "*[[:graph:]]*")
-    harp_files        <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
-    data_files$models <- gsub(".model.", " + ", unique(unlist(lapply(harp_files, `[`, 4))))
-    data_files$models <- gsub(".rds", "", data_files$models)
-
-    shiny::updateSelectInput(session, "models", choices = "Waiting for valid directory")
-    shiny::updateSelectInput(session, "models", choices = data_files$models)
-  })
-
-  ###
-
-  verif_file <- shiny::reactiveVal()
-
-  shiny::observeEvent(list(input$parameter, input$dates, input$models), {
-    shiny::req(input$models)
-    models <- gsub(" \\+ ", ".model.", input$models)
-    regexp <- paste(input$parameter, input$dates, models, sep = "*[[:graph:]]*")
-    verif_file(file.path(data_dir(), grep(regexp, data_files$filenames, value = TRUE)))
-  })
-
-  ###
-
-  verif_data <- reactiveVal()
-
-  shiny::observeEvent(input$load_data, {
-    valid_list_elements <- unlist(lapply(c("ens", "det"), paste, c("summary_scores", "threshold_scores"), sep = "_"))
-    if(is.null(verif_file()) || length(verif_file()) < 1 || !file.exists(verif_file())) {
-      shiny::showModal(
-        shiny::modalDialog(title = "ERROR", "Cannot find file", size = "s")
-      )
-    } else {
-      verif_data(try(readRDS(verif_file()), silent = TRUE))
-      if (inherits(verif_data(), "try-error")) {
-        shiny::showModal(
-          shiny::modalDialog(title = "ERROR", "Cannot read file", size = "s")
-        )
-        verif_data(NULL)
-      } else if (length(intersect(valid_list_elements, names(verif_data()))) < 1) {
-        shiny::showModal(
-          shiny::modalDialog(title = "ERROR", "File does not contain harp point verification scores", size = "s")
-        )
-        verif_data(NULL)
-      }
-    }
-  })
 
   ############################################################
   # DASHBOARD PLOTS                                          #
@@ -145,6 +63,13 @@ server <- function(input, output, session) {
       dashboard_plots$brier       <- NULL
       return()
     }
+    if (nrow(verif_data()[[threshold_element]]) < 1) {
+      dashboard_plots$reliability <- NULL
+      dashboard_plots$roc         <- NULL
+      dashboard_plots$brier       <- NULL
+      return()
+    }
+
     thresholds <- unique(verif_data()[[threshold_element]]$threshold)
     if (length(thresholds) == 1) {
       selected_threshold <- thresholds
