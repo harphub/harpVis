@@ -3,6 +3,8 @@
 export("%>%")
 export(GeomRibbonspline)
 export(StatRibbonspline)
+export(dashboard_eps)
+export(dashboard_epsUI)
 export(geom_ribbonspline)
 export(options_bar)
 export(options_barUI)
