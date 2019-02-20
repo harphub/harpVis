@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.0.0.9023
+Version: 0.0.0.9024
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
@@ -24,4 +24,5 @@ RoxygenNote: 6.1.1
 URL: https://github.com/andrew-MET/harpVis
 BugReports: https://github.com/andrew-MET/harpVis/issues
 Suggests: 
-    ggalt
+    ggalt,
+    ggridges

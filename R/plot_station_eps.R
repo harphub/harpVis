@@ -189,6 +189,10 @@ eps_ribbon_plot <- function(
   ...
 ) {
 
+  if(!requireNamespace("ggalt", quietly = TRUE)) {
+    stop("Please install the ggalt package from CRAN for ribbon plots", call. = FALSE)
+  }
+
   # Quote arguments
   best_guess_quo  <- rlang::enquo(best_guess_line)
   best_guess_expr <- rlang::quo_get_expr(best_guess_quo)
@@ -321,6 +325,11 @@ eps_stacked_prob_plot <- function(
 
 # Function for ridge plots
 eps_ridge_plot <- function(plot_data, ...) {
+
+   if(!requireNamespace("ggridges", quietly = TRUE)) {
+    stop("Please install the ggridges package from CRAN for ribbon plots", call. = FALSE)
+  }
+
   ggplot2::ggplot(plot_data, ggplot2::aes(.data$forecast, factor(.data$x), fill = ..x..)) +
     ggridges::geom_density_ridges_gradient() +
     ggplot2::scale_fill_viridis_c(option = "C")
