@@ -64,7 +64,7 @@ options_barUI <- function(id) {
 #' @examples
 options_bar <- function(input, output, session) {
 
-  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
+  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), harp_getVolumes()())
   shinyFiles::shinyDirChoose(
     input, "data_dir", roots = volumes, session = session, restrictions = system.file(package = "base")
   )
