@@ -19,7 +19,7 @@
 #' @export
 #'
 #' @examples
-plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", binwidth = NULL, colours = NULL, ...) {
+plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", facet_members = TRUE, binwidth = NULL, colours = NULL, ...) {
 
   fcst_model_quo   <- rlang::enquo(fcst_model)
   fcst_model_expr  <- rlang::quo_get_expr(fcst_model_quo)
@@ -83,7 +83,7 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", binwidth
   }
 
   num_members <- length(unique(plot_data$member))
-  if (num_members > 1) {
+  if (num_members > 1 && facet_members) {
     gg <- gg + ggplot2::facet_wrap("member", ncol = ceiling(sqrt(num_members)))
   }
 

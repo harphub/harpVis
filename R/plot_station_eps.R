@@ -36,6 +36,7 @@ plot_station_eps <- function(
   best_guess_line  = ens_median,
   ribbon_colours   = NULL,
   line_colour      = "black",
+  line_size        = 0.8,
   smooth_line      = FALSE,
   quantile_colours = NULL,
   stack_type       = c("column", "area"),
@@ -142,6 +143,7 @@ plot_station_eps <- function(
     "spaghetti" = eps_spaghetti_plot(
       plot_data,
       line_colour,
+      line_size,
       smooth_line,
       ...
     )
@@ -246,7 +248,7 @@ eps_ribbon_plot <- function(
 
 
   # Generate the ggplot object
-  gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$x))
+  gg <- ggplot2::ggplot(dplyr::arrange(plot_data, .data$x), ggplot2::aes(x = .data$x))
 
   for (ribbon_number in 1:num_ribbons) {
     ymin <- rlang::sym(ribbon_quantiles[[ribbon_number]][1])
@@ -313,7 +315,7 @@ eps_stacked_prob_plot <- function(
   # Make the plot
   switch(stack_type,
     "column" = ggplot2::ggplot(
-        plot_data, ggplot2::aes(factor(.data$x), .data$forecast, colour = quantile_label)
+        plot_data, ggplot2::aes(.data$x, .data$forecast, colour = quantile_label, group = .data$x)
       ) +
       ggplot2::geom_line(size = bar_width),
     "area"   = ggplot2::ggplot(
@@ -335,16 +337,16 @@ eps_ridge_plot <- function(plot_data, ...) {
     ggplot2::scale_fill_viridis_c(option = "C")
 }
 
-# Function for spghetti plots
-eps_spaghetti_plot <- function(plot_data, line_colour, smooth_line, ...) {
-  gg = ggplot2::ggplot(plot_data, ggplot2::aes(.data$x, .data$forecast, group = .data$member))
+# Function for spaghetti plots
+eps_spaghetti_plot <- function(plot_data, line_colour, line_size, smooth_line, ...) {
+  gg = ggplot2::ggplot(dplyr::arrange(plot_data, .data$x), ggplot2::aes(.data$x, .data$forecast, group = .data$member))
   if (smooth_line) {
     if (!requireNamespace("ggalt", quietly = TRUE)) {
       stop("You need to install the ggalt package to use smooth_line = TRUE", call. = FALSE)
     }
-    gg + ggalt::geom_xspline(colour = line_colour)
+    gg + ggalt::geom_xspline(colour = line_colour, size = line_size)
   } else {
-    gg + ggplot2::geom_line(colour = line_colour)
+    gg + ggplot2::geom_line(colour = line_colour, size = line_size)
   }
 }
 

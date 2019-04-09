@@ -23,7 +23,7 @@ ui <- tags$html(
       class = "harp_page_header",
       span(class = "harp_page_title", "harp : : Point Verification"),
       div(class = "harp_logo",
-        img(src = "harp_logo.svg", height = "70px")
+        img(src = "harp_logo_dark.svg", height = "70px")
       )
     ),
 
