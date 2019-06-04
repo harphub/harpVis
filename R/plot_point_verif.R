@@ -238,7 +238,7 @@ plot_point_verif <- function(
   summary_scores     <- names(summary_table)
   thresh_scores      <- names(thresh_table)
   if (fcst_type == "ens") {
-    derived_summary_scores <- c("spread_skill", "spread_skill_ratio")
+    derived_summary_scores <- c("spread_skill", "spread_skill_ratio", "normalized_rank_histogram")
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
     derived_summary_scores <- ""
@@ -266,7 +266,10 @@ plot_point_verif <- function(
 
   plot_geom <- "line"
 
-  switch(score_name,
+  switch(
+
+    score_name,
+
     "spread_skill" = {
       plot_data        <- tidyr::gather(plot_data, .data$rmse, .data$spread, key = "component", value = "spread ; skill")
       y_axis_name      <- "spread ; skill"
@@ -275,13 +278,15 @@ plot_point_verif <- function(
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
     },
+
     "spread_skill_ratio" = {
       plot_data       <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$rmse)
     },
+
     "rank_histogram" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
-        grouping_vars  <- rlang::syms(c("mname", facet_vars[nchar(facet_vars) > 0]))
+        grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
         plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       }
@@ -290,12 +295,37 @@ plot_point_verif <- function(
       y_axis_quo       <- rlang::quo(rank_count)
       plot_geom        <- "bar"
     },
+
+    "normalized_rank_histogram" = {
+      data_column      <- rlang::sym("rank_histogram")
+      plot_data        <- tidyr::unnest(plot_data, !! data_column)
+      if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
+        grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
+        plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank) %>%
+          dplyr::summarise(rank_count = sum(.data$rank_count))
+      } else {
+        grouping_vars  <- rlang::syms(c(colour_by_name, "leadtime", facet_vars[nchar(facet_vars) > 0]))
+      }
+      plot_data        <- plot_data %>%
+        dplyr::group_by(!!!grouping_vars) %>%
+        dplyr::mutate(
+          mean_count           = mean(.data$rank_count),
+          normalized_frequency = .data$rank_count / .data$mean_count
+        )
+
+      plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
+      x_axis_quo       <- rlang::quo(rank)
+      y_axis_quo       <- rlang::quo(normalized_frequency)
+      plot_geom        <- "bar"
+    },
+
     "reliability" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo) %>%
         dplyr::mutate(no_skill = (.data$forecast_probability - .data$bss_ref_climatology) / 2 + .data$bss_ref_climatology)
       x_axis_quo       <- rlang::quo(forecast_probability)
       y_axis_quo       <- rlang::quo(observed_frequency)
     },
+
     "sharpness" = {
       data_column      <- rlang::sym("reliability")
       plot_data        <- tidyr::unnest(plot_data, !! data_column)
@@ -303,16 +333,19 @@ plot_point_verif <- function(
       y_axis_quo       <- rlang::quo(proportion_occurred)
       plot_geom        <- "bar"
     },
+
     "economic_value" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       x_axis_quo       <- rlang::quo(cost_loss_ratio)
       y_axis_quo       <- rlang::quo(value)
     },
+
     "roc" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       x_axis_quo       <- rlang::quo(false_alarm_rate)
       y_axis_quo       <- rlang::quo(hit_rate)
     },
+
     "brier_score_decomposition" = {
       plot_data        <- tidyr::gather(
         plot_data,
