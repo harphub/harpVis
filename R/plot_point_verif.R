@@ -222,6 +222,15 @@ plot_point_verif <- function(
 
   verif_type <- match.arg(verif_type)
 
+  verif_attributes <- attributes(verif_data)
+  verif_data <- purrr::map(
+    verif_data,
+    dplyr::mutate_if,
+    is.numeric,
+    inf_to_na
+  )
+  attributes(verif_data) <- verif_attributes
+
   score_tables <- names(verif_data)
 
   if (all(grepl("det_", score_tables))) {
@@ -255,7 +264,7 @@ plot_point_verif <- function(
     stop("score: ", score_name, " not found in data. Note that arguments are case sensitive.", call. = FALSE)
   }
 
-
+  if (nrow(plot_data) == 0) return()
   ###########################################################################
   # PREP DATA FOR PLOTTING
   ###########################################################################
@@ -457,7 +466,7 @@ plot_point_verif <- function(
     "auto" = paste(
       totitle(gsub("_", " ", score_name)),
       ":",
-      paste0(attr(verif_data, "start_date"), "-", attr(verif_data, "end_date"))
+      paste0(date_to_char(attr(verif_data, "start_date")), " - ", date_to_char(attr(verif_data, "end_date")))
     ),
     "none" = "",
     plot_title
@@ -653,4 +662,14 @@ totitle <- function(s, strict = FALSE) {
     res <- gsub(special_name, toupper(special_name), res)
   }
   res
+}
+
+# Function to convert Infinite values to NA
+inf_to_na <- Vectorize(function(x) if (is.infinite(x)) { NA } else { x })
+
+# Function to convert date to a nice format
+date_to_char <- function(date_in) {
+  suppressMessages(harpIO::str_datetime_to_unixtime(date_in)) %>%
+    as.POSIXct(origin = "1970-01-01 00:00:00") %>%
+    format("%H:%M %d %b %Y")
 }

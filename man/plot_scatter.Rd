@@ -5,7 +5,7 @@
 \title{Scatter plot of forecast vs observations}
 \usage{
 plot_scatter(.fcst, fcst_model, parameter, members = "all",
-  binwidth = NULL, colours = NULL, ...)
+  facet_members = TRUE, binwidth = NULL, colours = NULL, ...)
 }
 \arguments{
 \item{.fcst}{A \code{harp_fcst} type object.}

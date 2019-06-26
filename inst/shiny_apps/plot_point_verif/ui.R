@@ -38,18 +38,7 @@ ui <- tags$html(
 
         harpVis::dashboard_epsUI("dashboard"),
 
-        shiny::tabPanel("Interactive",
-          fluidRow(
-            column(2,
-              shiny::selectInput("score", "Score", "Waiting for valid data"),
-              shiny::tags$div(id = "scoreOptionsPlaceholder")
-            ),
-            column(8,
-              shiny::plotOutput("verif_plot")
-            )
-          )
-
-        ) # end of tabPanel
+        harpVis::interactive_epsUI("interactive")
 
       ) # end of tabsetPanel
 

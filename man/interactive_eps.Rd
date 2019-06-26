@@ -4,10 +4,10 @@
 \alias{interactive_eps}
 \title{Title}
 \usage{
-interactive_eps(input, output, session, verif_data)
+interactive_eps(input, output, session, verif_data, bg_colour)
 }
 \arguments{
-\item{verif_data}{}
+\item{bg_colour}{}
 }
 \description{
 Title

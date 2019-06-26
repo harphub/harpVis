@@ -106,10 +106,16 @@ options_bar <- function(input, output, session) {
 
   shiny::observeEvent(list(input$models, input$parameter), {
     shiny::req(input$parameter)
-    models            <- gsub(" \\+ ", ".model.", input$models)
-    regexp            <- paste(input$parameter, models, sep = "*[[:graph:]]*")
-    harp_files        <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
-    data_files$dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
+    models       <- gsub(" \\+ ", ".model.", input$models)
+    regexp       <- paste(input$parameter, models, sep = "*[[:graph:]]*")
+    harp_files   <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
+    files_dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
+
+    if (!is.null(files_dates)) {
+      names(files_dates) <- menu_dates_to_char(files_dates)
+    }
+
+    data_files$dates  <- files_dates
 
     shiny::updateSelectInput(session, "dates", choices = "Waiting for valid directory")
     shiny::updateSelectInput(session, "dates", choices = data_files$dates)
@@ -155,4 +161,12 @@ options_bar <- function(input, output, session) {
 
   return(verif_data)
 
+}
+
+menu_dates_to_char <- function(menu_dates) {
+  split_dates <- strsplit(menu_dates, "-")
+  dates_start <- purrr::map(split_dates, ~date_to_char(.x[1]))
+  dates_end   <- purrr::map(split_dates, ~date_to_char(.x[2]))
+
+  purrr::map2_chr(dates_start, dates_end, paste, sep = " - ")
 }
