@@ -43,17 +43,34 @@ interactive_eps <- function(input, output, session, verif_data, bg_colour) {
 
   ns <- session$ns
 
-  # Get the score names from the data
+  new_data <- shiny::reactiveVal(NULL)
 
-  score_names <- shiny::reactiveVal("Waiting for valid data")
+  # Reset the app when new data arrives
 
   shiny::observeEvent(verif_data(), {
+    shiny::removeUI(paste0("#", ns("ens-rank-hist")))
+    shiny::removeUI(paste0("#", ns("ens-cat")))
+    shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
+    shiny::removeUI(paste0("#", ns("det-summary")))
+    shiny::removeUI(paste0("#", ns("det-cat")))
+    shiny::removeUI(paste0("#", ns("ens-cat-choose-x-leadtime")))
+    shiny::removeUI(paste0("#", ns("ens-cat-choose-x-threshold")))
+
     shiny::req(verif_data())
-    score_names(make_score_list(verif_data()))
+
+    if (is.null(new_data())) {
+      new_data(0)
+    } else {
+      new_data(new_data() + 1)
+    }
+    shiny::updateSelectInput(session, "score", choices = "Waiting for valid data")
   })
 
-  shiny::observeEvent(score_names(), {
-    shiny::updateSelectInput(session, "score", choices = score_names())
+  # Update the score selector
+
+  shiny::observeEvent(new_data(), {
+    shiny::req(new_data())
+    shiny::updateSelectInput(session, "score", choices = make_score_list(verif_data()))
   })
 
   # Get the ui type we need from the score
@@ -61,13 +78,15 @@ interactive_eps <- function(input, output, session, verif_data, bg_colour) {
   ui_type        <- shiny::reactiveVal("ens_summary")
   more_selectors <- shiny::reactiveVal(FALSE)
 
-  shiny::observeEvent(list(input$score, score_names()), {
+  shiny::observeEvent(input$score, {
     ui_type(get_ui_type(input$score))
   })
 
   # Update the UI based on the score
 
-  shiny::observeEvent(list(ui_type(), verif_data()), {
+  shiny::observeEvent(ui_type(), {
+
+    shiny::req(ui_type())
 
     if (ui_type() == "ens_summary") {
       shiny::removeUI(paste0("#", ns("ens-rank-hist")))
@@ -213,7 +232,6 @@ interactive_eps <- function(input, output, session, verif_data, bg_colour) {
   score_options <- shiny::eventReactive(
     list(
       ui_type(),
-      verif_data(),
       input[["score"]],
       input[["ens-rank-hist-leadtime"]],
       input[["ens-cat-choose-x-x_axis"]],
@@ -303,6 +321,12 @@ interactive_eps <- function(input, output, session, verif_data, bg_colour) {
 
   output$plot <- shiny::renderPlot({
     shiny::req(score_options())
+
+    # Score can sometimes come as extended name
+    if (grepl("[[:alpha:]]+_[[:alpha:]]+_scores_[[:graph:]]+", score_options()$score, perl = TRUE)) {
+      return()
+    }
+
     plot_score  <- rlang::sym(score_options()$score)
     plot_x_axis <- rlang::sym(score_options()$x_axis)
     harpVis::plot_point_verif(
@@ -403,7 +427,7 @@ get_ui_type <- function(verif_name) {
   } else if (grepl("det_threshold", verif_name)) {
     "det_cat"
   } else {
-    verif_name
+    NULL
   }
 
 }
