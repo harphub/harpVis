@@ -223,8 +223,11 @@ plot_point_verif <- function(
   verif_type <- match.arg(verif_type)
 
   verif_attributes <- attributes(verif_data)
-  verif_data <- purrr::map(
+
+  tables_with_data <- names(verif_data)[map_lgl(verif_data, ~!is.null(.x))]
+  verif_data <- purrr::map_at(
     verif_data,
+    tables_with_data,
     dplyr::mutate_if,
     is.numeric,
     inf_to_na
