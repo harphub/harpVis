@@ -65,6 +65,28 @@
 #'   (see \link[ggplo2]{theme_grey}), or "theme_harp_grey",
 #'   "theme_harp_midnight", or "theme_harp_black".
 #' @param ... Arguments to \link[ggplot2]{theme}
+#' @param colour_table A data frame with column names equal to the value of
+#'   \code{colour_by} and "colour". The colour column should contain colour
+#'   names or hex codes. There should be one row for each value in the
+#'   \code{colour_by} column. If set to NULL, the default colour table is used.
+#' @param plot_num_cases Logical of whether to inlcude the number of cases as a
+#'   panel in the plot. Only currently works for summary scores, and if
+#'   \code{facet_by} is set, the number of cases panel is not drawn since it
+#'   will clutter the plot.
+#' @param extend_num_cases_to_zero Logical of whether to extend the axis for the
+#'   number of cases to zero. The default behaviour (FALSE) is to have the axis
+#'   limits set to the minimum and maximum number of cases.
+#' @param num_cases_position The position of the number of cases panel relative
+#'   to the score panel. Can be "below" (the default), "above", "left", or
+#'   "right". Typically only "below" and "above" will work unless plotting
+#'   vertical profile scores with \link{plot_profile_verif}, where only "left"
+#'   and "right" can be chosen.
+#' @param facet_labeller The function used to label the title strip. Typically
+#'   this will always be "label_value", but if the column used for
+#'   \code{facet_by} contains plotmath expressions, "label_parsed" should be
+#'   used. See \link[ggplot2]{labellers} for more information.
+#' @param flip_axes Logical of whether to swap the x and y axes. This is
+#'   typically used when this function is called by \link{plot_profile_verif}.
 #'
 #' @return A plot. Can be saved with \link[ggplot2]{ggsave}.
 #' @import ggplot2
@@ -79,31 +101,34 @@
 plot_point_verif <- function(
   verif_data,
   score,
-  verif_type       = c("ens", "det"),
-  x_axis           = leadtime,
-  y_axis           = rlang::enquo(score),
-  colour_by        = mname,
-  colour_table     = NULL,
-  extend_y_to_zero = TRUE,
-  plot_num_cases   = TRUE,
-  facet_by         = NULL,
-  num_facet_cols   = 3,
-  facet_scales     = "fixed",
-  facet_labeller   = "label_value",
-  linetype_by      = NULL,
-  line_width       = 1.1,
-  point_size       = 2,
-  filter_by        = NULL,
-  plot_title       = "auto",
-  plot_subtitle    = "auto",
-  plot_caption     = "auto",
-  x_label          = "auto",
-  y_label          = "auto",
-  legend_position  = "bottom",
-  num_legend_rows  = 1,
-  log_scale_x      = FALSE,
-  log_scale_y      = FALSE,
-  colour_theme     = "bw",
+  verif_type               = c("ens", "det"),
+  x_axis                   = leadtime,
+  y_axis                   = rlang::enquo(score),
+  colour_by                = mname,
+  colour_table             = NULL,
+  extend_y_to_zero         = TRUE,
+  plot_num_cases           = TRUE,
+  extend_num_cases_to_zero = FALSE,
+  num_cases_position       = c("below", "right", "above", "left"),
+  facet_by                 = NULL,
+  num_facet_cols           = 3,
+  facet_scales             = "fixed",
+  facet_labeller           = "label_value",
+  linetype_by              = NULL,
+  line_width               = 1.1,
+  point_size               = 2,
+  filter_by                = NULL,
+  plot_title               = "auto",
+  plot_subtitle            = "auto",
+  plot_caption             = "auto",
+  x_label                  = "auto",
+  y_label                  = "auto",
+  legend_position          = "bottom",
+  num_legend_rows          = 1,
+  log_scale_x              = FALSE,
+  log_scale_y              = FALSE,
+  flip_axes                = FALSE,
+  colour_theme             = "bw",
   ...
 ) {
 
@@ -173,7 +198,7 @@ plot_point_verif <- function(
             "plot_num_cases set to FALSE.",
             call. = FALSE
           )
-          plot_num_cases = FALSE
+          plot_num_cases <- FALSE
         }
         facet_vars <- purrr::map_chr(rlang::eval_tidy(facet_by), rlang::quo_name)
       } else {
@@ -224,7 +249,7 @@ plot_point_verif <- function(
 
   verif_attributes <- attributes(verif_data)
 
-  tables_with_data <- names(verif_data)[map_lgl(verif_data, ~!is.null(.x))]
+  tables_with_data <- names(verif_data)[purrr::map_lgl(verif_data, ~!is.null(.x))]
   verif_data <- purrr::map_at(
     verif_data,
     tables_with_data,
@@ -485,6 +510,23 @@ plot_point_verif <- function(
     plot_caption
   )
 
+  # Special faceted plot if plot_num_cases == TRUE
+  if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
+    plot_data <- plot_data %>%
+      tidyr::gather("panel", !! y_axis_quo, .data$num_cases, !! y_axis_quo) %>%
+      dplyr::mutate(
+        panel = dplyr::case_when(
+          .data$panel == "num_cases" ~ "Number of Cases",
+          TRUE                       ~ totitle(gsub("_", " ", rlang::quo_name(y_axis_quo)))
+        ),
+        panel = factor(
+          .data$panel,
+          levels = c(totitle(gsub("_", " ", rlang::quo_name(y_axis_quo))), "Number of Cases")
+        )
+      )
+  }
+
+
   # Plot background
   if (tolower(colour_by_name == "none")) {
     gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo))
@@ -533,7 +575,12 @@ plot_point_verif <- function(
       ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
   }
 
-  y_values <- dplyr::pull(plot_data, !! y_axis_quo)
+  if (plot_num_cases) {
+    y_values <- dplyr::filter(plot_data, panel != "Number of Cases") %>%
+      dplyr::pull(!! y_axis_quo)
+  } else {
+    y_values <- dplyr::pull(plot_data, !! y_axis_quo)
+  }
   range_y  <- range(y_values, na.rm = TRUE)
   min_y    <- range_y[1]
   max_y    <- range_y[2]
@@ -548,7 +595,7 @@ plot_point_verif <- function(
     }
   }
   if (!log_scale_y & !aspect1_score) {
-    gg <- gg + ggplot2::coord_cartesian(ylim = c(min_y, max_y))
+    gg <- gg + ggplot2::scale_y_continuous(limits = c(min_y, max_y))
   }
 
   ###########################################################################
@@ -559,17 +606,6 @@ plot_point_verif <- function(
     gg                <- gg + ggplot2::scale_colour_manual(values = colour_table$colour)
   } else {
     gg                <- gg + ggplot2::scale_fill_manual(values = colour_table$colour)
-  }
-
-  if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
-    if (legend_position  == "bottom") gg <- gg + ggplot2::theme(legend.position = "none")
-    hh <- gg
-    gg <- gg + ggplot2::theme(
-      axis.title.x = ggplot2::element_blank(),
-      axis.text.x  = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      plot.margin  = ggplot2::unit(c(5.5, 5.5, 0.5, 5.5), "pt")
-    )
   }
 
   if (nchar(plot_title) > 0)    gg <- gg + ggplot2::labs(title    = plot_title)
@@ -614,23 +650,6 @@ plot_point_verif <- function(
       gg <- gg + ggplot2::geom_point(size = point_size)
     }
 
-    if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
-      hh <- hh +
-        ggplot2::geom_line(ggplot2::aes(y = .data$num_cases), size = line_width) +
-        ggplot2::coord_cartesian() +
-        ggplot2::ylab("Num Cases") +
-        ggplot2::theme(plot.margin = ggplot2::unit(c(0.5, 5.5, 5.5, 5.5), "pt"))
-      if (legend_position == "bottom") {
-        hh <- hh + ggplot2::theme(legend.position = "bottom")
-        if (nchar(plot_caption > 0)) hh <- hh + ggplot2::labs(caption = plot_caption)
-        height_ratio <- c(2.25, 1)
-      } else {
-        hh <- hh + ggplot2::theme(legend.position = "none")
-        height_ratio <- c(3, 1)
-      }
-      gg <- cowplot::plot_grid(gg, hh, nrow = 2, rel_heights = height_ratio, align = "v", axis = "lr")
-    }
-
   } else if (plot_geom == "bar") {
 
     gg <- gg + ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(), colour = "grey30")
@@ -644,13 +663,85 @@ plot_point_verif <- function(
   if (faceting) {
     gg <- gg + ggplot2::facet_wrap(
       facet_by,
-      ncol   = num_facet_cols,
-      scales = facet_scales,
+      ncol     = num_facet_cols,
+      scales   = facet_scales,
       labeller = facet_labeller
     )
   }
 
-  gg
+  if (flip_axes) {
+    gg         <- gg + ggplot2::coord_flip() + ggplot2::scale_x_reverse()
+    free_scale <- "x"
+  } else {
+    free_scale <- "y"
+  }
+
+  if (plot_num_cases) {
+
+    num_cases_position <- match.arg(num_cases_position)
+
+    if (num_cases_position == "below") {
+      ncol_num_cases <- 1
+      override_which <- 2
+      panel_position <- "1-1"
+      scale_function <- ggplot2::scale_x_continuous
+    }
+
+    if (num_cases_position == "right") {
+      ncol_num_cases <- 2
+      override_which <- 2
+      panel_position <- "1-1"
+      scale_function <- ggplot2::scale_x_continuous
+    }
+
+    if (num_cases_position == "above") {
+      ncol_num_cases <- 1
+      override_which <- 1
+      panel_position <- "1-2"
+      scale_function <- ggplot2::scale_x_continuous
+      gg$data        <- dplyr::mutate(
+        gg$data,
+        panel = factor(.data$panel, levels = rev(levels(.data$panel)))
+      )
+    }
+
+    if (num_cases_position == "left") {
+      ncol_num_cases <- 2
+      override_which <- 1
+      panel_position <- "2-1"
+      scale_function <- ggplot2::scale_y_continuous
+      gg$data        <- dplyr::mutate(
+        gg$data,
+        panel = factor(.data$panel, levels = rev(levels(.data$panel)))
+      )
+    }
+
+    min_y_limit <- ifelse(extend_num_cases_to_zero, 0, NA)
+
+    gg <- gg + facet_wrap_custom(
+      "panel",
+      scales          = paste0("free_", free_scale),
+      ncol            = ncol_num_cases,
+      scale_overrides = list(
+        scale_override(override_which, ggplot2::scale_y_continuous(limits = c(min_y_limit, NA)))
+      )
+    )
+
+    gt <- ggplot2::ggplot_gtable(ggplot2::ggplot_build(gg))
+    if (num_cases_position %in% c("above", "below")) {
+      score_panel <- gt$layout$t[grep(paste0("panel-", panel_position), gt$layout$name)]
+      gt$heights[score_panel] <- 5 * gt$heights[score_panel]
+    } else {
+      score_panel <- gt$layout$l[grep(paste0("panel-", panel_position), gt$layout$name)]
+      gt$widths[score_panel] <- 5 * gt$widths[score_panel]
+    }
+    grid::grid.draw(gt)
+
+  } else {
+
+    gg
+
+  }
 
 }
 

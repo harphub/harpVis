@@ -7,13 +7,15 @@
 plot_point_verif(verif_data, score, verif_type = c("ens", "det"),
   x_axis = leadtime, y_axis = rlang::enquo(score), colour_by = mname,
   colour_table = NULL, extend_y_to_zero = TRUE,
-  plot_num_cases = TRUE, facet_by = NULL, num_facet_cols = 3,
-  facet_scales = "fixed", facet_labeller = "label_value",
-  linetype_by = NULL, line_width = 1.1, point_size = 2,
-  filter_by = NULL, plot_title = "auto", plot_subtitle = "auto",
-  plot_caption = "auto", x_label = "auto", y_label = "auto",
-  legend_position = "bottom", num_legend_rows = 1,
-  log_scale_x = FALSE, log_scale_y = FALSE, colour_theme = "bw", ...)
+  plot_num_cases = TRUE, extend_num_cases_to_zero = FALSE,
+  num_cases_position = c("below", "right", "above", "left"),
+  facet_by = NULL, num_facet_cols = 3, facet_scales = "fixed",
+  facet_labeller = "label_value", linetype_by = NULL,
+  line_width = 1.1, point_size = 2, filter_by = NULL,
+  plot_title = "auto", plot_subtitle = "auto", plot_caption = "auto",
+  x_label = "auto", y_label = "auto", legend_position = "bottom",
+  num_legend_rows = 1, log_scale_x = FALSE, log_scale_y = FALSE,
+  flip_axes = FALSE, colour_theme = "bw", ...)
 }
 \arguments{
 \item{verif_data}{Output from \link[harpPoint]{ens_verif},
@@ -39,8 +41,28 @@ score input, and for most scores this is overrided.}
 is mname, for the model name. Set to NULL for all lines / bars to have the
 same colour.}
 
+\item{colour_table}{A data frame with column names equal to the value of
+\code{colour_by} and "colour". The colour column should contain colour
+names or hex codes. There should be one row for each value in the
+\code{colour_by} column. If set to NULL, the default colour table is used.}
+
 \item{extend_y_to_zero}{Logical. Whether to extend the y-axis to include
 zero.}
+
+\item{plot_num_cases}{Logical of whether to inlcude the number of cases as a
+panel in the plot. Only currently works for summary scores, and if
+\code{facet_by} is set, the number of cases panel is not drawn since it
+will clutter the plot.}
+
+\item{extend_num_cases_to_zero}{Logical of whether to extend the axis for the
+number of cases to zero. The default behaviour (FALSE) is to have the axis
+limits set to the minimum and maximum number of cases.}
+
+\item{num_cases_position}{The position of the number of cases panel relative
+to the score panel. Can be "below" (the default), "above", "left", or
+"right". Typically only "below" and "above" will work unless plotting
+vertical profile scores with \link{plot_profile_verif}, where only "left"
+and "right" can be chosen.}
 
 \item{facet_by}{The column(s) to facet the plot by. Faceting is a term used
 for generating plot panels. The argument must be wrapped inside the
@@ -50,6 +72,11 @@ for generating plot panels. The argument must be wrapped inside the
 
 \item{facet_scales}{Should facet scales be fixed ("fixed", the default), free
 ("free"), or free in one dimension ("free_x", "free_y")?}
+
+\item{facet_labeller}{The function used to label the title strip. Typically
+this will always be "label_value", but if the column used for
+\code{facet_by} contains plotmath expressions, "label_parsed" should be
+used. See \link[ggplot2]{labellers} for more information.}
 
 \item{linetype_by}{The column to set the line types of the plot by.}
 
@@ -92,6 +119,9 @@ quotes will be used as the y-axis label.}
 \item{log_scale_x}{Logical - whether to plot the x-axis on a log scale.}
 
 \item{log_scale_y}{Logical - whether to plot the y-axis on a log scale.}
+
+\item{flip_axes}{Logical of whether to swap the x and y axes. This is
+typically used when this function is called by \link{plot_profile_verif}.}
 
 \item{colour_theme}{The colour theme for the plot - can be any ggplot2 theme
 (see \link[ggplo2]{theme_grey}), or "theme_harp_grey",
