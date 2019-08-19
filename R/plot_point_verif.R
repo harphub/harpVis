@@ -575,7 +575,7 @@ plot_point_verif <- function(
       ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
   }
 
-  if (plot_num_cases) {
+  if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
     y_values <- dplyr::filter(plot_data, panel != "Number of Cases") %>%
       dplyr::pull(!! y_axis_quo)
   } else {
@@ -676,7 +676,7 @@ plot_point_verif <- function(
     free_scale <- "y"
   }
 
-  if (plot_num_cases) {
+  if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
 
     num_cases_position <- match.arg(num_cases_position)
 

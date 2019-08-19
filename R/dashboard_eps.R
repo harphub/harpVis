@@ -88,6 +88,7 @@ dashboard_eps <- function(input, output, session, verif_data) {
     dashboard_plots$rank_histogram <- harpVis::plot_point_verif(
       verif_data(),
       rank_histogram,
+      plot_num_cases = FALSE,
       filter_by = ggplot2::vars(leadtime == selected_leadtime),
       legend_position = "none",
       plot_caption = "none",
@@ -139,6 +140,7 @@ dashboard_eps <- function(input, output, session, verif_data) {
     dashboard_plots$reliability <- harpVis::plot_point_verif(
       verif_data(),
       reliability,
+      plot_num_cases = FALSE,
       filter_by = ggplot2::vars(leadtime == selected_leadtime, threshold == selected_threshold),
       legend_position = "none",
       plot_caption = "none",
@@ -149,6 +151,7 @@ dashboard_eps <- function(input, output, session, verif_data) {
     dashboard_plots$roc <- harpVis::plot_point_verif(
       verif_data(),
       roc,
+      plot_num_cases = FALSE,
       filter_by = ggplot2::vars(leadtime == selected_leadtime, threshold == selected_threshold),
       legend_position = "none",
       plot_caption = "none",
@@ -159,6 +162,7 @@ dashboard_eps <- function(input, output, session, verif_data) {
     dashboard_plots$brier <- harpVis::plot_point_verif(
       verif_data(),
       brier_score,
+      plot_num_cases = FALSE,
       filter_by = ggplot2::vars(threshold == selected_threshold),
       legend_position = "right",
       num_legend_rows = 8,
