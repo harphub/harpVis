@@ -64,7 +64,12 @@ options_barUI <- function(id) {
 #' @examples
 options_bar <- function(input, output, session) {
 
-  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), harp_getVolumes()())
+  app_start_dir <- shiny::getShinyOption("app_start_dir")
+  volumes <- c(Home = fs::path_home(), harp_getVolumes()())
+  if (!is.null(app_start_dir)) {
+    volumes <- c(fs::path(app_start_dir), volumes)
+    names(volumes)[1] <- app_start_dir
+  }
   shinyFiles::shinyDirChoose(
     input, "data_dir", roots = volumes, session = session, restrictions = system.file(package = "base")
   )
