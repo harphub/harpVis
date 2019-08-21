@@ -4,7 +4,7 @@
 \alias{shiny_plot_point_verif}
 \title{Start shiny app to plot point verification}
 \usage{
-shiny_plot_point_verif()
+shiny_plot_point_verif(start_dir = NULL)
 }
 \description{
 Start shiny app to plot point verification

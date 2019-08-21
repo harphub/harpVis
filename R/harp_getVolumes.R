@@ -7,7 +7,7 @@ harp_getVolumes <- function (exclude) {
   function() {
     osSystem <- Sys.info()["sysname"]
     if (osSystem == "Darwin") {
-      volumes <- dir_ls("/Volumes")
+      volumes <- fs::dir_ls("/Volumes")
       names(volumes) <- basename(volumes)
     }
     else if (osSystem == "Linux") {
