@@ -19,7 +19,10 @@ Imports:
     shinyFiles,
     hexbin,
     RadioSonde,
-    magrittr
+    magrittr,
+    harpIO
+Remotes:
+    andrew-MET/harpIO
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
