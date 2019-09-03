@@ -407,6 +407,14 @@ plot_point_verif <- function(
     }
   }
 
+  ### Ensure that x and y axis are numeric
+
+  plot_data <- dplyr::mutate(
+    plot_data,
+    !! x_axis_quo := as.numeric(!! x_axis_quo),
+    !! y_axis_quo := as.numeric(!! y_axis_quo)
+  )
+
   ###########################################################################
   # COLOURS
   ###########################################################################
