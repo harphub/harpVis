@@ -772,6 +772,6 @@ inf_to_na <- Vectorize(function(x) if (is.infinite(x)) { NA } else { x })
 # Function to convert date to a nice format
 date_to_char <- function(date_in) {
   suppressMessages(harpIO::str_datetime_to_unixtime(date_in)) %>%
-    as.POSIXct(origin = "1970-01-01 00:00:00") %>%
+    as.POSIXct(origin = "1970-01-01 00:00:00", tz = "UTC") %>%
     format("%H:%M %d %b %Y")
 }
