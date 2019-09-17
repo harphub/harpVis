@@ -12,6 +12,11 @@ body {
   margin-right: 5px;
   margin-top: 5px;
   padding: 1% 2% 2% 1%;
+  transition: all .2s ease-in-out;
+}
+
+dashboard-panel:hover {
+  transform: scale(1.5, 1.5);
 }
 
 .form-control {
@@ -129,6 +134,15 @@ body {
   margin-bottom: 15px;
 }
 
+#colour_choices-plot_options {
+  margin-top: 21px;
+  color: #D5D5D5;
+  background-color: #062F4F;
+}
+
+#colour_choices-plot_button_div {
+  text-align: center;
+}
 
 
 

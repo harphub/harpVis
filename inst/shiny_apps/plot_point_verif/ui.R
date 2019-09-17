@@ -34,6 +34,11 @@ ui <- tags$html(
 
       harpVis::options_barUI("options_bar"),
 
+      fluidRow(
+        harpVis::group_selectorsUI("group_selectors"),
+        harpVis::colour_choicesUI("colour_choices")
+      ),
+
       shiny::tabsetPanel(id = "tab_panel",
 
         harpVis::dashboard_epsUI("dashboard"),

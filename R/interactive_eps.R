@@ -39,7 +39,7 @@ interactive_epsUI <- function(id) {
 #' @export
 #'
 #' @examples
-interactive_eps <- function(input, output, session, verif_data, bg_colour) {
+interactive_eps <- function(input, output, session, verif_data, colour_table, bg_colour) {
 
   ns <- session$ns
 
@@ -335,7 +335,8 @@ interactive_eps <- function(input, output, session, verif_data, bg_colour) {
       x_axis       = !!plot_x_axis,
       facet_by     = score_options()$facets,
       filter_by    = score_options()$filters,
-      colour_theme = "harp_midnight"
+      colour_theme = "harp_midnight",
+      colour_table = colour_table()
     )
   }, height = 550, bg = bg_colour)
 
