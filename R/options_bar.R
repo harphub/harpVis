@@ -67,7 +67,7 @@ options_bar <- function(input, output, session) {
   app_start_dir <- shiny::getShinyOption("app_start_dir")
   volumes <- c(Home = fs::path_home(), harp_getVolumes()())
   if (!is.null(app_start_dir)) {
-    volumes <- c(fs::path(app_start_dir), volumes)
+    volumes <- unclass(fs::path(app_start_dir))
     names(volumes)[1] <- app_start_dir
   }
   shinyFiles::shinyDirChoose(
