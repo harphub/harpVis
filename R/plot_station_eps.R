@@ -191,7 +191,7 @@ eps_ribbon_plot <- function(
   ...
 ) {
 
-  if(!requireNamespace("ggalt", quietly = TRUE)) {
+  if (!requireNamespace("ggalt", quietly = TRUE)) {
     stop("Please install the ggalt package from CRAN for ribbon plots", call. = FALSE)
   }
 
@@ -223,7 +223,7 @@ eps_ribbon_plot <- function(
   if (is.null(ribbon_colours)) {
     n <- ifelse(num_ribbons < 3, 3, num_ribbons + 1)
     ribbon_colours <- RColorBrewer::brewer.pal(n, "Blues")
-    ribbon_colours <- ribbon_colours[2: n]
+    ribbon_colours <- ribbon_colours[2:n]
   } else {
     if (length(ribbon_colours) < num_ribbons) {
       stop("Only ", length(ribbon_colours), " colours supplied for ", num_ribbons, " ribbons.", call. = FALSE)
@@ -231,9 +231,14 @@ eps_ribbon_plot <- function(
   }
 
   # Compute quantiles
+  if (harpIO:::tidyr_new_interface()) {
+    plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("mname", "x")))
+  } else {
+    plot_data <- plot_data %>%
+      dplyr::group_by(.data$mname, .data$x) %>%
+      tidyr::nest()
+  }
   plot_data <- plot_data %>%
-    dplyr::group_by(.data$mname, .data$x) %>%
-    tidyr::nest() %>%
     dplyr::transmute(
       .data$mname,
       .data$x,
@@ -243,9 +248,12 @@ eps_ribbon_plot <- function(
       quantiles   = purrr::map(.data$data, ~ as.list(quantile(.x$forecast, quantiles)))
     ) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, ~ rlang::set_names(.x, ~ paste0("q", .)))) %>%
-    dplyr::mutate(quantiles = purrr::map(.data$quantiles, dplyr::bind_cols)) %>%
-    tidyr::unnest()
-
+    dplyr::mutate(quantiles = purrr::map(.data$quantiles, dplyr::bind_cols))
+  if (harpIO:::tidyr_new_interface()) {
+    plot_data <- tidyr::unnest(plot_data, tidyr::one_of("quantiles"))
+  } else {
+    plot_data <- tidyr::unnest(plot_data)
+  }
 
   # Generate the ggplot object
   gg <- ggplot2::ggplot(dplyr::arrange(plot_data, .data$x), ggplot2::aes(x = .data$x))
@@ -286,40 +294,60 @@ eps_stacked_prob_plot <- function(
   num_quantiles <- length(quantiles)
 
   # Compute the quantiles - the quantile names are reversed to get probability > .
+  if (harpIO:::tidyr_new_interface()) {
+    plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("mname", "x")))
+  } else {
+    plot_data <- plot_data %>%
+      dplyr::group_by(.data$mname, .data$x) %>%
+      tidyr::nest()
+  }
   plot_data <- plot_data %>%
-    dplyr::group_by(.data$mname, .data$x) %>%
-    tidyr::nest() %>%
     dplyr::transmute(
       .data$mname,
       .data$x,
        quantiles   = purrr::map(.data$data, ~ as.list(quantile(.x$forecast, quantiles)))
     ) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, ~ rlang::set_names(.x, ~ rev(.)))) %>%
-    dplyr::mutate(quantiles = purrr::map(.data$quantiles, dplyr::bind_cols)) %>%
-    tidyr::unnest()
+    dplyr::mutate(quantiles = purrr::map(.data$quantiles, dplyr::bind_cols))
+  if (harpIO:::tidyr_new_interface()) {
+    plot_data <- tidyr::unnest(plot_data, tidyr::one_of("quantiles"))
+  } else {
+    plot_data <- tidyr::unnest(plot_data)
+  }
 
   # Gather quantiles and lag to create quantile start and end points
   plot_data <- plot_data %>%
-    tidyr::gather(dplyr::ends_with("%"), key = "quantile", value = "forecast") %>%
-    dplyr::group_by(.data$mname, .data$x) %>%
-    tidyr::nest() %>%
+    tidyr::gather(dplyr::ends_with("%"), key = "quantile", value = "forecast")
+  if (harpIO:::tidyr_new_interface()) {
+    plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("mname", "x")))
+  } else {
+    plot_data <- plot_data %>%
+      dplyr::group_by(.data$mname, .data$x) %>%
+      tidyr::nest()
+  }
+  plot_data <- plot_data %>%
     dplyr::mutate(
       f1 = purrr::map(data, ~ dplyr::lag(.x$forecast)),
       quantile_end = purrr::map(data, ~ dplyr::lag(.x$quantile))
-    ) %>%
-    tidyr::unnest() %>%
-    tidyr::gather(forecast, f1, key = "key", value = "forecast") %>%
-    dplyr::mutate(quantile_label = paste(gsub("%", "", quantile), gsub("%", " %", quantile_end), sep = " - ")) %>%
+    )
+  if (harpIO:::tidyr_new_interface()) {
+    plot_data <- tidyr::unnest(plot_data, tidyr::one_of(c("data", "f1", "quantile_end")))
+  } else {
+    plot_data <- tidyr::unnest(plot_data)
+  }
+  plot_data <- plot_data %>%
+    tidyr::gather(forecast, .data$f1, key = "key", value = "forecast") %>%
+    dplyr::mutate(quantile_label = paste(gsub("%", "", .data$quantile), gsub("%", " %", .data$quantile_end), sep = " - ")) %>%
     tidyr::drop_na()
 
   # Make the plot
   switch(stack_type,
     "column" = ggplot2::ggplot(
-        plot_data, ggplot2::aes(.data$x, .data$forecast, colour = quantile_label, group = .data$x)
+        plot_data, ggplot2::aes(.data$x, .data$forecast, colour = .data$quantile_label, group = .data$x)
       ) +
       ggplot2::geom_line(size = bar_width),
     "area"   = ggplot2::ggplot(
-        dplyr::filter(plot_data, key == "forecast"), ggplot2::aes(.data$x, .data$forecast, fill = quantile_label)
+        dplyr::filter(plot_data, key == "forecast"), ggplot2::aes(.data$x, .data$forecast, fill = .data$quantile_label)
       ) +
       ggplot2::geom_area(position = "identity")
   )

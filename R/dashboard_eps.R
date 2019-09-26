@@ -112,7 +112,7 @@ dashboard_eps <- function(input, output, session, verif_data, colour_table) {
 
     dashboard_plots$rank_histogram <- harpVis::plot_point_verif(
       verif_data(),
-      rank_histogram,
+      normalized_rank_histogram,
       plot_num_cases = FALSE,
       filter_by = ggplot2::vars(leadtime == selected_leadtime),
       legend_position = legend_summary,
