@@ -407,13 +407,15 @@ plot_point_verif <- function(
     }
   }
 
-  ### Ensure that x and y axis are numeric
+  ### Ensure that x and y axes are numeric
 
-  plot_data <- dplyr::mutate(
-    plot_data,
-    !! x_axis_quo := as.numeric(!! x_axis_quo),
-    !! y_axis_quo := as.numeric(!! y_axis_quo)
-  )
+  if (!grepl("rank_histogram", score_name)) {
+    plot_data <- dplyr::mutate(
+      plot_data,
+      !! x_axis_quo := as.numeric(!! x_axis_quo),
+      !! y_axis_quo := as.numeric(!! y_axis_quo)
+    )
+  }
 
   ###########################################################################
   # COLOURS
