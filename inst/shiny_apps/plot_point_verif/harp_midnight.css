@@ -142,7 +142,11 @@ dashboard-panel:hover {
 
 #colour_choices-plot_button_div {
   text-align: center;
+  margin-bottom: 10px;
 }
 
+#download_plot-save_plot_div {
+  text-align: center;
+}
 
 

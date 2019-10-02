@@ -12,17 +12,16 @@ interactive_epsUI <- function(id) {
 
   ns <- shiny::NS(id)
 
-  shiny::tabPanel("Interactive",
-    shiny::fluidRow(
-      shiny::column(2,
-        shiny::selectInput(ns("score"), "Score", "Waiting for valid data"),
-        shiny::tags$div(id = ns("placeholder"))
-      ),
-      shiny::column(8,
-        shiny::plotOutput(ns("plot"))
-      )
+  shiny::fluidRow(
+    shiny::column(2,
+      shiny::selectInput(ns("score"), "Score", "Waiting for valid data"),
+      shiny::tags$div(id = ns("placeholder"))
+    ),
+    shiny::column(8,
+      shiny::plotOutput(ns("plot"), height = "100%")
     )
   )
+
 
 }
 
@@ -45,9 +44,15 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
   new_data <- shiny::reactiveVal(NULL)
 
+  # Get the ui type we need from the score
+
+  ui_type        <- shiny::reactiveVal("ens_summary")
+  more_selectors <- shiny::reactiveVal(FALSE)
+
   # Reset the app when new data arrives
 
   shiny::observeEvent(verif_data(), {
+    shiny::removeUI(paste0("#", ns("ens-summary")))
     shiny::removeUI(paste0("#", ns("ens-rank-hist")))
     shiny::removeUI(paste0("#", ns("ens-cat")))
     shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
@@ -64,19 +69,22 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       new_data(new_data() + 1)
     }
     shiny::updateSelectInput(session, "score", choices = "Waiting for valid data")
+    ui_type(NULL)
   })
 
   # Update the score selector
 
   shiny::observeEvent(new_data(), {
     shiny::req(new_data())
-    shiny::updateSelectInput(session, "score", choices = make_score_list(verif_data()))
+    score_choices <- make_score_list(verif_data())
+    selected_score <- input$score
+    if (!is.null(selected_score)) {
+      if (!is.element(input$score, unlist(score_choices))) {
+        selected_score <- NULL
+      }
+    }
+    shiny::updateSelectInput(session, "score", choices = score_choices, selected = selected_score)
   })
-
-  # Get the ui type we need from the score
-
-  ui_type        <- shiny::reactiveVal("ens_summary")
-  more_selectors <- shiny::reactiveVal(FALSE)
 
   shiny::observeEvent(input$score, {
     ui_type(get_ui_type(input$score))
@@ -94,6 +102,22 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
       shiny::removeUI(paste0("#", ns("det-summary")))
       shiny::removeUI(paste0("#", ns("det-cat")))
+      shiny::insertUI(
+        selector = paste0("#", ns("placeholder")),
+        ui       = shiny::tags$div(
+          id = ns("ens-summary"),
+          shiny::checkboxInput(
+            ns("ens-extend-to-zero"),
+            "y-axis to zero",
+            TRUE
+          ),
+          shiny::checkboxInput(
+            ns("ens-summary-num-cases"),
+            "Show number of cases",
+            FALSE
+          )
+        )
+      )
       more_selectors(FALSE)
     }
 
@@ -130,6 +154,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
           id = ns("ens-cat-choose-x"),
+          shiny::checkboxInput(
+            ns("ens-extend-to-zero"),
+            "y-axis to zero",
+            TRUE
+          ),
           shiny::radioButtons(
             ns("ens-cat-choose-x-x_axis"),
             "x axis",
@@ -180,7 +209,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
     if (more_selectors()) {
 
-      if (req(input[["ens-cat-choose-x-x_axis"]]) == "leadtime") {
+      if (shiny::req(input[["ens-cat-choose-x-x_axis"]]) == "leadtime") {
         thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
         shiny::removeUI(paste0("#", ns("ens-cat-choose-x-lead")))
         shiny::insertUI(
@@ -233,6 +262,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     list(
       ui_type(),
       input[["score"]],
+      input[["ens-summary-num-cases"]],
+      input[["ens-extend-to-zero"]],
       input[["ens-rank-hist-leadtime"]],
       input[["ens-cat-choose-x-x_axis"]],
       input[["ens-cat-choose-x-leadtime"]],
@@ -243,8 +274,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       shiny::req(verif_data())
       shiny::req(input[["score"]])
+      shiny::req(ui_type())
       if (ui_type() == "ens_summary") {
 
+        n_cases <- input[["ens-summary-num-cases"]]
+        to_zero <- input[["ens-extend-to-zero"]]
         facets  <- NULL
         filters <- NULL
         x_axis  <- "leadtime"
@@ -252,9 +286,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       } else if (ui_type() == "ens_rank_hist") {
 
+        n_cases   <- FALSE
+        to_zero   <- TRUE
         leadtimes <- shiny::req(input[["ens-rank-hist-leadtime"]])
-        x_axis   <- "leadtime"
-        score    <- gsub("ens_summary_scores_", "", input$score)
+        x_axis    <- "leadtime"
+        score     <- gsub("ens_summary_scores_", "", input$score)
         if (length(leadtimes) == 1) {
           if (leadtimes == "All") {
             facets  <- NULL
@@ -275,8 +311,10 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       } else if (ui_type() == "ens_cat_choose_x") {
 
-        score  <- gsub("ens_threshold_scores_", "", input$score)
-        x_axis <- shiny::req(input[["ens-cat-choose-x-x_axis"]])
+        to_zero <- input[["ens-extend-to-zero"]]
+        n_cases <- FALSE
+        score   <- gsub("ens_threshold_scores_", "", input$score)
+        x_axis  <- shiny::req(input[["ens-cat-choose-x-x_axis"]])
         if (x_axis == "leadtime") {
           thresholds <- shiny::req(input[["ens-cat-choose-x-threshold"]])
           if (length(thresholds) == 1) {
@@ -299,6 +337,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       } else if (ui_type() == "ens_cat") {
 
+        to_zero    <- FALSE
+        n_cases    <- FALSE
         score      <- gsub("ens_threshold_scores_", "", input$score)
         x_axis     <- "leadtime"
         leadtimes  <- shiny::req(input[["ens-cat-leadtime"]])
@@ -313,8 +353,17 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       }
 
-      list(score = score, x_axis = x_axis, facets = facets, filters = filters)
+      list(
+        score     = score,
+        num_cases = n_cases,
+        to_y_zero = to_zero,
+        x_axis    = x_axis,
+        facets    = facets,
+        filters   = filters
+      )
+
     }
+
   )
 
   # make the plot
@@ -332,13 +381,17 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     harpVis::plot_point_verif(
       shiny::req(verif_data()),
       !! plot_score,
-      x_axis       = !!plot_x_axis,
-      facet_by     = score_options()$facets,
-      filter_by    = score_options()$filters,
-      colour_theme = "harp_midnight",
-      colour_table = colour_table()
+      x_axis           = !!plot_x_axis,
+      plot_num_cases   = score_options()$num_cases,
+      extend_y_to_zero = score_options()$to_y_zero,
+      facet_by         = score_options()$facets,
+      filter_by        = score_options()$filters,
+      colour_theme     = "harp_midnight",
+      colour_table     = colour_table()
     )
   }, height = 550, bg = bg_colour)
+
+  return(score_options)
 
 }
 
@@ -418,7 +471,7 @@ get_ui_type <- function(verif_name) {
       "ens_summary"
     }
   } else if (grepl("ens_threshold", verif_name)) {
-    if(grepl(ens_cat_choose_x, gsub("ens_threshold", "", verif_name))) {
+    if (grepl(ens_cat_choose_x, gsub("ens_threshold", "", verif_name))) {
       "ens_cat_choose_x"
     } else {
       "ens_cat"

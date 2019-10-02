@@ -12,7 +12,7 @@ dashboard_epsUI <- function(id) {
 
   ns <- shiny::NS(id)
 
-  shiny::tabPanel("Dashboard",
+  shiny::div(
     shiny::fluidRow(
       shiny::column(7,
         shiny::fluidRow(
@@ -88,7 +88,7 @@ dashboard_eps <- function(input, output, session, verif_data, colour_table) {
     shiny::req(colour_table())
 
     leadtimes <- unique(verif_data()[[1]]$leadtime)
-    closest_to_twelve <- which(abs(leadtimes -12) == min(abs(leadtimes - 12)))
+    closest_to_twelve <- which(abs(leadtimes - 12) == min(abs(leadtimes - 12)))
     selected_leadtime <- leadtimes[closest_to_twelve]
 
     legend_summary    <- "none"

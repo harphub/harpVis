@@ -34,6 +34,24 @@ server <- function(input, output, session) {
   # INTERACTIVE PLOT                                         #
   ############################################################
 
-  shiny::callModule(harpVis::interactive_eps, "interactive", filtered_data, colour_table, bg_colour = bg_colour)
+  score_optons <- shiny::callModule(
+    harpVis::interactive_eps,
+    "interactive",
+    filtered_data,
+    colour_table,
+    bg_colour = bg_colour
+  )
+
+  ############################################################
+  # DOWNLOAD HANDLER                                         #
+  ############################################################
+
+  shiny::callModule(
+    harpVis::download_verif_plot,
+    "download_plot",
+    filtered_data,
+    score_optons,
+    colour_table
+  )
 
 }

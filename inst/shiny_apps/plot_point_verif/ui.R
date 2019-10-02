@@ -41,9 +41,14 @@ ui <- tags$html(
 
       shiny::tabsetPanel(id = "tab_panel",
 
-        harpVis::dashboard_epsUI("dashboard"),
+        shiny::tabPanel("Dashboard",
+          harpVis::dashboard_epsUI("dashboard")
+        ),
 
-        harpVis::interactive_epsUI("interactive")
+        shiny::tabPanel("Interactive",
+          harpVis::interactive_epsUI("interactive"),
+          harpVis::download_verif_plotUI("download_plot")
+        )
 
       ) # end of tabsetPanel
 

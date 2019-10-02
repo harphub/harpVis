@@ -618,9 +618,15 @@ plot_point_verif <- function(
     gg                <- gg + ggplot2::scale_fill_manual(values = colour_table$colour)
   }
 
-  if (nchar(plot_title) > 0)    gg <- gg + ggplot2::labs(title    = plot_title)
-  if (nchar(plot_subtitle) > 0) gg <- gg + ggplot2::labs(subtitle = plot_subtitle)
-  if (nchar(plot_caption) > 0 & !plot_num_cases)  gg <- gg + ggplot2::labs(caption  = plot_caption)
+  if (nchar(gsub("[[:space:]]", "", plot_title)) > 0) {
+    gg <- gg + ggplot2::labs(title    = plot_title)
+  }
+  if (nchar(gsub("[[:space:]]", "", plot_subtitle)) > 0) {
+    gg <- gg + ggplot2::labs(subtitle = plot_subtitle)
+  }
+  if (nchar(gsub("[[:space:]]", "", plot_caption)) > 0) {
+    gg <- gg + ggplot2::labs(caption  = plot_caption)
+  }
 
   if (plot_geom == "line") {
 

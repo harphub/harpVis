@@ -39,7 +39,7 @@ colour_choices <- function(input, output, session, verif_data) {
   # "default" colours from the Paired palette.
   shiny::observeEvent(input$colour_palette, {
     shiny::req(input$colour_palette)
-    if (input$colour_palette %in% c("Custom", "Paired")) {
+    if (input$colour_palette == "Paired") {
       available_colours <- RColorBrewer::brewer.pal(12, "Paired")
       available_colours <- available_colours[c(4, 8, 10, 1:3, 5:7, 9, 11:12)]
     } else if (input$colour_palette == "harp2") {
@@ -53,8 +53,16 @@ colour_choices <- function(input, output, session, verif_data) {
         "#D55E00",
         "#CC79A7",
         "#FF0000",
-        "#A50026"
+        "#A50026",
+        "#111111"
       )
+    } else if (input$colour_palette == "Custom") {
+      fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
+      if (is.null(colour_table()) | nrow(colour_table()) < length(fcst_models)) {
+        available_colours <- palette_colours()
+      } else {
+        available_colours <- colour_table()$colour
+      }
     } else {
       available_colours <- RColorBrewer::brewer.pal(
         RColorBrewer:::qualnum[input$colour_palette],
@@ -139,8 +147,8 @@ colour_choices <- function(input, output, session, verif_data) {
         )
       ),
       footer = shiny::tagList(
-        shiny::actionButton(ns("colours_modal_ok"), "OK"),
-        shiny::actionButton(ns("colours_modal_cancel"), "Cancel")
+        shiny::actionButton(ns("colours_modal_cancel"), "Cancel"),
+        customActionButton(ns("colours_modal_ok"), "OK", btn_class = "primary")
       ),
       size = "s"
     )
