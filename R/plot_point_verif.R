@@ -249,6 +249,8 @@ plot_point_verif <- function(
 
   verif_attributes <- attributes(verif_data)
 
+  verif_data <- purrr::map(verif_data, dplyr::ungroup)
+
   tables_with_data <- names(verif_data)[purrr::map_lgl(verif_data, ~!is.null(.x))]
   verif_data <- purrr::map_at(
     verif_data,
@@ -409,7 +411,7 @@ plot_point_verif <- function(
 
   ### Ensure that x and y axes are numeric
 
-  if (!grepl("rank_histogram", score_name)) {
+  if (!grepl("rank_histogram", score_name)  && x_axis_name == "leadtime") {
     plot_data <- dplyr::mutate(
       plot_data,
       !! x_axis_quo := as.numeric(!! x_axis_quo),
