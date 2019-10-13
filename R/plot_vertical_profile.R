@@ -21,7 +21,7 @@ plot_vertical_profile <- function(
   lead_time,
   y_axis         = p,
   skew_t         = FALSE,
-  colour_by      = parameter,
+  colour_by      = mname,
   colours        = NULL,
   facet_by       = NULL,
   num_facet_cols = 2,
@@ -62,12 +62,19 @@ plot_vertical_profile <- function(
     stop("No data found for SID = ", SID, ", fcdate = ", fcdate, ", lead_time = ", lead_time, call. = FALSE)
   }
 
+  if (all(purrr::map_lgl(plot_data, ~any(grepl("_det+$", colnames(.x)))))) {
+    plot_data <- purrr::map(
+      plot_data,
+      ~dplyr::rename_at(.x, dplyr::vars(dplyr::matches("_det+$")), ~ "forecast")
+    )
+  }
+
   plot_data <- dplyr::bind_rows(plot_data, .id = "mname")
 
   if (any(grepl("_mbr[[:digit:]]+$", colnames(plot_data)))) {
     plot_data <- plot_data %>%
       harpPoint::gather_members()
-  } else if (any(grepl("_det+$"))) {
+  } else if (any(grepl("_det+$", colnames(plot_data)))) {
     plot_data <- plot_data %>%
       dplyr::rename_at(dplyr::vars(dplyr::matches("_det+$")), ~ "forecast")
   }
