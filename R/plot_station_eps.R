@@ -244,7 +244,7 @@ eps_ribbon_plot <- function(
       .data$x,
       ens_mean    = purrr::map_dbl(.data$data, ~ mean(.x$forecast)),
       ens_median  = purrr::map_dbl(.data$data, ~ median(.x$forecast)),
-      ens_control = purrr::map_dbl(.data$data, ~ .x$forecast[.x$member == control_member]),
+      #ens_control = purrr::map_dbl(.data$data, ~ .x$forecast[.x$member == control_member]),
       quantiles   = purrr::map(.data$data, ~ as.list(quantile(.x$forecast, quantiles)))
     ) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, ~ rlang::set_names(.x, ~ paste0("q", .)))) %>%
