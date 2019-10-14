@@ -152,8 +152,8 @@ plot_station_eps <- function(
   if (plot_obs) {
     func_args <- list(...)
     geom_args <- intersect(names(func_args), c(std_aes(), names(formals(geom_point))))
-    ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$x, y = .data$forecast, group = .data$x)) +
-      do.call(geom_point, func_args[geom_args])
+    eps_plot <- eps_plot +
+      do.call(ggplot2::geom_point, c(list(data = plot_data, mapping = ggplot2::aes(y = !! obs_column_quo)), func_args[geom_args]))
   }
 
   if (is.null(ncol)) {
