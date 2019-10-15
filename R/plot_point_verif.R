@@ -543,7 +543,7 @@ plot_point_verif <- function(
   if (tolower(colour_by_name == "none")) {
     gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, ...))
   } else {
-    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, colour = !! colour_by_quo, fill = !! colour_by_quo))
+    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, colour = !! colour_by_quo, fill = !! colour_by_quo, ...))
   }
 
   if (is.function(colour_theme)) {
