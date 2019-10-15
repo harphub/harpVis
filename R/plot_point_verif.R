@@ -541,7 +541,7 @@ plot_point_verif <- function(
 
   # Plot background
   if (tolower(colour_by_name == "none")) {
-    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo))
+    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, ...))
   } else {
     gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, colour = !! colour_by_quo, fill = !! colour_by_quo))
   }
@@ -561,7 +561,7 @@ plot_point_verif <- function(
   gg <- gg + theme_func()
   gg <- gg + ggplot2::xlab(x_label)
   gg <- gg + ggplot2::ylab(y_label)
-  gg <- gg + ggplot2::theme(legend.position = legend_position, ...)
+  gg <- gg + ggplot2::theme(legend.position = legend_position)
   gg <- gg + ggplot2::guides(
     colour   = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     shape    = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
