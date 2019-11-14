@@ -87,6 +87,10 @@
 #'   used. See \link[ggplot2]{labellers} for more information.
 #' @param flip_axes Logical of whether to swap the x and y axes. This is
 #'   typically used when this function is called by \link{plot_profile_verif}.
+#' @param base_size base font size.
+#' @param base_family base font family.
+#' @param base_line_size base size for line elements.
+#' @param base_rect_size base size for rect elements.
 #'
 #' @return A plot. Can be saved with \link[ggplot2]{ggsave}.
 #' @import ggplot2
@@ -129,6 +133,10 @@ plot_point_verif <- function(
   log_scale_y              = FALSE,
   flip_axes                = FALSE,
   colour_theme             = "bw",
+  base_size                = 11,
+  base_family              = "",
+  base_line_size           = base_size / 22,
+  base_rect_size           = base_size / 22,
   ...
 ) {
 
@@ -558,7 +566,12 @@ plot_point_verif <- function(
     theme_func <- get(colour_theme, envir = asNamespace(function_env))
   }
 
-  gg <- gg + theme_func()
+  gg <- gg + theme_func(
+    base_size      = base_size,
+    base_family    = base_family,
+    base_line_size = base_line_size,
+    base_rect_size = base_rect_size
+  )
   gg <- gg + ggplot2::xlab(x_label)
   gg <- gg + ggplot2::ylab(y_label)
   gg <- gg + ggplot2::theme(legend.position = legend_position)
