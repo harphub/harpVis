@@ -65,6 +65,7 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
     save_options$filename <- paste0(
       paste(
         score_options()$score,
+        attr(verif_data(), "parameter"),
         paste(plot_models, collapse = "+"),
         paste(attr(verif_data(), "start_date"), attr(verif_data(), "end_date"), sep = "-"),
         sep = "_"
