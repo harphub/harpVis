@@ -5,19 +5,19 @@
 \title{Plot verification scores}
 \usage{
 plot_point_verif(verif_data, score, verif_type = c("ens", "det"),
-  x_axis = leadtime, y_axis = rlang::enquo(score), colour_by = mname,
-  colour_table = NULL, extend_y_to_zero = TRUE,
-  plot_num_cases = TRUE, extend_num_cases_to_zero = FALSE,
-  num_cases_position = c("below", "right", "above", "left"),
-  facet_by = NULL, num_facet_cols = 3, facet_scales = "fixed",
-  facet_labeller = "label_value", linetype_by = NULL,
-  line_width = 1.1, point_size = 2, filter_by = NULL,
-  plot_title = "auto", plot_subtitle = "auto", plot_caption = "auto",
-  x_label = "auto", y_label = "auto", legend_position = "bottom",
-  num_legend_rows = 1, log_scale_x = FALSE, log_scale_y = FALSE,
-  flip_axes = FALSE, colour_theme = "bw", base_size = 11,
-  base_family = "", base_line_size = base_size/22,
-  base_rect_size = base_size/22, ...)
+  x_axis = leadtime, y_axis = rlang::enquo(score),
+  rank_is_relative = FALSE, colour_by = mname, colour_table = NULL,
+  extend_y_to_zero = TRUE, plot_num_cases = TRUE,
+  extend_num_cases_to_zero = FALSE, num_cases_position = c("below",
+  "right", "above", "left"), facet_by = NULL, num_facet_cols = 3,
+  facet_scales = "fixed", facet_labeller = "label_value",
+  linetype_by = NULL, line_width = 1.1, point_size = 2,
+  filter_by = NULL, plot_title = "auto", plot_subtitle = "auto",
+  plot_caption = "auto", x_label = "auto", y_label = "auto",
+  legend_position = "bottom", num_legend_rows = 1,
+  log_scale_x = FALSE, log_scale_y = FALSE, flip_axes = FALSE,
+  colour_theme = "bw", base_size = 11, base_family = "",
+  base_line_size = base_size/22, base_rect_size = base_size/22, ...)
 }
 \arguments{
 \item{verif_data}{Output from \link[harpPoint]{ens_verif},
