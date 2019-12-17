@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 plot_vertical_profile(.fcst, SID, fcdate, lead_time, y_axis = p,
-  skew_t = FALSE, colour_by = parameter, colours = NULL,
+  skew_t = FALSE, colour_by = mname, colours = NULL,
   facet_by = NULL, num_facet_cols = 2, ...)
 }
 \arguments{

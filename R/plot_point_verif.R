@@ -21,6 +21,8 @@
 #'   also be threshold. For some scores this is overrided.
 #' @param y_axis The y-axis for the plot. The default is to take the same as the
 #'   score input, and for most scores this is overrided.
+#' @param rank_is_relative Logical. If TRUE rank histograms are plotted with the
+#'   relative rank (between 0 and 1) on the x-axis. The default is FALSE.
 #' @param colour_by The column to colour the plot lines or bars by. The default
 #'   is mname, for the model name. Set to NULL for all lines / bars to have the
 #'   same colour.
@@ -104,6 +106,7 @@ plot_point_verif <- function(
   verif_type               = c("ens", "det"),
   x_axis                   = leadtime,
   y_axis                   = rlang::enquo(score),
+  rank_is_relative         = FALSE,
   colour_by                = mname,
   colour_table             = NULL,
   extend_y_to_zero         = TRUE,
@@ -249,7 +252,7 @@ plot_point_verif <- function(
 
   verif_attributes <- attributes(verif_data)
 
-  verif_data <- purrr::map(verif_data, dplyr::ungroup)
+  verif_data <- purrr::map(verif_data, ~ if(!is.null(.x)) dplyr::ungroup(.x))
 
   tables_with_data <- names(verif_data)[purrr::map_lgl(verif_data, ~!is.null(.x))]
   verif_data <- purrr::map_at(
@@ -326,11 +329,13 @@ plot_point_verif <- function(
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
         grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
-        plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank) %>%
-          dplyr::summarise(rank_count = sum(.data$rank_count))
+        plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank, .data$relative_rank) %>%
+          dplyr::summarise(rank_count = sum(.data$rank_count)) %>%
+          dplyr::ungroup()
       }
       plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
       x_axis_quo       <- rlang::quo(rank)
+      if (rank_is_relative) x_axis_quo <- rlang::quo(relative_rank)
       y_axis_quo       <- rlang::quo(rank_count)
       plot_geom        <- "bar"
     },
@@ -354,6 +359,7 @@ plot_point_verif <- function(
 
       plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
       x_axis_quo       <- rlang::quo(rank)
+      if (rank_is_relative) x_axis_quo <- rlang::quo(relative_rank)
       y_axis_quo       <- rlang::quo(normalized_frequency)
       plot_geom        <- "bar"
     },
@@ -670,7 +676,7 @@ plot_point_verif <- function(
 
   } else if (plot_geom == "bar") {
 
-    gg <- gg + ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(), colour = "grey30")
+    gg <- gg + ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(), colour = "transparent")
 
   } else {
 
