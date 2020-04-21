@@ -9,6 +9,9 @@ download_verif_plotUI(id)
 \arguments{
 \item{id}{}
 }
+\value{
+
+}
 \description{
 Title
 }

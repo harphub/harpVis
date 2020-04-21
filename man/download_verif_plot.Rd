@@ -4,11 +4,20 @@
 \alias{download_verif_plot}
 \title{Title}
 \usage{
-download_verif_plot(input, output, session, verif_data, score_options,
-  colour_table)
+download_verif_plot(
+  input,
+  output,
+  session,
+  verif_data,
+  score_options,
+  colour_table
+)
 }
 \arguments{
 \item{colour_table}{}
+}
+\value{
+
 }
 \description{
 Title

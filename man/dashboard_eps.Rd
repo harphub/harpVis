@@ -9,6 +9,9 @@ dashboard_eps(input, output, session, verif_data, colour_table)
 \arguments{
 \item{session}{}
 }
+\value{
+
+}
 \description{
 Title
 }

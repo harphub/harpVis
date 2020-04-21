@@ -4,10 +4,12 @@
 \name{det_verif_data}
 \alias{det_verif_data}
 \title{Deterministic verification scores example data.}
-\format{A list with 2 data frames: \describe{
+\format{
+A list with 2 data frames: \describe{
   \item{det_summary_scores}{Summary scores for the forecasts}
   \item{det_threshold_scores}{Categorical scores for the forecasts based on
-  threshold exceedence categories.}}}
+  threshold exceedence categories.}}
+}
 \source{
 MetCoOp / HIRLAM
 }

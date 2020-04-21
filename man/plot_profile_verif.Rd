@@ -4,8 +4,15 @@
 \alias{plot_profile_verif}
 \title{Plot verification scores for vertical profiles}
 \usage{
-plot_profile_verif(verif_data, score, y_axis = p, lead_time = NA,
-  plot_num_cases = TRUE, num_cases_position = c("right", "left"), ...)
+plot_profile_verif(
+  verif_data,
+  score,
+  y_axis = p,
+  lead_time = NA,
+  plot_num_cases = TRUE,
+  num_cases_position = c("right", "left"),
+  ...
+)
 }
 \arguments{
 \item{verif_data}{The verification data.}

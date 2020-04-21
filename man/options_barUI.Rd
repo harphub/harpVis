@@ -9,6 +9,9 @@ options_barUI(id)
 \arguments{
 \item{id}{}
 }
+\value{
+
+}
 \description{
 Title
 }

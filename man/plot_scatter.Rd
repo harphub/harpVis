@@ -4,8 +4,16 @@
 \alias{plot_scatter}
 \title{Scatter plot of forecast vs observations}
 \usage{
-plot_scatter(.fcst, fcst_model, parameter, members = "all",
-  facet_members = TRUE, binwidth = NULL, colours = NULL, ...)
+plot_scatter(
+  .fcst,
+  fcst_model,
+  parameter,
+  members = "all",
+  facet_members = TRUE,
+  binwidth = NULL,
+  colours = NULL,
+  ...
+)
 }
 \arguments{
 \item{.fcst}{A \code{harp_fcst} type object.}

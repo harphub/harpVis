@@ -9,6 +9,9 @@ colour_choicesUI(id)
 \arguments{
 \item{id}{}
 }
+\value{
+
+}
 \description{
 Title
 }
