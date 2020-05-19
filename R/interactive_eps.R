@@ -48,6 +48,9 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
   ui_type        <- shiny::reactiveVal("ens_summary")
   more_selectors <- shiny::reactiveVal(FALSE)
+  det_ens        <- shiny::reactiveVal(FALSE)
+  all_members    <- shiny::reactiveVal("")
+  all_models     <- shiny::reactiveVal("")
 
   # Reset the app when new data arrives
 
@@ -84,15 +87,31 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       }
     }
     shiny::updateSelectInput(session, "score", choices = score_choices, selected = selected_score)
+    det_df <- verif_data()[["det_summary_scores"]]
+    if (!is.null(det_df) && is.element("member", colnames(det_df))) {
+      det_ens(TRUE)
+    } else {
+      det_ens(FALSE)
+    }
   })
 
   shiny::observeEvent(input$score, {
     ui_type(get_ui_type(input$score))
   })
 
+  shiny::observeEvent(list(det_ens(), new_data()), {
+    if (det_ens()) {
+      all_members(sort(unique(verif_data()[["det_summary_scores"]][["member"]])))
+      all_models(sort(unique(verif_data()[["det_summary_scores"]][["mname"]])))
+    } else {
+      all_members("")
+      all_models("")
+    }
+  })
+
   # Update the UI based on the score
 
-  shiny::observeEvent(ui_type(), {
+  shiny::observeEvent(list(ui_type(), all_members()), {
 
     shiny::req(ui_type())
 
@@ -201,6 +220,48 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       more_selectors(FALSE)
     }
 
+    if (ui_type() == "det_summary") {
+      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
+      shiny::removeUI(paste0("#", ns("ens-cat")))
+      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
+      shiny::removeUI(paste0("#", ns("ens-summary")))
+      shiny::removeUI(paste0("#", ns("det-cat")))
+      shiny::insertUI(
+        selector = paste0("#", ns("placeholder")),
+        ui       = shiny::tags$div(
+          id = ns("det-summary"),
+          shiny::checkboxInput(
+            ns("det-extend-to-zero"),
+            "y-axis to zero",
+            TRUE
+          )
+        )
+      )
+      if (length(all_members() > 0)) {
+        shiny::insertUI(
+          selector = paste0("#", ns("det-summary")),
+          where    = "beforeEnd",
+          ui       = shiny::tags$div(
+            id = ns("det-member-ens"),
+            shiny::selectInput(
+              ns("det-member"),
+              "Highlight member",
+              all_members(),
+              all_members()[1],
+              multiple = TRUE
+            ),
+            shiny::checkboxGroupInput(
+              ns("det-models"),
+              "Show models",
+              all_models(),
+              all_models()
+            )
+          )
+        )
+      }
+      more_selectors(FALSE)
+    }
+
   })
 
   # Add extra UI selector if there is an x-axis selector
@@ -269,20 +330,25 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       input[["ens-cat-choose-x-leadtime"]],
       input[["ens-cat-choose-x-threshold"]],
       input[["ens-cat-leadtime"]],
-      input[["ens-cat-threshold"]]
+      input[["ens-cat-threshold"]],
+      input[["det-extend-to-zero"]],
+      input[["det-member"]],
+      input[["det-models"]]
     ), {
 
       shiny::req(verif_data())
       shiny::req(input[["score"]])
       shiny::req(ui_type())
+      highlight <- NULL
+
       if (ui_type() == "ens_summary") {
 
-        n_cases <- input[["ens-summary-num-cases"]]
-        to_zero <- input[["ens-extend-to-zero"]]
-        facets  <- NULL
-        filters <- NULL
-        x_axis  <- "leadtime"
-        score   <- gsub("ens_summary_scores_", "", input$score)
+        n_cases   <- input[["ens-summary-num-cases"]]
+        to_zero   <- input[["ens-extend-to-zero"]]
+        facets    <- NULL
+        filters   <- NULL
+        x_axis    <- "leadtime"
+        line_cols <- "mname"
 
       } else if (ui_type() == "ens_rank_hist") {
 
@@ -290,7 +356,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         to_zero   <- TRUE
         leadtimes <- shiny::req(input[["ens-rank-hist-leadtime"]])
         x_axis    <- "leadtime"
-        score     <- gsub("ens_summary_scores_", "", input$score)
+        line_cols <- "mname"
+
         if (length(leadtimes) == 1) {
           if (leadtimes == "All") {
             facets  <- NULL
@@ -311,10 +378,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       } else if (ui_type() == "ens_cat_choose_x") {
 
-        to_zero <- input[["ens-extend-to-zero"]]
-        n_cases <- FALSE
-        score   <- gsub("ens_threshold_scores_", "", input$score)
-        x_axis  <- shiny::req(input[["ens-cat-choose-x-x_axis"]])
+        to_zero   <- input[["ens-extend-to-zero"]]
+        n_cases   <- FALSE
+        x_axis    <- shiny::req(input[["ens-cat-choose-x-x_axis"]])
+        line_cols <- "mname"
+
         if (x_axis == "leadtime") {
           thresholds <- shiny::req(input[["ens-cat-choose-x-threshold"]])
           if (length(thresholds) == 1) {
@@ -339,8 +407,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
         to_zero    <- FALSE
         n_cases    <- FALSE
-        score      <- gsub("ens_threshold_scores_", "", input$score)
         x_axis     <- "leadtime"
+        line_cols  <- "mname"
         leadtimes  <- shiny::req(input[["ens-cat-leadtime"]])
         thresholds <- shiny::req(input[["ens-cat-threshold"]])
         if (length(thresholds) == 1 & length(leadtimes) == 1) {
@@ -351,15 +419,34 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes), threshold %in% as.numeric(thresholds))
         }
 
+      } else if (ui_type() == "det_summary") {
+
+        if (is.null(input[["det-extend-to-zero"]])) return()
+
+        n_cases   <- TRUE
+        to_zero   <- input[["det-extend-to-zero"]]
+        facets    <- NULL
+        filters   <- NULL
+        x_axis    <- "leadtime"
+        line_cols <- "mname"
+        if (det_ens()) {
+          n_cases   <- FALSE
+          facets    <- ggplot2::vars(mname)
+          filters   <- ggplot2::vars(mname %in% shiny::req(input[["det-models"]]))
+          line_cols <- "member"
+          highlight <- input[["det-member"]]
+        }
       }
 
       list(
-        score     = score,
+        score     = input[["score"]],
         num_cases = n_cases,
         to_y_zero = to_zero,
         x_axis    = x_axis,
         facets    = facets,
-        filters   = filters
+        filters   = filters,
+        line_cols = line_cols,
+        highlight = highlight
       )
 
     }
@@ -371,25 +458,102 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
   output$plot <- shiny::renderPlot({
     shiny::req(score_options())
 
-    # Score can sometimes come as extended name
-    if (grepl("[[:alpha:]]+_[[:alpha:]]+_scores_[[:graph:]]+", score_options()$score, perl = TRUE)) {
-      return()
+    score_type <- strsplit(score_options()$score, "_")[[1]][1]
+    plot_score <- gsub("^[[:alpha:]]+_[[:alpha:]]+_scores_", "", score_options()$score)
+
+    plot_score  <- rlang::sym(plot_score)
+    plot_x_axis <- rlang::sym(score_options()$x_axis)
+
+    if (score_options()$line_cols == "mname") {
+
+      line_cols  <- rlang::sym(score_options()$line_cols)
+      score_plot <- harpVis::plot_point_verif(
+        shiny::req(verif_data()),
+        !!plot_score,
+        verif_type       = score_type,
+        x_axis           = !!plot_x_axis,
+        colour_by        = !!line_cols,
+        plot_num_cases   = score_options()$num_cases,
+        extend_y_to_zero = score_options()$to_y_zero,
+        facet_by         = score_options()$facets,
+        filter_by        = score_options()$filters,
+        colour_theme     = "harp_midnight",
+        colour_table     = colour_table()
+      )
+
+    } else {
+
+      line_cols <- rlang::sym("member_highlight")
+      plot_data <- shiny::req(verif_data())
+
+      plot_data[["det_summary_scores"]][["member_highlight"]] <- forcats::fct_other(
+        plot_data[["det_summary_scores"]][["member"]],
+        keep        = score_options()$highlight,
+        other_level = "Other members"
+      )
+
+      highlight_cols <- c(RColorBrewer::brewer.pal(8, "Set1"), RColorBrewer::brewer.pal(8, "Dark2"))
+      highlight_mems <- c(
+        paste0("mbr", formatC(seq(0, 1500), width = 3, flag = "0")),
+        "Other members"
+      )
+      num_vec        <- floor(length(highlight_mems) / length(highlight_cols))
+      num_xtra       <- length(highlight_mems) %% length(highlight_cols)
+      all_cols       <- rep(highlight_cols, num_vec)
+
+      if (num_xtra > 0) {
+        all_cols <- c(all_cols, highlight_cols[1:num_xtra])
+      }
+
+      member_cols <- data.frame(
+        member_highlight = highlight_mems,
+        colour           = all_cols
+      )
+
+      member_cols[["colour"]][grep("Other", member_cols[["member_highlight"]])] <- "grey70"
+      member_cols <- dplyr::filter(
+        member_cols,
+        .data[["member_highlight"]] %in% c(score_options()$highlight, "Other members")
+      )
+
+      score_plot <- harpVis::plot_point_verif(
+        plot_data,
+        !! plot_score,
+        verif_type       = score_type,
+        x_axis           = !!plot_x_axis,
+        colour_by        = !!line_cols,
+        plot_num_cases   = score_options()$num_cases,
+        extend_y_to_zero = score_options()$to_y_zero,
+        facet_by         = score_options()$facets,
+        filter_by        = score_options()$filters,
+        colour_theme     = "harp_midnight",
+        colour_table     = member_cols,
+        group            = member
+      )
+
+      all_highlights <- grep(
+        "mbr[[:digit:]]+$",
+        levels(plot_data[["det_summary_scores"]][["member_highlight"]]),
+        value = TRUE
+      )
+
+      for (highlight_member in all_highlights) {
+        group_colour <- member_cols[["colour"]][member_cols[["member_highlight"]] == highlight_member]
+        group_data   <- dplyr::filter(
+          plot_data[["det_summary_scores"]],
+          member == highlight_member,
+          !!!score_options()$filters
+        )
+        score_plot <- score_plot +
+          ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
+          ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
+      }
+
     }
 
-    plot_score  <- rlang::sym(score_options()$score)
-    plot_x_axis <- rlang::sym(score_options()$x_axis)
-    harpVis::plot_point_verif(
-      shiny::req(verif_data()),
-      !! plot_score,
-      x_axis           = !!plot_x_axis,
-      plot_num_cases   = score_options()$num_cases,
-      extend_y_to_zero = score_options()$to_y_zero,
-      facet_by         = score_options()$facets,
-      filter_by        = score_options()$filters,
-      colour_theme     = "harp_midnight",
-      colour_table     = colour_table()
-    )
-  }, height = 550, bg = bg_colour)
+    score_plot
+
+  }, height = 550, bg = bg_colour, res = 96)
 
   return(score_options)
 

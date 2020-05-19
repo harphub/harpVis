@@ -164,7 +164,7 @@ typically used when this function is called by \link{plot_profile_verif}.}
 
 \item{base_rect_size}{base size for rect elements.}
 
-\item{...}{Arguments to \link[ggplot2]{theme}}
+\item{...}{Arguments to \link[ggplot2]{aes} e.g. group = ...}
 }
 \value{
 A plot. Can be saved with \link[ggplot2]{ggsave}.

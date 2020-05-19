@@ -72,11 +72,22 @@ dashboard-panel:hover {
   background-color: #0A0A2C !important;
 }
 
-.selectize-input.full {
+.selectize-input .full {
   background-color: #0A0A2C;
 }
+
+.selectize-control.multi .selectize-input > div {
+  color: #D5D5D5;
+  background-color: #062F4F;
+}
+
 .shiny-input-container {
   width: 100%;
+}
+
+.selectize-dropdown .optgroup-header {
+  color: #0A0A2C;
+  background-color: #D5D5D5;
 }
 
 .tab_buttons {
@@ -99,9 +110,33 @@ dashboard-panel:hover {
   font-weight: 700;
 }
 
-#dashboard {
-  background-color: #0A0A2C;
+.nav-tabs {
+  border-bottom: 1px solid #062F4F;
+}
+
+.nav-tabs>li>a {
   color: #D5D5D5;
+}
+
+.nav-tabs>li>a:hover {
+  background-color: #062F4F;
+  transform: scale(1.1);
+}
+
+.nav-tabs>li.active>a {
+  background-color: #081D3E;
+  color: #D5D5D5;
+}
+
+.nav-tabs>li.active>a:focus {
+  background-color: #081D3E;
+  color: #D5D5D5;
+}
+
+.nav-tabs>li.active>a:hover {
+  background-color: #062F4F;
+  color: #D5D5D5;
+  transform: scale(1.1);
 }
 
 #dashboard:hover {
@@ -114,7 +149,7 @@ dashboard-panel:hover {
 }
 
 #interactive:hover {
-  background-color: #081D3E;
+  background-color: #F00;
 }
 
 

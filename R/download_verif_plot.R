@@ -50,8 +50,9 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
   )
 
   shiny::observeEvent(list(verif_data(), score_options()$score, input$close_save_modal), {
+    plot_score <- gsub("[[:alpha:]]+_[[:alpha:]]+_scores_", "", score_options()$score)
     plot_options$title <- paste(
-      totitle(gsub("_", " ", score_options()$score)),
+      totitle(gsub("_", " ", plot_score)),
       ":",
       paste0(
         date_to_char(attr(verif_data(), "start_date")),
@@ -210,22 +211,108 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
   })
 
   output$verif_plot <- shiny::renderPlot({
-    plot_score  <- rlang::sym(score_options()$score)
+
+    score_type <- strsplit(score_options()$score, "_")[[1]][1]
+    plot_score <- gsub("[[:alpha:]]+_[[:alpha:]]+_scores_", "", score_options()$score)
+
+    plot_score  <- rlang::sym(plot_score)
     plot_x_axis <- rlang::sym(score_options()$x_axis)
-    harpVis::plot_point_verif(
-      verif_data(),
-      !! plot_score,
-      x_axis           = !!plot_x_axis,
-      plot_num_cases   = score_options()$num_cases,
-      extend_y_to_zero = score_options()$to_y_zero,
-      facet_by         = score_options()$facets,
-      filter_by        = score_options()$filters,
-      colour_theme     = plot_options$bg,
-      colour_table     = colour_table(),
-      plot_title       = plot_options$title,
-      plot_subtitle    = plot_options$subtitle,
-      plot_caption     = plot_options$caption
-    )
+
+    if (score_options()$line_cols == "mname") {
+
+      line_cols  <- rlang::sym(score_options()$line_cols)
+      score_plot <- harpVis::plot_point_verif(
+        verif_data(),
+        !!plot_score,
+        verif_type       = score_type,
+        x_axis           = !!plot_x_axis,
+        colour_by        = !!line_cols,
+        plot_num_cases   = score_options()$num_cases,
+        extend_y_to_zero = score_options()$to_y_zero,
+        facet_by         = score_options()$facets,
+        filter_by        = score_options()$filters,
+        colour_theme     = plot_options$bg,
+        colour_table     = colour_table(),
+        plot_title       = plot_options$title,
+        plot_subtitle    = plot_options$subtitle,
+        plot_caption     = plot_options$caption
+      )
+
+    } else {
+
+      line_cols <- rlang::sym("member_highlight")
+      plot_data <- shiny::req(verif_data())
+
+      plot_data[["det_summary_scores"]][["member_highlight"]] <- forcats::fct_other(
+        plot_data[["det_summary_scores"]][["member"]],
+        keep        = score_options()$highlight,
+        other_level = "Other members"
+      )
+
+      highlight_cols <- c(RColorBrewer::brewer.pal(8, "Set1"), RColorBrewer::brewer.pal(8, "Dark2"))
+      highlight_mems <- c(
+        paste0("mbr", formatC(seq(0, 1500), width = 3, flag = "0")),
+        "Other members"
+      )
+
+      num_vec        <- floor(length(highlight_mems) / length(highlight_cols))
+      num_xtra       <- length(highlight_mems) %% length(highlight_cols)
+      all_cols       <- rep(highlight_cols, num_vec)
+
+      if (num_xtra > 0) {
+        all_cols <- c(all_cols, highlight_cols[1:num_xtra])
+      }
+
+      member_cols <- data.frame(
+        member_highlight = highlight_mems,
+        colour           = all_cols
+      )
+
+      member_cols[["colour"]][grep("Other", member_cols[["member_highlight"]])] <- "grey70"
+      member_cols <- dplyr::filter(
+        member_cols,
+        .data[["member_highlight"]] %in% c(score_options()$highlight, "Other members")
+      )
+
+      score_plot <- harpVis::plot_point_verif(
+        plot_data,
+        !! plot_score,
+        verif_type       = score_type,
+        x_axis           = !!plot_x_axis,
+        colour_by        = !!line_cols,
+        plot_num_cases   = score_options()$num_cases,
+        extend_y_to_zero = score_options()$to_y_zero,
+        facet_by         = score_options()$facets,
+        filter_by        = score_options()$filters,
+        colour_theme     = plot_options$bg,
+        colour_table     = member_cols,
+        plot_title       = plot_options$title,
+        plot_subtitle    = plot_options$subtitle,
+        plot_caption     = plot_options$caption,
+        group            = member
+      )
+
+      all_highlights <- grep(
+        "mbr[[:digit:]]+$",
+        levels(plot_data[["det_summary_scores"]][["member_highlight"]]),
+        value = TRUE
+      )
+
+      for (highlight_member in all_highlights) {
+        group_colour <- member_cols[["colour"]][member_cols[["member_highlight"]] == highlight_member]
+        group_data   <- dplyr::filter(
+          plot_data[["det_summary_scores"]],
+          member == highlight_member,
+          !!!score_options()$filters
+        )
+        score_plot <- score_plot +
+          ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
+          ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
+      }
+    }
+
+    score_plot
+
   })
 
   output$save_customised_plot <- shiny::downloadHandler(
@@ -240,14 +327,22 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
     },
 
     content = function(file) {
-      plot_score  <- rlang::sym(score_options()$score)
+
+      score_type <- strsplit(score_options()$score, "_")[[1]][1]
+      plot_score <- gsub("^[[:alpha:]]+_[[:alpha:]]+_scores_", "", score_options()$score)
+
+      plot_score  <- rlang::sym(plot_score)
       plot_x_axis <- rlang::sym(score_options()$x_axis)
-      ggplot2::ggsave(
-        file,
-        harpVis::plot_point_verif(
+
+      if (score_options()$line_cols == "mname") {
+
+        line_cols  <- rlang::sym(score_options()$line_cols)
+        score_plot <- harpVis::plot_point_verif(
           verif_data(),
-          !! plot_score,
+          !!plot_score,
+          verif_type       = score_type,
           x_axis           = !!plot_x_axis,
+          colour_by        = !!line_cols,
           plot_num_cases   = score_options()$num_cases,
           extend_y_to_zero = score_options()$to_y_zero,
           facet_by         = score_options()$facets,
@@ -257,7 +352,85 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           plot_title       = plot_options$title,
           plot_subtitle    = plot_options$subtitle,
           plot_caption     = plot_options$caption
-        ),
+        )
+
+      } else {
+
+        line_cols <- rlang::sym("member_highlight")
+        plot_data <- shiny::req(verif_data())
+
+        plot_data[["det_summary_scores"]][["member_highlight"]] <- forcats::fct_other(
+          plot_data[["det_summary_scores"]][["member"]],
+          keep        = score_options()$highlight,
+          other_level = "Other members"
+        )
+
+        highlight_cols <- c(RColorBrewer::brewer.pal(8, "Set1"), RColorBrewer::brewer.pal(8, "Dark2"))
+        highlight_mems <- c(
+          paste0("mbr", formatC(seq(0, 1500), width = 3, flag = "0")),
+          "Other members"
+        )
+
+        num_vec        <- floor(length(highlight_mems) / length(highlight_cols))
+        num_xtra       <- length(highlight_mems) %% length(highlight_cols)
+        all_cols       <- rep(highlight_cols, num_vec)
+
+        if (num_xtra > 0) {
+          all_cols <- c(all_cols, highlight_cols[1:num_xtra])
+        }
+
+        member_cols <- data.frame(
+          member_highlight = highlight_mems,
+          colour           = all_cols
+        )
+
+        member_cols[["colour"]][grep("Other", member_cols[["member_highlight"]])] <- "grey70"
+        member_cols <- dplyr::filter(
+          member_cols,
+          .data[["member_highlight"]] %in% c(score_options()$highlight, "Other members")
+        )
+
+        score_plot <- harpVis::plot_point_verif(
+          plot_data,
+          !! plot_score,
+          verif_type       = score_type,
+          x_axis           = !!plot_x_axis,
+          colour_by        = !!line_cols,
+          plot_num_cases   = score_options()$num_cases,
+          extend_y_to_zero = score_options()$to_y_zero,
+          facet_by         = score_options()$facets,
+          filter_by        = score_options()$filters,
+          colour_theme     = plot_options$bg,
+          colour_table     = member_cols,
+          plot_title       = plot_options$title,
+          plot_subtitle    = plot_options$subtitle,
+          plot_caption     = plot_options$caption,
+          group            = member
+        )
+
+        all_highlights <- grep(
+          "mbr[[:digit:]]+$",
+          levels(plot_data[["det_summary_scores"]][["member_highlight"]]),
+          value = TRUE
+        )
+
+        for (highlight_member in all_highlights) {
+          group_colour <- member_cols[["colour"]][member_cols[["member_highlight"]] == highlight_member]
+          group_data   <- dplyr::filter(
+            plot_data[["det_summary_scores"]],
+            member == highlight_member,
+            !!!score_options()$filters
+          )
+          score_plot <- score_plot +
+            ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
+            ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
+        }
+
+      }
+
+      ggplot2::ggsave(
+        file,
+        score_plot,
         width  = save_options$width,
         height = save_options$height,
         dpi    = save_options$dpi,

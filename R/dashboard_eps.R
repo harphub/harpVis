@@ -258,22 +258,22 @@ dashboard_eps <- function(input, output, session, verif_data, colour_table) {
 
   output$dashboard_rank_hist <- shiny::renderPlot({
     shiny::req(dashboard_plots$rank_histogram)
-  }, height = "auto", bg = bg_colour)
+  }, height = "auto", res = 96, bg = bg_colour)
   output$dashboard_spread_skill <- shiny::renderPlot({
     shiny::req(dashboard_plots$spread_skill)
-  }, height = "auto", bg = bg_colour)
+  }, height = "auto", res = 96, bg = bg_colour)
   output$dashboard_crps <- shiny::renderPlot({
     shiny::req(dashboard_plots$crps)
-  }, height = "auto", bg = bg_colour)
+  }, height = "auto", res = 96, bg = bg_colour)
   output$dashboard_reliability <- shiny::renderPlot({
     shiny::req(dashboard_plots$reliability)
-  }, height = "auto", bg = bg_colour)
+  }, height = "auto", res = 96, bg = bg_colour)
   output$dashboard_roc <- shiny::renderPlot({
     shiny::req(dashboard_plots$roc)
-  }, height = "auto", bg = bg_colour)
+  }, height = "auto", res = 96, bg = bg_colour)
   output$dashboard_brier <- shiny::renderPlot({
     shiny::req(dashboard_plots$brier)
-  }, height = "auto", bg = bg_colour)
+  }, height = "auto", res = 96, bg = bg_colour)
 
 
 }

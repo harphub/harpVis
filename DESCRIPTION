@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.0.0.9049
+Version: 0.0.0.9050
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
@@ -28,7 +28,8 @@ Imports:
     purrr,
     scales,
     colourpicker,
-    svglite
+    svglite,
+    forcats
 Remotes:
     andrew-MET/harpIO,
     andrew-MET/harpPoint,

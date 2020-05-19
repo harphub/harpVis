@@ -66,7 +66,7 @@
 #' @param colour_theme The colour theme for the plot - can be any ggplot2 theme
 #'   (see \link[ggplo2]{theme_grey}), or "theme_harp_grey",
 #'   "theme_harp_midnight", or "theme_harp_black".
-#' @param ... Arguments to \link[ggplot2]{theme}
+#' @param ... Arguments to \link[ggplot2]{aes} e.g. group = ...
 #' @param colour_table A data frame with column names equal to the value of
 #'   \code{colour_by} and "colour". The colour column should contain colour
 #'   names or hex codes. There should be one row for each value in the
@@ -330,7 +330,9 @@ plot_point_verif <- function(
     },
 
     "spread_skill_ratio" = {
-      plot_data       <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$rmse)
+      if (!is.element("spread_skill_ratio", colnames(plot_data))) {
+        plot_data <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$rmse)
+      }
     },
 
     "rank_histogram" = {
