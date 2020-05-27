@@ -10,7 +10,7 @@ if (is_online) {
 
 ui <- shiny::tags$html(
   shiny::tags$head(
-    shiny::tags$link(href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"),
+   font_link,
     shiny::tags$script('
       var dimension = [0, 0];
       $(document).on("shiny:connected", function(e) {
