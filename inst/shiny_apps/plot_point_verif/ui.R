@@ -2,7 +2,8 @@
 
 font_link <- shiny::tags$link("")
 is_online <- shiny::getShinyOption("online")
-if (is_online) {
+hostname  <- Sys.getenv("HOSTNAME")
+if (is_online & (!is.null(hostname) && !grepl("^ecgb", hostname))) {
   font_link <- shiny::tags$link(
     href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"
   )
