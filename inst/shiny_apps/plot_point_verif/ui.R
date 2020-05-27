@@ -1,10 +1,17 @@
 # UI for shiny_plot_point_verif
 
+font_link <- shiny::tags$link("")
+is_online <- shiny::getShinyOption("online")
+if (is_online) {
+  font_link <- shiny::tags$link(
+    href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"
+  )
+}
 
-ui <- tags$html(
-  tags$head(
-    tags$link(href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"),
-    tags$script('
+ui <- shiny::tags$html(
+  shiny::tags$head(
+    shiny::tags$link(href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"),
+    shiny::tags$script('
       var dimension = [0, 0];
       $(document).on("shiny:connected", function(e) {
         dimension[0] = window.innerWidth;
@@ -18,12 +25,12 @@ ui <- tags$html(
       });
     ')
   ),
-  tags$body(
-    tags$div(
+  shiny::tags$body(
+    shiny::tags$div(
       class = "harp_page_header",
-      span(class = "harp_page_title", "harp : : Point Verification"),
-      div(class = "harp_logo",
-        img(src = "harp_logo_dark.svg", height = "70px")
+      shiny::span(class = "harp_page_title", "harp : : Point Verification"),
+      shiny::div(class = "harp_logo",
+        shiny::img(src = "harp_logo_dark.svg", height = "70px")
       )
     ),
 
