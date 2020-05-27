@@ -56,6 +56,7 @@ group_selectors <- function(input, output, session, verif_data) {
 
   std_ens_tables  <- grep("ens_", names(harpVis::ens_verif_data))
   std_ens_columns <- unique(unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)))
+  std_ens_columns <- c(std_ens_columns, "spread_skill_ratio")
 
   # When there is new data get the grouping coloumns and remove all inserted UI
 
