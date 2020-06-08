@@ -11,17 +11,41 @@
 #' @param lead_time The lead time to plot. Can be omitted if there is only one
 #'   lead time in the data.
 #' @param ... Other filtering rules
+#' @param palette Colour palette to use. This should be a vector of colours.
+#' @param num_breaks Number of coloyur breaks to use in the plot.
+#' @param breaks The values to use for colour breaks. If not NULL, breaks has
+#'   priority over num_breaks.
 #'
 #' @return A plot
 #' @export
 #'
 #' @examples
-plot_field <- function(.fcst, .name, col, fcdate, lead_time, ...) {
+plot_field <- function(
+  .fcst,
+  .name,
+  col,
+  fcdate,
+  lead_time,
+  ...,
+  palette    = viridis::viridis(255),
+  num_breaks = 15,
+  breaks     = NULL
+) {
   UseMethod("plot_field")
 }
 
 #' @export
-plot_field.harp_spatial_fcst <- function(.fcst, .name, col, fcdate, lead_time, ...) {
+plot_field.harp_spatial_fcst <- function(
+  .fcst,
+  .name,
+  col,
+  fcdate,
+  lead_time,
+  ...,
+  palette    = viridis::viridis(255),
+  num_breaks = 15,
+  breaks     = NULL
+) {
 
   col <- rlang::enquo(col)
 
@@ -63,12 +87,28 @@ plot_field.harp_spatial_fcst <- function(.fcst, .name, col, fcdate, lead_time, .
   field_info[["name"]] <- paste(.name, field_info[["name"]], sep = ": ")
   attr(.field, "info") <- field_info
 
-  meteogrid::iview(.field, legend = TRUE)
+  if (is.null(breaks)) {
+    breaks <- pretty(.field, num_breaks)
+  }
+
+  plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
+
+  meteogrid::iview(.field, legend = TRUE, col = plot_colours, levels = breaks)
 
 }
 
 #' @export
-plot_field.harp_fcst <- function(.fcst, .name, col, fcdate, lead_time, ...) {
+plot_field.harp_fcst <- function(
+  .fcst,
+  .name,
+  col,
+  fcdate,
+  lead_time,
+  ...,
+  palette    = viridis::viridis(255),
+  num_breaks = 15,
+  breaks     = NULL
+) {
 
   if (missing(.name) && length(.fcst) == 1) {
     .name = names(.fcst)
@@ -78,6 +118,16 @@ plot_field.harp_fcst <- function(.fcst, .name, col, fcdate, lead_time, ...) {
     stop ("'", .name, "' not found in .fcst.", call. = FALSE)
   }
 
-  plot_field(.fcst[[.name]], .name, !!rlang::enquo(col), fcdate, lead_time, ...)
+  plot_field(
+    .fcst      = .fcst[[.name]],
+    .name      = .name,
+    col        = !!rlang::enquo(col),
+    fcdate     = fcdate,
+    lead_time  = lead_time,
+    ...,
+    palette    = palette,
+    num_breaks = num_breaks,
+    breaks     = breaks
+  )
 
 }

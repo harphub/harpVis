@@ -2,9 +2,19 @@
 % Please edit documentation in R/plot_field.R
 \name{plot_field}
 \alias{plot_field}
-\title{Title}
+\title{Plot a harp_fcst 2d field}
 \usage{
-plot_field(.fcst, .name, col, fcdate, lead_time, ...)
+plot_field(
+  .fcst,
+  .name,
+  col,
+  fcdate,
+  lead_time,
+  ...,
+  palette = viridis::viridis(255),
+  num_breaks = 15,
+  breaks = NULL
+)
 }
 \arguments{
 \item{.fcst}{A harp_fcst object or harp_spatial_fcst data frame}
@@ -28,5 +38,5 @@ lead time in the data.}
 A plot
 }
 \description{
-Title
+Plot a harp_fcst 2d field
 }
