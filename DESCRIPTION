@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.0.0.9054
+Version: 0.0.0.9055
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
@@ -29,11 +29,13 @@ Imports:
     scales,
     colourpicker,
     svglite,
-    forcats
+    forcats,
+    meteogrid
 Remotes:
     andrew-MET/harpIO,
     andrew-MET/harpPoint,
-    andrew-MET/ggsonde
+    andrew-MET/ggsonde,
+    adeckmyn/meteogrid
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.0
