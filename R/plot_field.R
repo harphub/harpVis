@@ -43,7 +43,8 @@ plot_field.harp_spatial_fcst <- function(.fcst, .name, col, fcdate, lead_time, .
   .fcst <- dplyr::filter(
     .fcst,
     .data[["fcdate"]]    == fcdate_filter,
-    .data[["lead_time"]] == lead_time_filter
+    .data[["lead_time"]] == lead_time_filter,
+    ...
   )
 
   if (nrow(.fcst) < 1) {
