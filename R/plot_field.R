@@ -1,13 +1,18 @@
-#' Title
+#' Plot a harp_fcst 2d field
 #'
-#' @param .fcst
-#' @param .name
-#' @param col
-#' @param fcdate
-#' @param lead_time
-#' @param ...
+#' @param .fcst A harp_fcst object or harp_spatial_fcst data frame
+#' @param .name The name of the model to plot. This selects the model from the
+#'   harp_fcst list to plot. Can be omitted if there is only one model in the
+#'   harp_fcst list.
+#' @param col The column of data to plot from. Should be unquoted, or if a
+#'   variable, wrapped in \{\{\}\}
+#' @param fcdate The forecast date to plot in "YYYYMMDDhh" or similar format.
+#'   Can be omitted if there is only one date in the data.
+#' @param lead_time The lead time to plot. Can be omitted if there is only one
+#'   lead time in the data.
+#' @param ... Other filtering rules
 #'
-#' @return
+#' @return A plot
 #' @export
 #'
 #' @examples

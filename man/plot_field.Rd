@@ -7,10 +7,25 @@
 plot_field(.fcst, .name, col, fcdate, lead_time, ...)
 }
 \arguments{
-\item{...}{}
+\item{.fcst}{A harp_fcst object or harp_spatial_fcst data frame}
+
+\item{.name}{The name of the model to plot. This selects the model from the
+harp_fcst list to plot. Can be omitted if there is only one model in the
+harp_fcst list.}
+
+\item{col}{The column of data to plot from. Should be unquoted, or if a
+variable, wrapped in \{\{\}\}}
+
+\item{fcdate}{The forecast date to plot in "YYYYMMDDhh" or similar format.
+Can be omitted if there is only one date in the data.}
+
+\item{lead_time}{The lead time to plot. Can be omitted if there is only one
+lead time in the data.}
+
+\item{...}{Other filtering rules}
 }
 \value{
-
+A plot
 }
 \description{
 Title
