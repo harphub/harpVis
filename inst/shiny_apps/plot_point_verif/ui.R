@@ -2,6 +2,9 @@
 
 font_link <- shiny::tags$link("")
 is_online <- shiny::getShinyOption("online")
+if (is.null(is_online)) {
+  is_online <- TRUE
+}
 hostname  <- Sys.getenv("HOSTNAME")
 if (is_online & (!is.null(hostname) && !grepl("^ecgb", hostname))) {
   font_link <- shiny::tags$link(
