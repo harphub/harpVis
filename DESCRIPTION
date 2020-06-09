@@ -30,7 +30,8 @@ Imports:
     colourpicker,
     svglite,
     forcats,
-    meteogrid
+    meteogrid,
+    viridis
 Remotes:
     andrew-MET/harpIO,
     andrew-MET/harpPoint,
