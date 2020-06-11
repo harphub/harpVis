@@ -42,7 +42,6 @@ options_barUI <- function(id) {
           shiny::div(class = "col-sm-4",
             shiny::selectInput(ns("parameter"), "Parameter", "Waiting for valid directory", width = "100%")
           ),
-          #classButton("load_data", "Load", icon = icon("upload"), class = "btn btn-primary action-button btn-block")
           shiny::div(class = "col-sm-2",
             shiny::actionButton(ns("load_data"), "Load", icon = icon("upload"), width = "100%")
           )
@@ -82,12 +81,12 @@ options_bar <- function(input, output, session) {
 
   data_files <- shiny::reactiveValues(
     filenames  = NULL,
-    parameters = NULL,
-    dates      = NULL,
-    models     = NULL
+    parameters = "Waiting for valid directory",
+    dates      = "Waiting for valid directory",
+    models     = "Waiting for valid directory"
   )
 
-  shiny::observeEvent(data_dir(), {
+  shiny::observeEvent(list(data_dir()), {
     shiny::req(data_dir())
     if(length(data_dir()) < 1) return()
     data_files$filenames  <- dir(data_dir(), pattern = "harpPointVerif*[[:graph:]]*.rds")
@@ -95,24 +94,22 @@ options_bar <- function(input, output, session) {
     data_files$models     <- gsub(".model.", " + ", unique(unlist(lapply(harp_files, `[`, 4))))
     data_files$models     <- gsub(".rds", "", data_files$models)
 
-    shiny::updateSelectInput(session, "models", choices = "Waiting for valid directory")
-    shiny::updateSelectInput(session, "models", choices = data_files$models)
+    selected_models <- NULL
+    if (!is.null(input$models) && input$models %in% data_files$models) {
+      selected_models <- input$models
+    }
+    shiny::updateSelectInput(
+      session,
+      "models",
+      choices  = data_files$models,
+      selected = selected_models
+    )
   })
 
   shiny::observeEvent(input$models, {
     shiny::req(input$models)
-    models                <- gsub(" \\+ ", ".model.", input$models)
-    harp_files            <- strsplit(grep(models, data_files$filenames, value = TRUE), ".harp.")
-    data_files$parameters <- unique(unlist(lapply(harp_files, `[`, 2)))
-
-    shiny::updateSelectInput(session, "parameter", choices = "Waiting for valid directory")
-    shiny::updateSelectInput(session, "parameter", choices = data_files$parameters)
-  })
-
-  shiny::observeEvent(list(input$models, input$parameter), {
-    shiny::req(input$parameter)
     models       <- gsub(" \\+ ", ".model.", input$models)
-    regexp       <- paste(input$parameter, models, sep = "*[[:graph:]]*")
+    regexp       <- paste0(".harp.", models, ".rds")
     harp_files   <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
     files_dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
 
@@ -122,8 +119,40 @@ options_bar <- function(input, output, session) {
 
     data_files$dates  <- files_dates
 
-    shiny::updateSelectInput(session, "dates", choices = "Waiting for valid directory")
-    shiny::updateSelectInput(session, "dates", choices = data_files$dates)
+    selected_dates <- NULL
+    if (!is.null(input$dates) && input$dates %in% data_files$dates) {
+      selected_dates <- input$dates
+    }
+
+    shiny::updateSelectInput(
+      session,
+      "dates",
+      choices  = data_files$dates,
+      selected = selected_dates
+    )
+  })
+
+  shiny::observeEvent(list(input$models, input$dates), {
+    shiny::req(input$models, input$dates)
+    models                <- gsub(" \\+ ", ".model.", input$models)
+    dates                 <- input$dates
+    if (grepl("Waiting", dates)) {
+      dates <- ""
+    }
+    regexp                <- paste0(paste(dates, models, sep = ".harp."), ".rds")
+    harp_files            <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
+    data_files$parameters <- unique(unlist(lapply(harp_files, `[`, 2)))
+
+    selected_parameter <- NULL
+    if (!is.null(input$parameter) && input$parameter %in% data_files$parameters) {
+      selected_parameter <- input$parameter
+    }
+    shiny::updateSelectInput(
+      session,
+      "parameter",
+      choices  = data_files$parameters,
+      selected = selected_parameter
+    )
   })
 
   verif_file <- shiny::reactiveVal()
@@ -169,6 +198,7 @@ options_bar <- function(input, output, session) {
 }
 
 menu_dates_to_char <- function(menu_dates) {
+  if (length(menu_dates) == 1 && grepl("Waiting", menu_dates)) return("")
   split_dates <- strsplit(menu_dates, "-")
   dates_start <- purrr::map(split_dates, ~date_to_char(.x[1]))
   dates_end   <- purrr::map(split_dates, ~date_to_char(.x[2]))

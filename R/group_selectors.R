@@ -93,7 +93,7 @@ group_selectors <- function(input, output, session, verif_data) {
           verif_attr <- attributes(verif_data())
           filtered_data <- purrr::map_at(
             verif_data(),
-            grep("^ens_", names(verif_data())),
+            which(sapply(verif_data(), nrow) > 0),
             dplyr::filter,
             !! filter_col == input[[paste0("group_", x)]]
           )
