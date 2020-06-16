@@ -6,25 +6,24 @@
 \usage{
 plot_field(
   .fcst,
-  .name,
-  col,
+  fcst_model,
+  plot_col,
   fcdate,
   lead_time,
-  ...,
+  filter_by = NULL,
   palette = viridis::viridis(255),
   num_breaks = 15,
   breaks = NULL
 )
 }
 \arguments{
-\item{.fcst}{A harp_fcst object or harp_spatial_fcst data frame}
+\item{.fcst}{A harp_fcst list or harp_spatial_fcst data frame.}
 
-\item{.name}{The name of the model to plot. This selects the model from the
-harp_fcst list to plot. Can be omitted if there is only one model in the
-harp_fcst list.}
-
-\item{col}{The column of data to plot from. Should be unquoted, or if a
-variable, wrapped in \{\{\}\}}
+\item{fcst_model}{The name of the model to plot. This selects the model from
+the harp_fcst list to plot. Can be omitted if there is only one model in
+the harp_fcst list. For plotting directly from a harp_spatial_fcst data
+frame, as returned by \code{\link{read_grid}}, this is the name to be used
+in the plot title.}
 
 \item{fcdate}{The forecast date to plot in "YYYYMMDDhh" or similar format.
 Can be omitted if there is only one date in the data.}
@@ -32,7 +31,19 @@ Can be omitted if there is only one date in the data.}
 \item{lead_time}{The lead time to plot. Can be omitted if there is only one
 lead time in the data.}
 
-\item{...}{Other filtering rules}
+\item{filter_by}{Expressions that return a logical value wrapped inside the
+\code{vars} function for filtering the data prior to plotting. Only a
+single row should be left in the data frame for \code{plot_field} to work.}
+
+\item{palette}{Colour palette to use. This should be a vector of colours.}
+
+\item{num_breaks}{Number of colour breaks to use in the plot.}
+
+\item{breaks}{The values to use for colour breaks. If not NULL, breaks has
+priority over num_breaks.}
+
+\item{col}{The column of data to plot from. Should be unquoted, or if a
+variable, wrapped in double curly brackets: \{\{\}\}.}
 }
 \value{
 A plot
