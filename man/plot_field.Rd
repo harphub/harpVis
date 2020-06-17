@@ -25,6 +25,9 @@ the harp_fcst list. For plotting directly from a harp_spatial_fcst data
 frame, as returned by \code{\link{read_grid}}, this is the name to be used
 in the plot title.}
 
+\item{plot_col}{The column of data to plot from. Should be unquoted, or if a
+variable, wrapped in double curly brackets: \{\{\}\}.}
+
 \item{fcdate}{The forecast date to plot in "YYYYMMDDhh" or similar format.
 Can be omitted if there is only one date in the data.}
 
@@ -41,9 +44,6 @@ single row should be left in the data frame for \code{plot_field} to work.}
 
 \item{breaks}{The values to use for colour breaks. If not NULL, breaks has
 priority over num_breaks.}
-
-\item{col}{The column of data to plot from. Should be unquoted, or if a
-variable, wrapped in double curly brackets: \{\{\}\}.}
 }
 \value{
 A plot

@@ -6,7 +6,7 @@
 #'   the harp_fcst list. For plotting directly from a harp_spatial_fcst data
 #'   frame, as returned by \code{\link{read_grid}}, this is the name to be used
 #'   in the plot title.
-#' @param col The column of data to plot from. Should be unquoted, or if a
+#' @param plot_col The column of data to plot from. Should be unquoted, or if a
 #'   variable, wrapped in double curly brackets: \{\{\}\}.
 #' @param fcdate The forecast date to plot in "YYYYMMDDhh" or similar format.
 #'   Can be omitted if there is only one date in the data.
@@ -137,7 +137,7 @@ plot_field.harp_spatial_fcst <- function(
 plot_field.harp_fcst <- function(
   .fcst,
   fcst_model,
-  col,
+  plot_col,
   fcdate,
   lead_time,
   filter_by  = NULL,
