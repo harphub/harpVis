@@ -56,9 +56,9 @@ group_selectors <- function(input, output, session, verif_data) {
 
   std_ens_tables  <- grep("ens_", names(harpVis::ens_verif_data))
   std_ens_columns <- unique(unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)))
-  std_ens_columns <- c(std_ens_columns, "spread_skill_ratio")
+  std_ens_columns <- c(std_ens_columns, "spread_skill_ratio", "parameter")
 
-  # When there is new data get the grouping coloumns and remove all inserted UI
+  # When there is new data get the grouping columns and remove all inserted UI
 
   grp_ens_columns <- shiny::reactiveVal(NULL)
   new_data        <- shiny::reactiveVal(0)
