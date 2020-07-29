@@ -7,7 +7,7 @@ Authors@R: as.person(c(
 Description: Functions for visualising data such as verification scores, 
   model fields, profiles, point forecasts etc. produced by harp. Each 
   visualisation has a corresponding interactive shiny app. 
-License: MIT + file LICENSE
+License: Apache License (>= 2.0)
 Depends:
     R (>= 3.3.1),
     ggplot2 (>= 3.0.0),
