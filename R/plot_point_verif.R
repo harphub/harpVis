@@ -23,6 +23,8 @@
 #'   score input, and for most scores this is overrided.
 #' @param rank_is_relative Logical. If TRUE rank histograms are plotted with the
 #'   relative rank (between 0 and 1) on the x-axis. The default is FALSE.
+#' @param rank_hist_type For rank histograms, the plot can be done as a bar
+#'   chart, lollipop chart or a line chart.
 #' @param colour_by The column to colour the plot lines or bars by. The default
 #'   is mname, for the model name. Set to NULL for all lines / bars to have the
 #'   same colour.
@@ -111,6 +113,7 @@ plot_point_verif <- function(
   x_axis                   = leadtime,
   y_axis                   = rlang::enquo(score),
   rank_is_relative         = FALSE,
+  rank_hist_type           = c("bar", "lollipop", "line"),
   colour_by                = mname,
   colour_table             = NULL,
   extend_y_to_zero         = TRUE,
@@ -316,9 +319,29 @@ plot_point_verif <- function(
 
   plot_geom <- "line"
 
+  if (grepl("rank_histogram", score_name) && nrow(plot_data) > 0 && is.element("rank_histogram", colnames(plot_data))) {
+    plot_num_cases <- FALSE
+    add_rel_rank <- function(rank_hist) {
+      if (!is.element("relative_rank", colnames(rank_hist))) {
+        rank_hist <- dplyr::mutate(
+          rank_hist,
+          relative_rank = (.data$rank - min(.data$rank)) / (max(.data$rank) - min(.data$rank))
+        )
+      }
+    }
+    plot_data <- dplyr::mutate(
+      plot_data,
+      rank_histogram = lapply(.data$rank_histogram, add_rel_rank)
+    )
+  }
+
   switch(
 
     score_name,
+
+    "num_cases" = {
+      plot_num_cases <- FALSE
+    },
 
     "spread_skill" = {
       plot_data        <- tidyr::gather(plot_data, .data$rmse, .data$spread, key = "component", value = "spread ; skill")
@@ -343,11 +366,11 @@ plot_point_verif <- function(
           dplyr::summarise(rank_count = sum(.data$rank_count)) %>%
           dplyr::ungroup()
       }
-      plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
+      #plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
       x_axis_quo       <- rlang::quo(rank)
       if (rank_is_relative) x_axis_quo <- rlang::quo(relative_rank)
       y_axis_quo       <- rlang::quo(rank_count)
-      plot_geom        <- "bar"
+      plot_geom        <- match.arg(rank_hist_type)
     },
 
     "normalized_rank_histogram" = {
@@ -355,10 +378,10 @@ plot_point_verif <- function(
       plot_data        <- tidyr::unnest(plot_data, !! data_column)
       if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
         grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
-        plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank) %>%
+        plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank, .data$relative_rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       } else {
-        grouping_vars  <- rlang::syms(c(colour_by_name, "leadtime", facet_vars[nchar(facet_vars) > 0]))
+        grouping_vars  <- rlang::syms(union("leadtime", c(colour_by_name, facet_vars[nchar(facet_vars) > 0])))
       }
       plot_data        <- plot_data %>%
         dplyr::group_by(!!!grouping_vars) %>%
@@ -367,11 +390,11 @@ plot_point_verif <- function(
           normalized_frequency = .data$rank_count / .data$mean_count
         )
 
-      plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
+      #plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
       x_axis_quo       <- rlang::quo(rank)
       if (rank_is_relative) x_axis_quo <- rlang::quo(relative_rank)
       y_axis_quo       <- rlang::quo(normalized_frequency)
-      plot_geom        <- "bar"
+      plot_geom        <- match.arg(rank_hist_type)
     },
 
     "reliability" = {
@@ -633,7 +656,7 @@ plot_point_verif <- function(
   # GEOMS
   ###########################################################################
 
-  if (plot_geom == "line") {
+  if (plot_geom %in% c("line", "lollipop")) {
     gg                <- gg + ggplot2::scale_colour_manual(values = colour_table$colour)
   } else {
     gg                <- gg + ggplot2::scale_fill_manual(values = colour_table$colour)
@@ -689,7 +712,24 @@ plot_point_verif <- function(
 
   } else if (plot_geom == "bar") {
 
-    gg <- gg + ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(), colour = "transparent")
+    gg <- gg + ggplot2::geom_col(
+      ggplot2::aes(x = factor(!!x_axis_quo)),
+      position = ggplot2::position_dodge(preserve = "single"), colour = "transparent"
+    ) +
+      ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo), n = 10))
+
+  } else if (plot_geom == "lollipop") {
+
+    gg <- gg +
+      ggplot2::geom_point(
+        aes(x = factor(!!x_axis_quo)), size = point_size, position = position_dodge(width = 1)) +
+      ggplot2::geom_linerange(
+        ggplot2::aes(x = factor(!!x_axis_quo), ymin = 0, ymax = !!y_axis_quo),
+        size      = line_width,
+        position  = position_dodge(width = 1),
+        key_glyph = "point"
+      ) +
+      ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo)))
 
   } else {
 

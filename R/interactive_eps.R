@@ -67,10 +67,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     shiny::req(verif_data())
 
     if (is.null(new_data())) {
-      new_data(0)
+      new_data(1)
     } else {
-      new_data(new_data() + 1)
+      new_data(new_data() * -1)
     }
+
     shiny::updateSelectInput(session, "score", choices = "Waiting for valid data")
     ui_type(NULL)
   })
@@ -88,7 +89,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     }
     shiny::updateSelectInput(session, "score", choices = score_choices, selected = selected_score)
     det_df <- verif_data()[["det_summary_scores"]]
-    if (!is.null(det_df) && is.element("member", colnames(det_df))) {
+    if (!is.null(det_df) && is.data.frame(det_df) && is.element("member", colnames(det_df))) {
       det_ens(TRUE)
     } else {
       det_ens(FALSE)
@@ -221,6 +222,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     }
 
     if (ui_type() == "det_summary") {
+
       shiny::removeUI(paste0("#", ns("ens-rank-hist")))
       shiny::removeUI(paste0("#", ns("ens-cat")))
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
@@ -237,7 +239,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           )
         )
       )
-      if (length(all_members() > 0)) {
+
+      if (any(nchar(all_members()) > 0)) {
         shiny::insertUI(
           selector = paste0("#", ns("det-summary")),
           where    = "beforeEnd",
@@ -258,60 +261,146 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
             )
           )
         )
+      } else {
+        shiny::insertUI(
+          selector = paste0("#", ns("det-summary")),
+          where    = "beforeEnd",
+          ui       = shiny::checkboxInput(
+            ns("det-summary-num-cases"),
+            "Show number of cases",
+            FALSE
+          )
+        )
       }
+
       more_selectors(FALSE)
+
+    }
+
+    if (ui_type() == "det_cat") {
+      shiny::removeUI(paste0("#", ns("ens-summary")))
+      shiny::removeUI(paste0("#", ns("ens-cat")))
+      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
+      shiny::removeUI(paste0("#", ns("det-summary")))
+      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
+      shiny::insertUI(
+        selector = paste0("#", ns("placeholder")),
+        ui       = shiny::tags$div(
+          id = ns("det-cat"),
+          shiny::checkboxInput(
+            ns("det-extend-to-zero"),
+            "y-axis to zero",
+            TRUE
+          ),
+          shiny::radioButtons(
+            ns("det-cat-x_axis"),
+            "x axis",
+            c("Lead Time" = "leadtime", "Threshold" = "threshold"),
+            selected = "leadtime"
+          )
+        )
+      )
+      more_selectors(TRUE)
     }
 
   })
 
   # Add extra UI selector if there is an x-axis selector
 
-  shiny::observeEvent(list(input[["ens-cat-choose-x-x_axis"]], more_selectors()), {
+  shiny::observeEvent(list(input[["ens-cat-choose-x-x_axis"]], input[["det-cat-x_axis"]], more_selectors()), {
 
     if (more_selectors()) {
 
-      if (shiny::req(input[["ens-cat-choose-x-x_axis"]]) == "leadtime") {
-        thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
-        shiny::removeUI(paste0("#", ns("ens-cat-choose-x-lead")))
-        shiny::insertUI(
-          selector = paste0("#", ns("ens-cat-choose-x")),
-          where    = "beforeEnd",
-          ui       = shiny::tags$div(
-            id = ns("ens-cat-choose-x-thresh"),
-            shiny::selectInput(
-              ns("ens-cat-choose-x-threshold"),
-              "Threshold",
-              thresholds,
-              thresholds[1],
-              multiple = TRUE
+      if (ui_type() == "ens_cat_choose_x") {
+
+        if (shiny::req(input[["ens-cat-choose-x-x_axis"]]) == "leadtime") {
+          thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
+          shiny::removeUI(paste0("#", ns("ens-cat-choose-x-lead")))
+          shiny::insertUI(
+            selector = paste0("#", ns("ens-cat-choose-x")),
+            where    = "beforeEnd",
+            ui       = shiny::tags$div(
+              id = ns("ens-cat-choose-x-thresh"),
+              shiny::selectInput(
+                ns("ens-cat-choose-x-threshold"),
+                "Threshold",
+                thresholds,
+                thresholds[1],
+                multiple = TRUE
+              )
             )
           )
-        )
 
-      } else {
+        } else {
 
-        lead_times <- sort(unique(verif_data()$ens_threshold_scores$leadtime))
-        shiny::removeUI(paste0("#", ns("ens-cat-choose-x-thresh")))
-        shiny::insertUI(
-          selector = paste0("#", ns("ens-cat-choose-x")),
-          where    = "beforeEnd",
-          ui       = shiny::tags$div(
-            id = ns("ens-cat-choose-x-lead"),
-            shiny::selectInput(
-              ns("ens-cat-choose-x-leadtime"),
-              "Lead Time",
-              lead_times,
-              lead_times[1],
-              multiple = TRUE
+          lead_times <- sort(unique(verif_data()$ens_threshold_scores$leadtime))
+          shiny::removeUI(paste0("#", ns("ens-cat-choose-x-thresh")))
+          shiny::insertUI(
+            selector = paste0("#", ns("ens-cat-choose-x")),
+            where    = "beforeEnd",
+            ui       = shiny::tags$div(
+              id = ns("ens-cat-choose-x-lead"),
+              shiny::selectInput(
+                ns("ens-cat-choose-x-leadtime"),
+                "Lead Time",
+                lead_times,
+                lead_times[1],
+                multiple = TRUE
+              )
             )
           )
-        )
+        }
+
+      }
+
+      if (ui_type() == "det_cat") {
+
+        if (shiny::req(input[["det-cat-x_axis"]]) == "leadtime") {
+          thresholds <- sort(unique(verif_data()$det_threshold_scores$threshold))
+          shiny::removeUI(paste0("#", ns("det-cat-x-lead")))
+          shiny::insertUI(
+            selector = paste0("#", ns("det-cat")),
+            where    = "beforeEnd",
+            ui       = shiny::tags$div(
+              id = ns("det-cat-x-thresh"),
+              shiny::selectInput(
+                ns("det-cat-x-threshold"),
+                "Threshold",
+                thresholds,
+                thresholds[1],
+                multiple = TRUE
+              )
+            )
+          )
+
+        } else {
+
+          lead_times <- sort(unique(verif_data()$det_threshold_scores$leadtime))
+          shiny::removeUI(paste0("#", ns("det-cat-x-thresh")))
+          shiny::insertUI(
+            selector = paste0("#", ns("det-cat")),
+            where    = "beforeEnd",
+            ui       = shiny::tags$div(
+              id = ns("det-cat-x-lead"),
+              shiny::selectInput(
+                ns("det-cat-x-leadtime"),
+                "Lead Time",
+                lead_times,
+                lead_times[1],
+                multiple = TRUE
+              )
+            )
+          )
+        }
+
       }
 
     } else {
 
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x-leadtime")))
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x-threshold")))
+      shiny::removeUI(paste0("#", ns("det-cat-x-leadtime")))
+      shiny::removeUI(paste0("#", ns("det-cat-x-threshold")))
 
     }
 
@@ -332,8 +421,12 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       input[["ens-cat-leadtime"]],
       input[["ens-cat-threshold"]],
       input[["det-extend-to-zero"]],
+      input[["det-summary-num-cases"]],
       input[["det-member"]],
-      input[["det-models"]]
+      input[["det-models"]],
+      input[["det-cat-x_axis"]],
+      input[["det-cat-x-leadtime"]],
+      input[["det-cat-x-threshold"]]
     ), {
 
       shiny::req(verif_data())
@@ -435,7 +528,37 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           filters   <- ggplot2::vars(mname %in% shiny::req(input[["det-models"]]))
           line_cols <- "member"
           highlight <- input[["det-member"]]
+        } else {
+          n_cases   <- input[["det-summary-num-cases"]]
         }
+
+      } else if (ui_type() == "det_cat") {
+
+        to_zero   <- input[["det-extend-to-zero"]]
+        n_cases   <- FALSE
+        x_axis    <- shiny::req(input[["det-cat-x_axis"]])
+        line_cols <- "mname"
+
+        if (x_axis == "leadtime") {
+          thresholds <- shiny::req(input[["det-cat-x-threshold"]])
+          if (length(thresholds) == 1) {
+            facets  <- NULL
+            filters <- ggplot2::vars(threshold == as.numeric(thresholds))
+          } else {
+            facets  <- ggplot2::vars(threshold)
+            filters <- ggplot2::vars(threshold %in% as.numeric(thresholds))
+          }
+        } else {
+          leadtimes <- shiny::req(input[["det-cat-x-leadtime"]])
+          if (length(leadtimes) == 1) {
+            facets  <- NULL
+            filters <- ggplot2::vars(leadtime == as.numeric(leadtimes))
+          } else {
+            facets  <- ggplot2::vars(leadtime)
+            filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes))
+          }
+        }
+
       }
 
       list(
@@ -477,6 +600,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         extend_y_to_zero = score_options()$to_y_zero,
         facet_by         = score_options()$facets,
         filter_by        = score_options()$filters,
+        rank_is_relative = TRUE,
+        rank_hist_type   = "lollipop",
         colour_theme     = "harp_midnight",
         colour_table     = colour_table()
       )
@@ -571,7 +696,7 @@ make_score_list <- function(verif_list) {
 
   verif_names <- purrr::map(
     verif_list,
-    ~setdiff(names(.x), c("mname", "leadtime", "threshold", "member"))
+    ~setdiff(names(.x), c("mname", "leadtime", "threshold", "member", "cont_tab"))
   )
 
   # Add derived scores if the required data are available in verif_list
