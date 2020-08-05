@@ -19,6 +19,8 @@
 #' @param num_breaks Number of colour breaks to use in the plot.
 #' @param breaks The values to use for colour breaks. If not NULL, breaks has
 #'   priority over num_breaks.
+#' @param legend Logical. Whether to plot a legend
+#' @param ... Other options to \code{\link[meteogrid]{iview}}
 #'
 #' @return A plot
 #' @export
@@ -33,7 +35,9 @@ plot_field <- function(
   filter_by  = NULL,
   palette    = viridis::viridis(255),
   num_breaks = 15,
-  breaks     = NULL
+  breaks     = NULL,
+  legend     = TRUE,
+  ...
 ) {
   UseMethod("plot_field")
 }
@@ -48,7 +52,9 @@ plot_field.harp_spatial_fcst <- function(
   filter_by  = NULL,
   palette    = viridis::viridis(255),
   num_breaks = 15,
-  breaks     = NULL
+  breaks     = NULL,
+  legend     = TRUE,
+  ...
 ) {
 
   col <- rlang::enquo(plot_col)
@@ -129,7 +135,7 @@ plot_field.harp_spatial_fcst <- function(
 
   plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
 
-  meteogrid::iview(.field, legend = TRUE, col = plot_colours, levels = breaks)
+  meteogrid::iview(.field, legend = legend, col = plot_colours, levels = breaks, ...)
 
 }
 
@@ -143,7 +149,9 @@ plot_field.harp_fcst <- function(
   filter_by  = NULL,
   palette    = viridis::viridis(255),
   num_breaks = 15,
-  breaks     = NULL
+  breaks     = NULL,
+  legend     = TRUE,
+  ...
 ) {
 
   if (is.null(fcst_model) && length(.fcst) == 1) {
@@ -167,7 +175,9 @@ plot_field.harp_fcst <- function(
     filter_by  = filter_by,
     palette    = palette,
     num_breaks = num_breaks,
-    breaks     = breaks
+    breaks     = breaks,
+    legend     = legend,
+    ...
   )
 
 }

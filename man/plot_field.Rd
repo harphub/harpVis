@@ -13,7 +13,8 @@ plot_field(
   filter_by = NULL,
   palette = viridis::viridis(255),
   num_breaks = 15,
-  breaks = NULL
+  breaks = NULL,
+  ...
 )
 }
 \arguments{
@@ -44,6 +45,8 @@ single row should be left in the data frame for \code{plot_field} to work.}
 
 \item{breaks}{The values to use for colour breaks. If not NULL, breaks has
 priority over num_breaks.}
+
+\item{...}{Other options to \code{\link[meteogrid]{iview}}}
 }
 \value{
 A plot
