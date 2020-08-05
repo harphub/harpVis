@@ -11,6 +11,7 @@ plot_point_verif(
   x_axis = leadtime,
   y_axis = rlang::enquo(score),
   rank_is_relative = FALSE,
+  rank_hist_type = c("bar", "lollipop", "line"),
   colour_by = mname,
   colour_table = NULL,
   extend_y_to_zero = TRUE,
@@ -65,6 +66,9 @@ score input, and for most scores this is overrided.}
 
 \item{rank_is_relative}{Logical. If TRUE rank histograms are plotted with the
 relative rank (between 0 and 1) on the x-axis. The default is FALSE.}
+
+\item{rank_hist_type}{For rank histograms, the plot can be done as a bar
+chart, lollipop chart or a line chart.}
 
 \item{colour_by}{The column to colour the plot lines or bars by. The default
 is mname, for the model name. Set to NULL for all lines / bars to have the
