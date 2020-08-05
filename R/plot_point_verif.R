@@ -328,6 +328,7 @@ plot_point_verif <- function(
           relative_rank = (.data$rank - min(.data$rank)) / (max(.data$rank) - min(.data$rank))
         )
       }
+      rank_hist
     }
     plot_data <- dplyr::mutate(
       plot_data,
