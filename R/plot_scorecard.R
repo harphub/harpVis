@@ -110,19 +110,21 @@ plot_scorecard <- function(
     check_length(significance_breaks, legend_labels)
   }
 
-  sc_data[["class"]] <- factor(
-    as.numeric(
-      cut(
-        abs(sc_data[["pc_diff"]]) * sc_data[["better"]],
-        breaks = significance_breaks
-      )
-    ),
-    labels = legend_labels
+  classes <- as.numeric(
+    cut(
+      abs(sc_data[["pc_diff"]]) * sc_data[["better"]],
+      breaks = significance_breaks
+    )
   )
+
+  classes <- factor(classes, labels = legend_labels[sort(unique(classes))])
+  levels(classes) <- c(levels(classes), legend_labels[!legend_labels %in% levels(classes)])
+
+  sc_data[["class"]] <- classes
 
   if (grid_facets) {
     if (length(facet_by) != 2) {
-      warning("Need to facet variables for facet_grid = TRUE. Wrapping facets.")
+      warning("Need two facet variables for facet_grid = TRUE. Wrapping facets.")
       grid_facets <- FALSE
     }
   }
@@ -143,10 +145,10 @@ plot_scorecard <- function(
     )
   ) +
     ggplot2::geom_point() +
-    ggplot2::scale_fill_manual(values = fills, breaks = legend_labels) +
-    ggplot2::scale_colour_manual(values = colours, breaks = legend_labels) +
-    ggplot2::scale_shape_manual(values = shapes, breaks = legend_labels) +
-    ggplot2::scale_size_manual(values = sizes, breaks = legend_labels) +
+    ggplot2::scale_fill_manual(values = fills, breaks = legend_labels, drop = FALSE) +
+    ggplot2::scale_colour_manual(values = colours, breaks = legend_labels, drop = FALSE) +
+    ggplot2::scale_shape_manual(values = shapes, breaks = legend_labels, drop = FALSE) +
+    ggplot2::scale_size_manual(values = sizes, breaks = legend_labels, drop = FALSE) +
     ggplot2::guides(
       fill   = ggplot2::guide_legend(NULL, nrow = ceiling(length(fills) / 2)),
       colour = ggplot2::guide_legend(NULL, nrow = ceiling(length(fills) / 2)),
