@@ -110,17 +110,13 @@ plot_scorecard <- function(
     check_length(significance_breaks, legend_labels)
   }
 
-  classes <- as.numeric(
-    cut(
-      abs(sc_data[["pc_diff"]]) * sc_data[["better"]],
-      breaks = significance_breaks
-    )
+  classes <- cut(
+    abs(sc_data[["pc_diff"]]) * sc_data[["better"]],
+    breaks = significance_breaks
   )
+  names(legend_labels) <- levels(classes)
 
-  classes <- factor(classes, labels = legend_labels[sort(unique(classes))])
-  levels(classes) <- c(levels(classes), legend_labels[!legend_labels %in% levels(classes)])
-
-  sc_data[["class"]] <- classes
+  sc_data[["class"]] <- forcats::fct_relabel(classes, ~legend_labels[.x])
 
   if (grid_facets) {
     if (length(facet_by) != 2) {
