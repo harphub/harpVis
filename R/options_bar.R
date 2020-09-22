@@ -160,7 +160,7 @@ options_bar <- function(input, output, session) {
   shiny::observeEvent(list(input$parameter, input$dates, input$models), {
     shiny::req(input$models)
     models <- gsub(" \\+ ", ".model.", input$models)
-    regexp <- paste(paste0(input$parameter, "\\."), input$dates, models, sep = "[[:graph:]]*")
+    regexp <- paste0(paste(paste0(input$parameter, "\\."), input$dates, models, sep = "[[:graph:]]*"), ".rds$")
     verif_file(file.path(data_dir(), grep(regexp, data_files$filenames, value = TRUE)))
   })
 
