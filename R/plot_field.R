@@ -120,6 +120,21 @@ plot_field.harp_spatial_fcst <- function(
   .field     <- dplyr::pull(.fcst, !!col)[[1]]
   field_info <- attr(.field, "info")
 
+  if (is.element("parameter", colnames(.fcst))) {
+    field_info[["name"]] <- dplyr::pull(.fcst, .data[["parameter"]])
+    if (is.element("units", colnames(.fcst))) {
+      field_info[["name"]] <- paste0(field_info[["name"]], " [", dplyr::pull(.fcst, .data[["units"]]), "]")
+    }
+  }
+
+  if (is.element("lead_time", colnames(.fcst))) {
+    lt <- dplyr::pull(.fcst, .data[["lead_time"]])
+    if (is.numeric(lt)) {
+      lt <- paste0(lt, "h")
+    }
+    field_info[["time"]][["leadtime"]] <- lt
+  }
+
   field_info[["name"]] <- paste(fcst_model, field_info[["name"]], sep = ": ")
   attr(.field, "info") <- field_info
 
