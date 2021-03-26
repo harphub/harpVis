@@ -28,7 +28,6 @@ Imports:
     purrr,
     scales,
     colourpicker,
-    svglite,
     forcats,
     meteogrid,
     viridis
@@ -43,5 +42,6 @@ RoxygenNote: 7.1.1
 URL: https://github.com/harphub/harpVis
 BugReports: https://github.com/harphub/harpVis/issues
 Suggests: 
+    svglite,
     ggalt,
     ggridges
