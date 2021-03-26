@@ -13,7 +13,8 @@ plot_field(
   filter_by = NULL,
   palette = viridis::viridis(255),
   num_breaks = 15,
-  breaks = NULL
+  breaks = NULL,
+  legend = TRUE
 )
 }
 \arguments{

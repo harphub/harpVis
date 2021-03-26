@@ -33,7 +33,8 @@ plot_field <- function(
   filter_by  = NULL,
   palette    = viridis::viridis(255),
   num_breaks = 15,
-  breaks     = NULL
+  breaks     = NULL,
+  legend     = TRUE
 ) {
   UseMethod("plot_field")
 }
@@ -48,7 +49,8 @@ plot_field.harp_spatial_fcst <- function(
   filter_by  = NULL,
   palette    = viridis::viridis(255),
   num_breaks = 15,
-  breaks     = NULL
+  breaks     = NULL,
+  legend     = TRUE
 ) {
 
   col <- rlang::enquo(plot_col)
@@ -138,13 +140,7 @@ plot_field.harp_spatial_fcst <- function(
   field_info[["name"]] <- paste(fcst_model, field_info[["name"]], sep = ": ")
   attr(.field, "info") <- field_info
 
-  if (is.null(breaks)) {
-    breaks <- pretty(.field, num_breaks)
-  }
-
-  plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
-
-  meteogrid::iview(.field, legend = TRUE, col = plot_colours, levels = breaks)
+  plot_field(.field, palette, num_breaks, breaks, legend)
 
 }
 
@@ -158,7 +154,8 @@ plot_field.harp_fcst <- function(
   filter_by  = NULL,
   palette    = viridis::viridis(255),
   num_breaks = 15,
-  breaks     = NULL
+  breaks     = NULL,
+  legend     = TRUE
 ) {
 
   if (is.null(fcst_model) && length(.fcst) == 1) {
@@ -182,7 +179,28 @@ plot_field.harp_fcst <- function(
     filter_by  = filter_by,
     palette    = palette,
     num_breaks = num_breaks,
-    breaks     = breaks
+    breaks     = breaks,
+    legend     = legend
   )
+
+}
+
+#' @export
+plot_field.geofield <- function(
+  .fcst,
+  palette    = viridis::viridis(255),
+  num_breaks = 15,
+  breaks     = NULL,
+  legend     = TRUE,
+  ...
+) {
+
+  if (is.null(breaks)) {
+    breaks <- pretty(.fcst, num_breaks)
+  }
+
+  plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
+
+  meteogrid::iview(.fcst, legend = legend, col = plot_colours, levels = breaks)
 
 }
