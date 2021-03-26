@@ -34,7 +34,8 @@ plot_field <- function(
   palette    = viridis::viridis(255),
   num_breaks = 15,
   breaks     = NULL,
-  legend     = TRUE
+  legend     = TRUE,
+  title      = "auto"
 ) {
   UseMethod("plot_field")
 }
@@ -50,7 +51,8 @@ plot_field.harp_spatial_fcst <- function(
   palette    = viridis::viridis(255),
   num_breaks = 15,
   breaks     = NULL,
-  legend     = TRUE
+  legend     = TRUE,
+  title      = "auto"
 ) {
 
   col <- rlang::enquo(plot_col)
@@ -140,7 +142,7 @@ plot_field.harp_spatial_fcst <- function(
   field_info[["name"]] <- paste(fcst_model, field_info[["name"]], sep = ": ")
   attr(.field, "info") <- field_info
 
-  plot_field(.field, palette, num_breaks, breaks, legend)
+  plot_field(.field, palette, num_breaks, breaks, legend, title)
 
 }
 
@@ -155,7 +157,8 @@ plot_field.harp_fcst <- function(
   palette    = viridis::viridis(255),
   num_breaks = 15,
   breaks     = NULL,
-  legend     = TRUE
+  legend     = TRUE,
+  title      = "auto"
 ) {
 
   if (is.null(fcst_model) && length(.fcst) == 1) {
@@ -180,7 +183,8 @@ plot_field.harp_fcst <- function(
     palette    = palette,
     num_breaks = num_breaks,
     breaks     = breaks,
-    legend     = legend
+    legend     = legend,
+    title      = title
   )
 
 }
@@ -192,6 +196,7 @@ plot_field.geofield <- function(
   num_breaks = 15,
   breaks     = NULL,
   legend     = TRUE,
+  title      = "auto",
   ...
 ) {
 
@@ -201,6 +206,24 @@ plot_field.geofield <- function(
 
   plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
 
-  meteogrid::iview(.fcst, legend = legend, col = plot_colours, levels = breaks)
+  if (title == "auto") {
+    title <- paste(
+      attr(.fcst,"info")$name,
+      "\n",
+      format(attr(.fcst, "info")$time$basedate, "%H:%M %d %b %Y"),
+      "+",
+      paste0(
+        attr(.fcst,"info")$time$leadtime, attr(.fcst,"info")$time$stepUnit
+      )
+    )
+  }
+
+  meteogrid::iview(
+    .fcst,
+    legend = legend,
+    col    = plot_colours,
+    levels = breaks,
+    title  = title
+  )
 
 }
