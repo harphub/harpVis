@@ -1,3 +1,20 @@
+#' Title
+#'
+#' @param mapping
+#' @param data
+#' @param position
+#' @param ...
+#' @param upscale_factor
+#' @param upscale_method
+#' @param downsample_location
+#' @param na.rm
+#' @param show.legend
+#' @param inherit.aes
+#'
+#' @return
+#' @export
+#'
+#' @examples
 geom_geocontour <- function(
   mapping  = NULL,
   data     = NULL,
@@ -31,6 +48,23 @@ geom_geocontour <- function(
 
 }
 
+#' Title
+#'
+#' @param mapping
+#' @param data
+#' @param position
+#' @param ...
+#' @param upscale_factor
+#' @param upscale_method
+#' @param downsample_location
+#' @param na.rm
+#' @param show.legend
+#' @param inherit.aes
+#'
+#' @return
+#' @export
+#'
+#' @examples
 geom_geocontour_filled <- function(
   mapping  = NULL,
   data     = NULL,

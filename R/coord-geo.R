@@ -95,6 +95,25 @@ CoordGeo <- ggproto("CoordGeo", CoordSf,
 
 )
 
+#' Title
+#'
+#' @param xlim
+#' @param ylim
+#' @param expand
+#' @param crs
+#' @param default_crs
+#' @param datum
+#' @param label_graticule
+#' @param label_axes
+#' @param lims_method
+#' @param ndiscr
+#' @param default
+#' @param clip
+#'
+#' @return
+#' @export
+#'
+#' @examples
 coord_geo <- function(xlim = NULL, ylim = NULL, expand = TRUE,
   crs = NULL, default_crs = sf::st_crs(4326),
   datum = sf::st_crs(4326),

@@ -14,6 +14,7 @@ plot_field(
   palette = viridis::viridis(255),
   num_breaks = 15,
   breaks = NULL,
+  legend = TRUE,
   ...
 )
 }
@@ -45,6 +46,8 @@ single row should be left in the data frame for \code{plot_field} to work.}
 
 \item{breaks}{The values to use for colour breaks. If not NULL, breaks has
 priority over num_breaks.}
+
+\item{legend}{Logical. Whether to plot a legend}
 
 \item{...}{Other options to \code{\link[meteogrid]{iview}}}
 }

@@ -1,3 +1,13 @@
+#' Title
+#'
+#' @param map
+#' @param dom
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_map <- function(map = "world2", dom = NULL, ...) {
 
 
