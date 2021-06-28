@@ -9,7 +9,6 @@ StatGeoraster <- ggproto("StatGeoraster", Stat,
     upscale_factor = 1, upscale_method = "mean", downsample_location = "bottom_left", na.rm = FALSE
   ) {
 
-    browser()
     if (nrow(data) > 1) {
       rlang::abort(
         "More than one geofield in data. Use facet_wrap or facet_grid, or filter data before plotting."
