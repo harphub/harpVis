@@ -31,7 +31,7 @@
 #' @param legend_labels Character vector of labels to be used for the scorecard
 #'   symbols. Should be one fewer then \code{significance_breaks}. Set to "auto"
 #'   to automatically generate labels based on \code{significance_breaks}
-#' @param num_facet_cols Numbe of panel columns in the score card.
+#' @param num_facet_cols Number of panel columns in the score card.
 #'
 #' @return A score card plot. Can be saved with \link[ggplot2]{ggsave}
 #' @export

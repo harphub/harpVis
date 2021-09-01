@@ -65,7 +65,7 @@ fewer then \code{significance_breaks}. Default is \code{c(3, 2, 1, 0.5, 1,
 symbols. Should be one fewer then \code{significance_breaks}. Set to "auto"
 to automatically generate labels based on \code{significance_breaks}}
 
-\item{num_facet_cols}{Numbe of panel columns in the score card.}
+\item{num_facet_cols}{Number of panel columns in the score card.}
 }
 \value{
 A score card plot. Can be saved with \link[ggplot2]{ggsave}
