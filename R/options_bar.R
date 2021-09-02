@@ -111,7 +111,7 @@ options_bar <- function(input, output, session) {
     models       <- gsub(" \\+ ", ".model.", input$models)
     regexp       <- paste0(".harp.", models, ".rds")
     harp_files   <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
-    files_dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
+    files_dates  <- sort(unique(unlist(lapply(harp_files, `[`, 3))))
 
     if (!is.null(files_dates)) {
       names(files_dates) <- menu_dates_to_char(files_dates)
