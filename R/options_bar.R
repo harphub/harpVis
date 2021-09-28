@@ -112,15 +112,21 @@ options_bar <- function(input, output, session) {
     regexp       <- paste0(".harp.", models, ".rds")
     harp_files   <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
     files_dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
-    files_dates_df<-dplyr::arrange(data.frame(dates=files_dates) %>% tidyr::separate(dates,c("startdate","enddate"),"-"),startdate,enddate)
-    sorted_files_dates<-paste(files_dates_df$startdate,files_dates_df$enddate,sep ="-")
 
 
-    if (!is.null(sorted_files_dates)) {
-      names(sorted_files_dates) <- menu_dates_to_char(sorted_files_dates)
+    if (!is.null(files_dates)) {
+      files_dates <- data.frame(dates = files_dates) %>%
+        tidyr::separate(.data$dates, c("startdate", "enddate"), "-") %>%
+        dplyr::arrange(.data$startdate, .data$enddate) %>%
+        dplyr::mutate(
+          dates = paste(.data$startdate, .data$enddate, sep = "-")
+        ) %>%
+        dplyr::pull(.data$dates)
+
+      names(files_dates) <- menu_dates_to_char(files_dates)
     }
 
-    data_files$dates  <- sorted_files_dates
+    data_files$dates  <- files_dates
 
     selected_dates <- NULL
     if (!is.null(input$dates) && input$dates %in% data_files$dates) {
