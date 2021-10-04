@@ -191,7 +191,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     }
 
     if (ui_type() == "ens_cat") {
-      lead_times <- sort(unique(verif_data()$ens_threshold_scores$leadtime))
+      lt <- unique(verif_data()$ens_threshold_scores$leadtime)
+      lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
       thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
       shiny::removeUI(paste0("#", ns("ens-summary")))
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
@@ -333,7 +334,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
         } else {
 
-          lead_times <- sort(unique(verif_data()$ens_threshold_scores$leadtime))
+          lt <- unique(verif_data()$ens_threshold_scores$leadtime)
+          lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
           shiny::removeUI(paste0("#", ns("ens-cat-choose-x-thresh")))
           shiny::insertUI(
             selector = paste0("#", ns("ens-cat-choose-x")),
@@ -375,7 +377,8 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
         } else {
 
-          lead_times <- sort(unique(verif_data()$det_threshold_scores$leadtime))
+          lt <- unique(verif_data()$ens_threshold_scores$leadtime)
+          lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
           shiny::removeUI(paste0("#", ns("det-cat-x-thresh")))
           shiny::insertUI(
             selector = paste0("#", ns("det-cat")),
@@ -454,18 +457,18 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         if (length(leadtimes) == 1) {
           if (leadtimes == "All") {
             facets  <- NULL
-            filters <- NULL
+            filters <- ggplot2::vars(as.character(leadtime) != "All")
           } else {
             facets  <- NULL
-            filters <- ggplot2::vars(leadtime == as.numeric(leadtimes))
+            filters <- ggplot2::vars(as.character(leadtime) == leadtimes)
           }
         } else {
           if (is.element("All", leadtimes)) {
             facets  <- NULL
-            filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes[leadtimes != "All"]))
+            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes[leadtimes != "All"])
           } else {
             facets  <- ggplot2::vars(leadtime)
-            filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes))
+            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes)
           }
         }
 
@@ -489,10 +492,10 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           leadtimes <- shiny::req(input[["ens-cat-choose-x-leadtime"]])
           if (length(leadtimes) == 1) {
             facets  <- NULL
-            filters <- ggplot2::vars(leadtime == as.numeric(leadtimes))
+            filters <- ggplot2::vars(as.character(leadtime) == leadtimes)
           } else {
             facets  <- ggplot2::vars(leadtime)
-            filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes))
+            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes)
           }
         }
 
@@ -506,10 +509,10 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         thresholds <- shiny::req(input[["ens-cat-threshold"]])
         if (length(thresholds) == 1 & length(leadtimes) == 1) {
           facets  <- NULL
-          filters <- ggplot2::vars(leadtime == as.numeric(leadtimes), threshold == as.numeric(thresholds))
+          filters <- ggplot2::vars(as.character(leadtime) == leadtimes, threshold == as.numeric(thresholds))
         } else {
           facets  <- ggplot2::vars(leadtime, threshold)
-          filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes), threshold %in% as.numeric(thresholds))
+          filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes, threshold %in% as.numeric(thresholds))
         }
 
       } else if (ui_type() == "det_summary") {
@@ -552,10 +555,10 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           leadtimes <- shiny::req(input[["det-cat-x-leadtime"]])
           if (length(leadtimes) == 1) {
             facets  <- NULL
-            filters <- ggplot2::vars(leadtime == as.numeric(leadtimes))
+            filters <- ggplot2::vars(as.character(leadtime) == leadtimes)
           } else {
             facets  <- ggplot2::vars(leadtime)
-            filters <- ggplot2::vars(leadtime %in% as.numeric(leadtimes))
+            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes)
           }
         }
 
