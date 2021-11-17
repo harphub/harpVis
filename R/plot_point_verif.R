@@ -391,13 +391,13 @@ plot_point_verif <- function(
       if (!is.element("dropped_members_spread_skill_ratio", colnames(plot_data))) {
         plot_data <- dplyr::mutate(plot_data, spread_skill_ratio_with_dropped = .data$dropped_members_spread / .data$rmse)
       } else {
-        plot_data[["spread_skill_ratio_with_dropped"]] <- plot_data[["dropped_members_spread_skill_ratio"]]
+        plot_data <- dplyr::rename(plot_data, spread_skill_ratio_with_dropped = .data$dropped_members_spread_skill_ratio)
       }
       if (!is.element("spread_skill_ratio", colnames(plot_data))) {
         plot_data <- dplyr::mutate(plot_data, spread_skill_ratio = .data$dropped_members_spread / .data$rmse)
       }
       plot_data        <- tidyr::gather(
-        plot_data, .data$spread_skill_ratio, .data$dropped_members_spread_skill_ratio,
+        plot_data, .data$spread_skill_ratio, .data$spread_skill_ratio_with_dropped,
         key = "component", value = "Spread Skill Ratio"
       )
       y_axis_name      <- "Spread Skill Ratio"
