@@ -712,6 +712,13 @@ make_score_list <- function(verif_list) {
         "spread_skill_ratio"
       )
     }
+    if ("dropped_members_spread" %in% verif_names$ens_summary_scores && "rmse" %in% verif_names$ens_summary_scores) {
+      verif_names$ens_summary_scores <- c(
+        verif_names$ens_summary_scores,
+        "spread_skill_with_dropped",
+        "spread_skill_ratio_with_dropped"
+      )
+    }
     if ("rank_histogram" %in% verif_names$ens_summary_scores) {
       verif_names$ens_summary_scores <- c(verif_names$ens_summary_scores, "normalized_rank_histogram")
     }
