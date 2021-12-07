@@ -696,7 +696,10 @@ make_score_list <- function(verif_list) {
 
   verif_names <- purrr::map(
     verif_list,
-    ~setdiff(names(.x), c("mname", "leadtime", "threshold", "member", "cont_tab"))
+    ~setdiff(
+      names(.x),
+      c("mname", "leadtime", "threshold", "member", "cont_tab", "lon", "lat", "elev")
+    )
   )
 
   # Add derived scores if the required data are available in verif_list
