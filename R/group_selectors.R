@@ -56,7 +56,20 @@ group_selectors <- function(input, output, session, verif_data) {
 
   std_ens_tables  <- grep("ens_", names(harpVis::ens_verif_data))
   std_ens_columns <- unique(unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)))
-  std_ens_columns <- c(std_ens_columns, "spread_skill_ratio", "parameter")
+  std_ens_columns <- c(
+    std_ens_columns,
+    "spread_skill_ratio",
+    "dropped_members_spread_skill_ratio",
+    "dropped_members_spread",
+    "parameter",
+    "dates",
+    "num_stations",
+    "fair_crps",
+    "fair_brier_score",
+    "lon",
+    "lat",
+    "elev"
+  )
 
   # When there is new data get the grouping columns and remove all inserted UI
 
