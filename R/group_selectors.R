@@ -66,7 +66,10 @@ group_selectors <- function(input, output, session, verif_data) {
       "dates",
       "num_stations",
       "fair_crps",
-      "fair_brier_score"
+      "fair_brier_score",
+      "lon",
+      "lat",
+      "elev"
     )
   )
 
