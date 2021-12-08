@@ -207,6 +207,8 @@ dashboard_eps <- function(
         )
       )
       if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
+        lt <- unique(thresh_data_to_plot()[[thresh_table()]]$leadtime)
+        lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
           where    = "beforeEnd",
@@ -214,8 +216,8 @@ dashboard_eps <- function(
             shiny::selectInput(
               ns("leadtime"),
               "Lead Time",
-              sort(unique(thresh_data_to_plot()[[thresh_table()]]$leadtime)),
-              sort(unique(thresh_data_to_plot()[[thresh_table()]]$leadtime))[1]
+              lead_times,
+              lead_times[1]
             )
           )
         )
