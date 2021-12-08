@@ -140,20 +140,16 @@ dashboard_eps <- function(
     shiny::req(colour_table())
 
     leadtimes <- unique(verif_data()[[summary_table()]]$leadtime)
+    if (length(leadtimes) < 1) {
+      return()
+    }
     closest_to_twelve <- which(abs(leadtimes - 12) == min(abs(leadtimes - 12)))
     selected_leadtime <- leadtimes[closest_to_twelve]
 
     legend_summary    <- "none"
     show_thresh_data  <- TRUE
 
-    if (is.null(verif_data()[[thresh_table()]])) {
-      dashboard_plots$reliability <- NULL
-      dashboard_plots$roc         <- NULL
-      dashboard_plots$brier       <- NULL
-      legend_summary              <- "right"
-      show_thresh_data            <- FALSE
-    }
-    if (nrow(verif_data()[[thresh_table()]]) < 1) {
+    if (is.null(verif_data()[[thresh_table()]]) || nrow(verif_data()[[thresh_table()]]) < 1) {
       dashboard_plots$reliability <- NULL
       dashboard_plots$roc         <- NULL
       dashboard_plots$brier       <- NULL
