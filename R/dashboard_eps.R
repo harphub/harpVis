@@ -140,20 +140,16 @@ dashboard_eps <- function(
     shiny::req(colour_table())
 
     leadtimes <- unique(verif_data()[[summary_table()]]$leadtime)
+    if (length(leadtimes) < 1) {
+      return()
+    }
     closest_to_twelve <- which(abs(leadtimes - 12) == min(abs(leadtimes - 12)))
     selected_leadtime <- leadtimes[closest_to_twelve]
 
     legend_summary    <- "none"
     show_thresh_data  <- TRUE
 
-    if (is.null(verif_data()[[thresh_table()]])) {
-      dashboard_plots$reliability <- NULL
-      dashboard_plots$roc         <- NULL
-      dashboard_plots$brier       <- NULL
-      legend_summary              <- "right"
-      show_thresh_data            <- FALSE
-    }
-    if (nrow(verif_data()[[thresh_table()]]) < 1) {
+    if (is.null(verif_data()[[thresh_table()]]) || nrow(verif_data()[[thresh_table()]]) < 1) {
       dashboard_plots$reliability <- NULL
       dashboard_plots$roc         <- NULL
       dashboard_plots$brier       <- NULL
@@ -211,8 +207,6 @@ dashboard_eps <- function(
         )
       )
       if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
-        lt <- unique(thresh_data_to_plot()[[thresh_table()]]$leadtime)
-        lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
           where    = "beforeEnd",
@@ -220,8 +214,8 @@ dashboard_eps <- function(
             shiny::selectInput(
               ns("leadtime"),
               "Lead Time",
-              lead_times,
-              lead_times[1]
+              sort(unique(thresh_data_to_plot()[[thresh_table()]]$leadtime)),
+              sort(unique(thresh_data_to_plot()[[thresh_table()]]$leadtime))[1]
             )
           )
         )
