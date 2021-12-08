@@ -66,7 +66,10 @@ group_selectors <- function(input, output, session, verif_data) {
       "dates",
       "num_stations",
       "fair_crps",
-      "fair_brier_score"
+      "fair_brier_score",
+      "lon",
+      "lat",
+      "elev"
     )
   )
 
@@ -90,8 +93,10 @@ group_selectors <- function(input, output, session, verif_data) {
   # Reactive value for the filtered data
 
   out_data <- shiny::reactiveVal(NULL)
-  shiny::observeEvent(verif_data(), {
-    out_data(verif_data())
+  shiny::observeEvent(new_data(), {
+    if (length(grp_ens_columns()) == 0) {
+      out_data(verif_data())
+    }
   })
 
   # function to spawn observers for new group columns
@@ -101,15 +106,21 @@ group_selectors <- function(input, output, session, verif_data) {
       seq_along(grp_ens_columns()),
       function(x) {
         shiny::observeEvent(input[[paste0("group_", x)]], {
-          filter_col <- rlang::sym(grp_ens_columns()[x])
           verif_attr <- attributes(verif_data())
-          filtered_data <- purrr::map_at(
-            verif_data(),
-            which(sapply(verif_data(), nrow) > 0),
-            dplyr::filter,
-            !! filter_col == input[[paste0("group_", x)]]
-          )
+          filtered_data <- verif_data()
+          for (i in seq_along(grp_ens_columns())) {
+            filter_col <- rlang::sym(grp_ens_columns()[i])
+            filtered_data <- purrr::map_at(
+              filtered_data,
+              which(sapply(filtered_data, nrow) > 0),
+              dplyr::filter,
+              !! filter_col == input[[paste0("group_", i)]]
+            )
+          }
           attributes(filtered_data) <- verif_attr
+          if (all(sapply(filtered_data, nrow) < 1)) {
+            return()
+          }
           out_data(filtered_data)
         })
       }
@@ -134,7 +145,8 @@ group_selectors <- function(input, output, session, verif_data) {
         select_label_before   <- grp_ens_columns()[group_num - 4]
       }
 
-      ui_arg <- shiny::div(id = ns(paste0("dropdown_", select_label)),
+      ui_arg <- shiny::div(
+        id = ns(paste0("dropdown_", select_label)),
         shiny::selectInput(
           ns(paste0("group_", group_num)),
           select_label,
