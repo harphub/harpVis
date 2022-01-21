@@ -148,8 +148,8 @@ colour_choices <- function(input, output, session, verif_data) {
                    showColour = "background",
                    palette = palette,
                    allowedCols = allowed_cols
+                   )
                  )
-               )
         ),
         column(6,
                lapply(seq_along(fcst_models), function(i)
@@ -157,15 +157,15 @@ colour_choices <- function(input, output, session, verif_data) {
                    ns(paste0("legend_", i)),
                    paste("Legend",fcst_models[i]),
                    colour_table()$new_legend[i]
+                   )
                  )
-               )
         )
       ),
       footer = shiny::tagList(
         shiny::actionButton(ns("colours_modal_cancel"), "Cancel"),
         customActionButton(ns("colours_modal_ok"), "OK", btn_class = "primary")
       ),
-      size = "s"
+      size = "m"
     )
 
   }
