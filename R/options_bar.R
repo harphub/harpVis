@@ -61,7 +61,7 @@ options_barUI <- function(id) {
 #' @export
 #'
 #' @examples
-options_bar <- function(input, output, session) {
+options_bar <- function(input, output, session, colour_table) {
 
   app_start_dir <- shiny::getShinyOption("app_start_dir")
   volumes <- c(Home = fs::path_home(), harp_getVolumes()())
