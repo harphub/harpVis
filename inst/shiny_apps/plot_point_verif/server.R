@@ -10,7 +10,7 @@ server <- function(input, output, session) {
   # LOAD DATA                                                #
   ############################################################
 
-  verif_data <- shiny::callModule(harpVis::options_bar, "options_bar")
+  verif_data <- shiny::callModule(harpVis::options_bar, "options_bar", colour_table)
 
   ############################################################
   # FILTER DATA                                              #
