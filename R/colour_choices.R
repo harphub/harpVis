@@ -103,15 +103,17 @@ colour_choices <- function(input, output, session, verif_data) {
     shiny::req(verif_data())
     fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
     colour_table_modal(
-      data.frame(mname = fcst_models, colour = palette_colours()[1:length(fcst_models)], stringsAsFactors = FALSE)
+      data.frame(mname = fcst_models, colour = palette_colours()[1:length(fcst_models)], new_legend = fcst_models, stringsAsFactors = FALSE)
     )
     colour_table(colour_table_modal())
     lapply(
       seq_along(fcst_models),
-      function(i) shiny::observeEvent(input[[paste0("colour_", i)]], {
+      function(i) shiny::observeEvent(c(input[[paste0("colour_", i)]], input[[paste0("legend_", i)]]), {
         modified_colours <- colour_table_modal()
         new_colour       <- input[[paste0("colour_", i)]]
         modified_colours$colour[modified_colours$mname == fcst_models[i]] <- new_colour
+        new_legend       <- input[[paste0("legend_", i)]]
+        modified_colours$new_legend[modified_colours$mname == fcst_models[i]] <- new_legend
         colour_table_modal(modified_colours)
       })
     )
@@ -136,14 +138,27 @@ colour_choices <- function(input, output, session, verif_data) {
         c(RColorBrewer:::quallist, "harp2", "Custom"),
         selected_palette()
       ),
-      lapply(seq_along(fcst_models), function(i)
-        colourpicker::colourInput(
-          ns(paste0("colour_", i)),
-          fcst_models[i],
-          value = colour_table()$colour[i],
-          showColour = "background",
-          palette = palette,
-          allowedCols = allowed_cols
+      shiny::fluidRow(
+        column(6,
+               lapply(seq_along(fcst_models), function(i)
+                 colourpicker::colourInput(
+                   ns(paste0("colour_", i)),
+                   fcst_models[i],
+                   value = colour_table()$colour[i],
+                   showColour = "background",
+                   palette = palette,
+                   allowedCols = allowed_cols
+                 )
+               )
+        ),
+        column(6,
+               lapply(seq_along(fcst_models), function(i)
+                 shiny::textInput(
+                   ns(paste0("legend_", i)),
+                   paste("Legend",fcst_models[i]),
+                   colour_table()$new_legend[i]
+                 )
+               )
         )
       ),
       footer = shiny::tagList(
