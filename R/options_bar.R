@@ -205,7 +205,7 @@ options_bar <- function(input, output, session, colour_table) {
     }
   })
 
-  # Update mname from input to create new legends
+  # Update mname from text input to create new legends
   new_verif_data <- reactiveVal(NULL)
   shiny::observeEvent(colour_table(), {
     shiny::req(colour_table())
