@@ -19,8 +19,13 @@
 #' @param num_breaks Number of colour breaks to use in the plot.
 #' @param breaks The values to use for colour breaks. If not NULL, breaks has
 #'   priority over num_breaks.
-#' @param legend Logical. Whether to plot a legend
-#' @param ... Other options to \code{\link[meteogrid]{iview}}
+#' @param legend Logical. Whether to plot a legend.
+#' @param title The title of the plot. Set to "auto" to automatically generate a
+#'   title.
+#' @param zoom_centre The centre point for a zoomed plot. Should be a 2-element
+#'   vector with the longitude and latitude of the desired centre point.
+#' @param zoom_radius The number of grid squares in each direction from
+#'   \code{zoom_centre} for a zoomed in plot.
 #'
 #' @return A plot
 #' @export
@@ -32,12 +37,14 @@ plot_field <- function(
   plot_col,
   fcdate,
   lead_time,
-  filter_by  = NULL,
-  palette    = viridis::viridis(255),
-  num_breaks = 15,
-  breaks     = NULL,
-  legend     = TRUE,
-  ...
+  filter_by   = NULL,
+  palette     = viridis::viridis(255),
+  num_breaks  = 15,
+  breaks      = NULL,
+  legend      = TRUE,
+  title       = "auto",
+  zoom_centre = NULL,
+  zoom_radius = 100
 ) {
   UseMethod("plot_field")
 }
@@ -49,12 +56,14 @@ plot_field.harp_spatial_fcst <- function(
   plot_col,
   fcdate,
   lead_time,
-  filter_by  = NULL,
-  palette    = viridis::viridis(255),
-  num_breaks = 15,
-  breaks     = NULL,
-  legend     = TRUE,
-  ...
+  filter_by   = NULL,
+  palette     = viridis::viridis(255),
+  num_breaks  = 15,
+  breaks      = NULL,
+  legend      = TRUE,
+  title       = "auto",
+  zoom_centre = NULL,
+  zoom_radius = 100
 ) {
 
   col <- rlang::enquo(plot_col)
@@ -126,16 +135,28 @@ plot_field.harp_spatial_fcst <- function(
   .field     <- dplyr::pull(.fcst, !!col)[[1]]
   field_info <- attr(.field, "info")
 
+  if (is.element("parameter", colnames(.fcst))) {
+    field_info[["name"]] <- dplyr::pull(.fcst, .data[["parameter"]])
+    if (is.element("units", colnames(.fcst))) {
+      field_info[["name"]] <- paste0(field_info[["name"]], " [", dplyr::pull(.fcst, .data[["units"]]), "]")
+    }
+  }
+
+  if (is.element("lead_time", colnames(.fcst))) {
+    lt <- dplyr::pull(.fcst, .data[["lead_time"]])
+    if (is.numeric(lt)) {
+      lt <- paste0(lt, "h")
+    }
+    field_info[["time"]][["leadtime"]] <- lt
+  }
+
   field_info[["name"]] <- paste(fcst_model, field_info[["name"]], sep = ": ")
   attr(.field, "info") <- field_info
 
-  if (is.null(breaks)) {
-    breaks <- pretty(.field, num_breaks)
-  }
-
-  plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
-
-  meteogrid::iview(.field, legend = legend, col = plot_colours, levels = breaks, ...)
+  plot_field(
+    .field, palette, num_breaks, breaks, legend, title,
+    zoom_centre, zoom_radius
+  )
 
 }
 
@@ -146,12 +167,14 @@ plot_field.harp_fcst <- function(
   plot_col,
   fcdate,
   lead_time,
-  filter_by  = NULL,
-  palette    = viridis::viridis(255),
-  num_breaks = 15,
-  breaks     = NULL,
-  legend     = TRUE,
-  ...
+  filter_by   = NULL,
+  palette     = viridis::viridis(255),
+  num_breaks  = 15,
+  breaks      = NULL,
+  legend      = TRUE,
+  title       = "auto",
+  zoom_centre = NULL,
+  zoom_radius = 100
 ) {
 
   if (is.null(fcst_model) && length(.fcst) == 1) {
@@ -167,17 +190,78 @@ plot_field.harp_fcst <- function(
   }
 
   plot_field(
-    .fcst      = .fcst[[fcst_model]],
-    fcst_model = fcst_model,
-    plot_col   = !!rlang::enquo(plot_col),
-    fcdate     = fcdate,
-    lead_time  = lead_time,
-    filter_by  = filter_by,
-    palette    = palette,
-    num_breaks = num_breaks,
-    breaks     = breaks,
-    legend     = legend,
-    ...
+    .fcst       = .fcst[[fcst_model]],
+    fcst_model  = fcst_model,
+    plot_col    = !!rlang::enquo(plot_col),
+    fcdate      = fcdate,
+    lead_time   = lead_time,
+    filter_by   = filter_by,
+    palette     = palette,
+    num_breaks  = num_breaks,
+    breaks      = breaks,
+    legend      = legend,
+    title       = title,
+    zoom_centre = zoom_centre,
+    zoom_radius = zoom_radius
+  )
+
+}
+
+#' @export
+plot_field.geofield <- function(
+  .fcst,
+  palette     = viridis::viridis(255),
+  num_breaks  = 15,
+  breaks      = NULL,
+  legend      = TRUE,
+  title       = "auto",
+  zoom_centre = NULL,
+  zoom_radius = 100,
+  ...
+) {
+
+  if (is.null(breaks)) {
+    breaks <- pretty(.fcst, num_breaks)
+  }
+
+  .fcst[.fcst < min(breaks)] <- min(breaks)
+  .fcst[.fcst > max(breaks)] <- max(breaks)
+
+  plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
+
+  if (title == "auto") {
+    title <- paste(
+      attr(.fcst,"info")$name,
+      "\n",
+      format(attr(.fcst, "info")$time$basedate, "%H:%M %d %b %Y"),
+      "+",
+      paste0(
+        attr(.fcst,"info")$time$leadtime, attr(.fcst,"info")$time$stepUnit
+      )
+    )
+  }
+
+  if (!is.null(zoom_centre)) {
+    stopifnot(length(zoom_centre) == 2)
+    stopifnot(is.numeric(zoom_centre))
+    zoom_centre <- round(meteogrid::point.index(
+      .fcst, zoom_centre[1], zoom_centre[2]
+    ))
+    if (any(is.na(c(zoom_centre$i, zoom_centre$j)))) {
+      warning("`zoom_centre` is outside domain. Not zooming!")
+    } else {
+      .fcst <- meteogrid::zoomgrid(
+        .fcst, zoom_centre$i[1], zoom_centre$j[1], zoom_radius
+      )
+    }
+  }
+
+  meteogrid::iview(
+    .fcst,
+    legend = legend,
+    col    = plot_colours,
+    levels = breaks,
+    title  = title
   )
 
 }

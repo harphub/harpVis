@@ -15,7 +15,9 @@ plot_field(
   num_breaks = 15,
   breaks = NULL,
   legend = TRUE,
-  ...
+  title = "auto",
+  zoom_centre = NULL,
+  zoom_radius = 100
 )
 }
 \arguments{
@@ -47,9 +49,16 @@ single row should be left in the data frame for \code{plot_field} to work.}
 \item{breaks}{The values to use for colour breaks. If not NULL, breaks has
 priority over num_breaks.}
 
-\item{legend}{Logical. Whether to plot a legend}
+\item{legend}{Logical. Whether to plot a legend.}
 
-\item{...}{Other options to \code{\link[meteogrid]{iview}}}
+\item{title}{The title of the plot. Set to "auto" to automatically generate a
+title.}
+
+\item{zoom_centre}{The centre point for a zoomed plot. Should be a 2-element
+vector with the longitude and latitude of the desired centre point.}
+
+\item{zoom_radius}{The number of grid squares in each direction from
+\code{zoom_centre} for a zoomed in plot.}
 }
 \value{
 A plot
