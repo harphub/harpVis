@@ -265,7 +265,8 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
 
       member_cols <- data.frame(
         member_highlight = highlight_mems,
-        colour           = all_cols
+        colour           = all_cols,
+        stringsAsFactors = FALSE
       )
 
       member_cols[["colour"]][grep("Other", member_cols[["member_highlight"]])] <- "grey70"
@@ -381,7 +382,8 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
 
         member_cols <- data.frame(
           member_highlight = highlight_mems,
-          colour           = all_cols
+          colour           = all_cols,
+          stringsAsFactors = FALSE
         )
 
         member_cols[["colour"]][grep("Other", member_cols[["member_highlight"]])] <- "grey70"

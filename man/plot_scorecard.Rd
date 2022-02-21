@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_scorecard.R
 \name{plot_scorecard}
 \alias{plot_scorecard}
-\title{Title}
+\title{Plot a scorecard from bootstrapped verification}
 \usage{
 plot_scorecard(
   bootstrap_data,
@@ -25,11 +25,52 @@ plot_scorecard(
 )
 }
 \arguments{
-\item{num_facet_cols}{}
+\item{bootstrap_data}{The output from \link{bootstrap_verify}.}
+
+\item{fcst_model}{The forecast model of interest.}
+
+\item{ref_model}{The forecast model to be used as reference.}
+
+\item{scores}{Vector of scores to include in the plot.}
+
+\item{facet_by}{Column(s) to facet panels by - should be unquoted and wrapped
+in the \code{vars} function. Defaults to score.}
+
+\item{filter_by}{Filtering function - column names should be unquoted and
+everything wrapped inside the \code{vars} function.}
+
+\item{significance_breaks}{The breaks to for statistical significance of
+differences. Default is \code{c(-1.1, -0.997, -0.95, -0.68, 0.68, 0.95,
+0.997, 1.1)}.}
+
+\item{colours}{Vector of outline colours used for the scorecard symbols.
+Should be one fewer then \code{significance_breaks}. Can be colour names or
+HEX colours. Default is \code{c("#CA0020", "#CA0020", "#CA0020", "grey70",
+"#0571B0", "#0571B0", "#0571B0")}.}
+
+\item{fills}{Vector of fill colours used for the scorecard symbols. Should be
+one fewer then \code{significance_breaks}. Can be colour names or HEX
+colours. Default is \code{c("#CA0020", "#F4A582", NA, "grey70", NA,
+"#92C5DE", "#0571B0")}.}
+
+\item{shapes}{Vector of shapes used for the scorecard symbols. Should be one
+fewer then \code{significance_breaks}. Default is \code{c(25, 25, 25, 22,
+24, 24, 24)}.}
+
+\item{sizes}{Vector of sizes used for the scorecard symbols. Should be one
+fewer then \code{significance_breaks}. Default is \code{c(3, 2, 1, 0.5, 1,
+2, 3)}.}
+
+\item{legend_labels}{Character vector of labels to be used for the scorecard
+symbols. Should be one fewer then \code{significance_breaks}. Set to "auto"
+to automatically generate labels based on \code{significance_breaks}}
+
+\item{num_facet_cols}{Number of panel columns in the score card.}
 }
 \value{
-
+A score card plot. Can be saved with \link[ggplot2]{ggsave}
 }
 \description{
-Title
+This function is used to plot a score card from the output of a bootstrap
+verification function such as \link{bootstrap_verify}.
 }

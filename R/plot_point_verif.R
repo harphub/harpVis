@@ -291,7 +291,11 @@ plot_point_verif <- function(
   summary_scores     <- names(summary_table)
   thresh_scores      <- names(thresh_table)
   if (fcst_type == "ens") {
-    derived_summary_scores <- c("spread_skill", "spread_skill_ratio", "normalized_rank_histogram")
+    derived_summary_scores <- c(
+      "spread_skill", "spread_skill_ratio", "spread_skill_with_dropped",
+      "spread_skill_dropped_only", "spread_skill_ratio_with_dropped",
+      "spread_skill_ratio_dropped_only", "normalized_rank_histogram"
+    )
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
     derived_summary_scores <- ""
@@ -353,11 +357,65 @@ plot_point_verif <- function(
       linetyping       <- TRUE
     },
 
+    "spread_skill_with_dropped" = {
+      plot_data        <- dplyr::rename(plot_data, spread_dropped_members = .data$dropped_members_spread)
+      plot_data        <- tidyr::gather(
+        plot_data, .data$rmse, .data$spread, .data$spread_dropped_members, key = "component", value = "spread ; skill"
+      )
+      y_axis_name      <- "spread ; skill"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+    },
+
+    "spread_skill_dropped_only" = {
+      plot_data        <- dplyr::rename(plot_data, spread_dropped_members = .data$dropped_members_spread)
+      plot_data        <- tidyr::gather(
+        plot_data, .data$rmse, .data$spread_dropped_members, key = "component", value = "spread ; skill"
+      )
+      y_axis_name      <- "spread ; skill"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+    },
+
     "spread_skill_ratio" = {
       if (!is.element("spread_skill_ratio", colnames(plot_data))) {
         plot_data <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$rmse)
       }
     },
+
+    "spread_skill_ratio_with_dropped" = {
+      if (!is.element("dropped_members_spread_skill_ratio", colnames(plot_data))) {
+        plot_data <- dplyr::mutate(plot_data, spread_skill_ratio_with_dropped = .data$dropped_members_spread / .data$rmse)
+      } else {
+        plot_data <- dplyr::rename(plot_data, spread_skill_ratio_with_dropped = .data$dropped_members_spread_skill_ratio)
+      }
+      if (!is.element("spread_skill_ratio", colnames(plot_data))) {
+        plot_data <- dplyr::mutate(plot_data, spread_skill_ratio = .data$dropped_members_spread / .data$rmse)
+      }
+      plot_data        <- tidyr::gather(
+        plot_data, .data$spread_skill_ratio, .data$spread_skill_ratio_with_dropped,
+        key = "component", value = "Spread Skill Ratio"
+      )
+      y_axis_name      <- "Spread Skill Ratio"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+    },
+
+    "spread_skill_ratio_dropped_only" = {
+      if (!is.element("dropped_members_spread_skill_ratio", colnames(plot_data))) {
+        plot_data <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$dropped_members_spread / .data$rmse)
+      } else {
+        plot_data[["spread_skill_ratio_dropped_only"]] <- plot_data[["dropped_members_spread_skill_ratio"]]
+      }
+    },
+
+
 
     "rank_histogram" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)

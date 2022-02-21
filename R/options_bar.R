@@ -113,7 +113,16 @@ options_bar <- function(input, output, session) {
     harp_files   <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
     files_dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
 
+
     if (!is.null(files_dates)) {
+      files_dates <- data.frame(dates = files_dates) %>%
+        tidyr::separate(.data$dates, c("startdate", "enddate"), "-") %>%
+        dplyr::arrange(.data$startdate, .data$enddate) %>%
+        dplyr::mutate(
+          dates = paste(.data$startdate, .data$enddate, sep = "-")
+        ) %>%
+        dplyr::pull(.data$dates)
+
       names(files_dates) <- menu_dates_to_char(files_dates)
     }
 
@@ -160,7 +169,10 @@ options_bar <- function(input, output, session) {
   shiny::observeEvent(list(input$parameter, input$dates, input$models), {
     shiny::req(input$models)
     models <- gsub(" \\+ ", ".model.", input$models)
-    regexp <- paste(paste0(input$parameter, "\\."), input$dates, models, sep = "[[:graph:]]*")
+    regexp <- paste0(
+      paste(input$parameter, input$dates, models, sep = "\\.harp\\."),
+      ".rds$"
+    )
     verif_file(file.path(data_dir(), grep(regexp, data_files$filenames, value = TRUE)))
   })
 

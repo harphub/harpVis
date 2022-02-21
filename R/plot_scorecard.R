@@ -1,20 +1,39 @@
-#' Title
+#' Plot a scorecard from bootstrapped verification
 #'
-#' @param bootstrap_data
-#' @param fcst_model
-#' @param ref_model
-#' @param scores
-#' @param facet_by
-#' @param filter_by
-#' @param significance_breaks
-#' @param colours
-#' @param fills
-#' @param shapes
-#' @param sizes
-#' @param legend_labels
-#' @param num_facet_cols
+#' This function is used to plot a score card from the output of a bootstrap
+#' verification function such as \link{bootstrap_verify}.
 #'
-#' @return
+#' @param bootstrap_data The output from \link{bootstrap_verify}.
+#' @param fcst_model The forecast model of interest.
+#' @param ref_model The forecast model to be used as reference.
+#' @param scores Vector of scores to include in the plot.
+#' @param facet_by Column(s) to facet panels by - should be unquoted and wrapped
+#'   in the \code{vars} function. Defaults to score.
+#' @param filter_by Filtering function - column names should be unquoted and
+#'   everything wrapped inside the \code{vars} function.
+#' @param significance_breaks The breaks to for statistical significance of
+#'   differences. Default is \code{c(-1.1, -0.997, -0.95, -0.68, 0.68, 0.95,
+#'   0.997, 1.1)}.
+#' @param colours Vector of outline colours used for the scorecard symbols.
+#'   Should be one fewer then \code{significance_breaks}. Can be colour names or
+#'   HEX colours. Default is \code{c("#CA0020", "#CA0020", "#CA0020", "grey70",
+#'   "#0571B0", "#0571B0", "#0571B0")}.
+#' @param fills Vector of fill colours used for the scorecard symbols. Should be
+#'   one fewer then \code{significance_breaks}. Can be colour names or HEX
+#'   colours. Default is \code{c("#CA0020", "#F4A582", NA, "grey70", NA,
+#'   "#92C5DE", "#0571B0")}.
+#' @param shapes Vector of shapes used for the scorecard symbols. Should be one
+#'   fewer then \code{significance_breaks}. Default is \code{c(25, 25, 25, 22,
+#'   24, 24, 24)}.
+#' @param sizes Vector of sizes used for the scorecard symbols. Should be one
+#'   fewer then \code{significance_breaks}. Default is \code{c(3, 2, 1, 0.5, 1,
+#'   2, 3)}.
+#' @param legend_labels Character vector of labels to be used for the scorecard
+#'   symbols. Should be one fewer then \code{significance_breaks}. Set to "auto"
+#'   to automatically generate labels based on \code{significance_breaks}
+#' @param num_facet_cols Number of panel columns in the score card.
+#'
+#' @return A score card plot. Can be saved with \link[ggplot2]{ggsave}
 #' @export
 #'
 #' @examples
@@ -37,9 +56,43 @@ plot_scorecard <- function(
   ...
 ) {
 
-  stopifnot(inherits(bootstrap_data, "harp_bootstrap"))
+  if (inherits(bootstrap_data, "harp_bootstrap")) {
 
-  sc_data <- bootstrap_data[["confidence_of_differences"]]
+    sc_data <- bootstrap_data[["confidence_of_differences"]]
+    sc_data[["percent_better"]] <- abs(sc_data[["pc_diff"]]) *
+      sc_data[["better"]]
+
+  } else {
+
+    possible_names <- c(
+      "det_summary_scores",
+      "det_threshold_scores",
+      "ens_summary_scores",
+      "ens_threshold_scores"
+    )
+
+    if (length(intersect(names(bootstrap_data), possible_names)) < 1) {
+      stop("Do not know how to plot `bootstrap_data`.")
+    }
+
+    sc_data <- dplyr::bind_rows(bootstrap_data) %>%
+      tidyr::drop_na()
+
+    if (!is.element("parameter", colnames(sc_data))) {
+      if (is.null(attr(bootstrap_data, "parameter"))) {
+        stop("`bootstrap_data` is missing parameter names.")
+      }
+      sc_data[["parameter"]] <- attr(bootstrap_data, "parameter")
+    }
+
+    if (!is.element("percent_better", colnames(sc_data))) {
+      stop("Do not know how to plot `bootstrap_data`")
+    }
+
+    sc_data[["percent_better"]][sc_data[["percent_better"]] < 0.5] <-
+      sc_data[["percent_better"]][sc_data[["percent_better"]] < 0.5] - 1
+
+  }
 
   sc_data <- sc_data[sc_data[["fcst_model"]] == fcst_model, ]
   if (nrow(sc_data) < 1) {
@@ -110,19 +163,17 @@ plot_scorecard <- function(
     check_length(significance_breaks, legend_labels)
   }
 
-  sc_data[["class"]] <- factor(
-    as.numeric(
-      cut(
-        abs(sc_data[["pc_diff"]]) * sc_data[["better"]],
-        breaks = significance_breaks
-      )
-    ),
-    labels = legend_labels
+  classes <- cut(
+    sc_data[["percent_better"]],
+    breaks = significance_breaks
   )
+  names(legend_labels) <- levels(classes)
+
+  sc_data[["class"]] <- forcats::fct_relabel(classes, ~legend_labels[.x])
 
   if (grid_facets) {
     if (length(facet_by) != 2) {
-      warning("Need to facet variables for facet_grid = TRUE. Wrapping facets.")
+      warning("Need two facet variables for facet_grid = TRUE. Wrapping facets.")
       grid_facets <- FALSE
     }
   }
@@ -143,10 +194,10 @@ plot_scorecard <- function(
     )
   ) +
     ggplot2::geom_point() +
-    ggplot2::scale_fill_manual(values = fills, breaks = legend_labels) +
-    ggplot2::scale_colour_manual(values = colours, breaks = legend_labels) +
-    ggplot2::scale_shape_manual(values = shapes, breaks = legend_labels) +
-    ggplot2::scale_size_manual(values = sizes, breaks = legend_labels) +
+    ggplot2::scale_fill_manual(values = fills, breaks = legend_labels, drop = FALSE) +
+    ggplot2::scale_colour_manual(values = colours, breaks = legend_labels, drop = FALSE) +
+    ggplot2::scale_shape_manual(values = shapes, breaks = legend_labels, drop = FALSE) +
+    ggplot2::scale_size_manual(values = sizes, breaks = legend_labels, drop = FALSE) +
     ggplot2::guides(
       fill   = ggplot2::guide_legend(NULL, nrow = ceiling(length(fills) / 2)),
       colour = ggplot2::guide_legend(NULL, nrow = ceiling(length(fills) / 2)),
