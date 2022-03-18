@@ -81,6 +81,7 @@ colour_choices <- function(input, output, session, verif_data) {
       palette      <- "limited"
       allowed_cols <- palette_colours()
     }
+
     fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
     lapply(
       seq_along(fcst_models),

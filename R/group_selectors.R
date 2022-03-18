@@ -54,11 +54,17 @@ group_selectors <- function(input, output, session, verif_data) {
 
   # The standard (std) column names come from the built in data
 
-  std_ens_tables  <- grep("ens_", names(harpVis::ens_verif_data))
-  std_ens_columns <- unique(unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)))
-  std_ens_columns <- union(
-    std_ens_columns,
+  std_ens_tables <- grep("ens_", names(harpVis::ens_verif_data))
+  std_det_tables <- grep("det_", names(harpVis::det_verif_data))
+  std_columns    <- unique(c(
+    unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)),
+    unlist(lapply(harpVis::det_verif_data[std_det_tables], names))
+  ))
+  std_columns <- union(
+    std_columns,
     c(
+      "sub_model",
+      "member",
       "spread_skill_ratio",
       "dropped_members_spread_skill_ratio",
       "dropped_members_spread",
@@ -75,18 +81,17 @@ group_selectors <- function(input, output, session, verif_data) {
 
   # When there is new data get the grouping columns and remove all inserted UI
 
-  grp_ens_columns <- shiny::reactiveVal(NULL)
-  new_data        <- shiny::reactiveVal(0)
+  grp_columns <- shiny::reactiveVal(NULL)
+  new_data    <- shiny::reactiveVal(0)
   shiny::observeEvent(verif_data(), {
     shiny::req(verif_data())
-    for (i in seq_along(grp_ens_columns())) {
+    for (i in seq_along(grp_columns())) {
       if (i > 4) break
-      shiny::removeUI(paste0("#", ns(paste0("dropdown_", grp_ens_columns()[i]))))
+      shiny::removeUI(paste0("#", ns(paste0("dropdown_", grp_columns()[i]))))
     }
-    verif_ens_tables  <- grep("ens_", names(verif_data()))
-    verif_ens_columns <- unique(unlist(lapply(verif_data()[verif_ens_tables], names)))
-    verif_ens_columns <- gsub("_for_threshold_", "_", verif_ens_columns)
-    grp_ens_columns(setdiff(verif_ens_columns, std_ens_columns))
+    verif_columns <- unique(unlist(lapply(verif_data(), names)))
+    verif_columns <- gsub("_for_threshold_", "_", verif_columns)
+    grp_columns(setdiff(verif_columns, std_columns))
     new_data(new_data() + 1)
   })
 
@@ -94,7 +99,7 @@ group_selectors <- function(input, output, session, verif_data) {
 
   out_data <- shiny::reactiveVal(NULL)
   shiny::observeEvent(new_data(), {
-    if (length(grp_ens_columns()) == 0) {
+    if (length(grp_columns()) == 0) {
       out_data(verif_data())
     }
   })
@@ -103,13 +108,13 @@ group_selectors <- function(input, output, session, verif_data) {
 
   generate_observers <- function() {
     res <- lapply(
-      seq_along(grp_ens_columns()),
+      seq_along(grp_columns()),
       function(x) {
         shiny::observeEvent(input[[paste0("group_", x)]], {
           verif_attr <- attributes(verif_data())
           filtered_data <- verif_data()
-          for (i in seq_along(grp_ens_columns())) {
-            filter_col <- rlang::sym(grp_ens_columns()[i])
+          for (i in seq_along(grp_columns())) {
+            filter_col <- rlang::sym(grp_columns()[i])
             filtered_data <- purrr::map_at(
               filtered_data,
               which(sapply(filtered_data, nrow) > 0),
@@ -117,7 +122,9 @@ group_selectors <- function(input, output, session, verif_data) {
               !! filter_col == input[[paste0("group_", i)]]
             )
           }
-          attributes(filtered_data) <- verif_attr
+          attributes(filtered_data) <- c(
+            verif_attr, list(group_cols = grp_columns())
+          )
           if (all(sapply(filtered_data, nrow) < 1)) {
             return()
           }
@@ -133,16 +140,21 @@ group_selectors <- function(input, output, session, verif_data) {
 
     if (new_data() == 0) return()
 
-    for (group_num in seq_along(grp_ens_columns())) {
+    for (group_num in seq_along(grp_columns())) {
 
       div_num        <- (group_num - 1) %% 4 + 1
-      select_label   <- grp_ens_columns()[group_num]
+      select_label   <- grp_columns()[group_num]
 
-      select_choices <- run_sort_choices(verif_data()$ens_summary_scores[[grp_ens_columns()[group_num]]])
+      verif_df <- verif_data()$ens_summary_scores
+      if (is.null(verif_df)) {
+        verif_df <- verif_data()$det_summary_scores
+      }
+
+      select_choices <- run_sort_choices(verif_df[[grp_columns()[group_num]]])
 
       if (group_num > 4) {
-        select_choices_before <- run_sort_choices(verif_data()$ens_summary_scores[[grp_ens_columns()[group_num - 4]]])
-        select_label_before   <- grp_ens_columns()[group_num - 4]
+        select_choices_before <- run_sort_choices(verif_df[[grp_columns()[group_num - 4]]])
+        select_label_before   <- grp_columns()[group_num - 4]
       }
 
       ui_arg <- shiny::div(
@@ -192,7 +204,7 @@ group_selectors <- function(input, output, session, verif_data) {
 
     }
 
-    if (length(grp_ens_columns()) > 0) generate_observers()
+    if (length(grp_columns()) > 0) generate_observers()
   })
 
   return(out_data)
