@@ -695,11 +695,19 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
 make_score_list <- function(verif_list) {
 
+  group_cols <- attr(verif_list, "group_cols")
   verif_list <- verif_list[which(purrr::map_int(verif_list, nrow) > 0)]
 
   verif_names <- purrr::map(
     verif_list,
-    ~setdiff(names(.x), c("mname", "leadtime", "threshold", "member", "cont_tab"))
+    ~setdiff(
+      names(.x),
+      c(
+        "mname", "leadtime", "threshold", "member",
+        "cont_tab", "lat", "lon", "dates", "parameter",
+        "sub_model", "num_stations", group_cols
+      )
+    )
   )
 
   # Add derived scores if the required data are available in verif_list
