@@ -4,7 +4,7 @@
 \alias{get_map}
 \title{Title}
 \usage{
-get_map(map = "world2", dom = NULL, ...)
+get_map(map = "world", dom = NULL, poly = TRUE, ...)
 }
 \arguments{
 \item{...}{}

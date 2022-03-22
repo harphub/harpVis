@@ -8,39 +8,88 @@
 #' @export
 #'
 #' @examples
-get_map <- function(map = "world2", dom = NULL, ...) {
+get_map <- function(map = "world", dom = NULL, poly = TRUE, ...) {
 
+  if (meteogrid::is.geodomain(dom) || meteogrid::is.geofield(dom)) {
 
-  map <- ggplot2::map_data(map, ...)
-  # Antarctica causes problems
-  map <- map[map$region != "Antarctica", ]
+    dom <- meteogrid::as.geodomain(dom)
 
-  if (isTRUE(meteogrid::is.geodomain(dom) || meteogrid::is.geofield(dom))) {
-    dom       <- meteogrid::as.geodomain(dom)
-    glimits   <- meteogrid::DomainExtent(dom)
-    map_names <- unique(paste(map$region, map$group, sep = ":"))
-    map       <- split(map, map$group)
-    map       <- dplyr::bind_rows(lapply(map, rbind, NA))
-    map       <- map[1:(nrow(map) - 1), ]
-
-    map       <- as.list(meteogrid::project(map, proj = dom$projection))
-    map$names <- map_names
-
-    map <- maps::map.clip.poly(
-      as.list(map),
-      xlim = c(glimits$x0, glimits$x1) + glimits$dx * c(-1, 1) / 2,
-      ylim = c(glimits$y0, glimits$y1) + glimits$dy * c(-1, 1) / 2,
-      poly = TRUE
+    map_data <- try(
+      meteogrid::getmap(dom, fill = poly, map.database = map),
+      silent = TRUE
     )
 
-    map <- ggplot2::map_data(map)
+    if (inherits(map_data, "try-error")) {
+      if (poly) {
+        warning("Could not clip polygons properly. Paths returned.")
+        poly     <- FALSE
+        map_data <- meteogrid::getmap(dom, fill = poly, map.database = map)
+      } else {
+        stop("Could not extract domain")
+      }
+    }
 
-    names(map)[names(map) == "long"] <- "x"
-    names(map)[names(map) == "lat"]  <- "y"
+    if (poly) {
+      map_data <- ggplot2::fortify(map_data)
+    } else {
+      map_data <- data.frame(x = map_data[["x"]], y = map_data[["y"]])
+    }
+
+    names(map_data)[names(map_data) == "long"] <- "x"
+    names(map_data)[names(map_data) == "lat"]  <- "y"
 
   }
 
-  map
+  map_data
 
 }
-#ggplot(map_poly, aes(x, y, group = group)) + geom_polygon(fill = "seagreen3", colour = "grey30", size = 2)
+
+#' Get domain information from a harp object
+#'
+#' @param x A harp object - can be a geofield, geolist, harp spatial data frame,
+#'   harp analysis or harp forecast
+#' @param col The column from which to extract the domain for harp objects that
+#'   include data frames
+#'
+#' @return An object (or list of objects) of class "geodomain"
+#' @export
+#'
+#' @examples
+get_domain <- function(x, ...) {
+  UseMethod("get_domain")
+}
+
+#' @export
+get_domain.geofield <- function(x) {
+  meteogrid::as.geodomain(x)
+}
+
+#' @export
+get_domain.geolist <- function(x) {
+  get_domain(x[[1]])
+}
+
+#' @export
+get_domain.harp_spatial_fcst <- function(x, col) {
+  get_domain(dplyr::pull(x, {{col}}))
+}
+
+#' @export
+get_domain.harp_analysis <- function(x, col) {
+  res <- lapply(x, get_domain, col = {{col}})
+  names(res) <- names(x)
+  if (length(res) < 2) {
+    res <- res[[1]]
+  }
+  res
+}
+
+#' @export
+get_domain.harp_fcst <- function(x, col) {
+  res <- lapply(x, get_domain, col = {{col}})
+  names(res) <- names(x)
+  if (length(res) < 2) {
+    res <- res[[1]]
+  }
+  res
+}
