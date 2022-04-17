@@ -61,7 +61,7 @@ options_barUI <- function(id) {
 #' @export
 #'
 #' @examples
-options_bar <- function(input, output, session) {
+options_bar <- function(input, output, session, colour_table) {
 
   app_start_dir <- shiny::getShinyOption("app_start_dir")
   volumes <- c(Home = fs::path_home(), harp_getVolumes()())
@@ -205,6 +205,24 @@ options_bar <- function(input, output, session) {
     }
   })
 
+  # Update mname from text input to create new legends
+  new_verif_data <- reactiveVal(NULL)
+  shiny::observeEvent(colour_table(), {
+    shiny::req(colour_table())
+    fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
+    
+    new_verif_data <- verif_data()
+    new_verif_data <- mutate_list(
+      new_verif_data,
+      mname = msub(
+        mname,
+        fcst_models,
+        colour_table()$new_legend
+      )
+    )
+    verif_data(new_verif_data)
+  })
+  
   return(verif_data)
 
 }
