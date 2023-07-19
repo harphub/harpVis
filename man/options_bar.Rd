@@ -9,9 +9,6 @@ options_bar(input, output, session)
 \arguments{
 \item{session}{}
 }
-\value{
-
-}
 \description{
 Title
 }

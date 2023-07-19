@@ -20,9 +20,6 @@ geom_georaster(
 \arguments{
 \item{inherit.aes}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -9,9 +9,6 @@ group_selectorsUI(id)
 \arguments{
 \item{id}{}
 }
-\value{
-
-}
 \description{
 Title
 }

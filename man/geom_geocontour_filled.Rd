@@ -20,9 +20,6 @@ geom_geocontour_filled(
 \arguments{
 \item{inherit.aes}{}
 }
-\value{
-
-}
 \description{
 Title
 }

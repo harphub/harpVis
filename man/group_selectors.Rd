@@ -9,9 +9,6 @@ group_selectors(input, output, session, verif_data)
 \arguments{
 \item{verif_data}{}
 }
-\value{
-
-}
 \description{
 Title
 }

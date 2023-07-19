@@ -20,9 +20,6 @@ geom_geocontour(
 \arguments{
 \item{inherit.aes}{}
 }
-\value{
-
-}
 \description{
 Title
 }

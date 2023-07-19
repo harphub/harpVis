@@ -9,9 +9,6 @@ get_map(map = "world", dom = NULL, poly = TRUE, ...)
 \arguments{
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

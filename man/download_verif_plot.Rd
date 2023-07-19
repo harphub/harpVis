@@ -16,9 +16,6 @@ download_verif_plot(
 \arguments{
 \item{colour_table}{}
 }
-\value{
-
-}
 \description{
 Title
 }

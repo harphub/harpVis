@@ -22,9 +22,6 @@ coord_geo(
 \arguments{
 \item{clip}{}
 }
-\value{
-
-}
 \description{
 Title
 }

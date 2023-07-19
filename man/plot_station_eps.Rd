@@ -31,9 +31,6 @@ plot_station_eps(
 \arguments{
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

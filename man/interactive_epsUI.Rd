@@ -9,9 +9,6 @@ interactive_epsUI(id)
 \arguments{
 \item{id}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -21,9 +21,6 @@ plot_vertical_profile(
 \arguments{
 \item{colours}{}
 }
-\value{
-
-}
 \description{
 Title
 }
