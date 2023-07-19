@@ -85,3 +85,16 @@ theme_harp_midnight <- function (base_size = 11, base_family = "", base_line_siz
     )
 }
 
+#' @export
+theme_harp_map <- function (base_size = 11, base_family = "", base_line_size = base_size/22,
+  base_rect_size = base_size/22)
+{
+  ggplot2::theme_bw(base_size = base_size, base_family = base_family,
+    base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace%
+    ggplot2::theme(
+      axis.ticks = ggplot2::element_blank(),
+      axis.title = ggplot2::element_blank(),
+      axis.text  = ggplot2::element_blank(),
+      panel.grid = ggplot2::element_blank(),
+    )
+}
