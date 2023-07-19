@@ -21,6 +21,7 @@ Imports:
     RadioSonde,
     magrittr,
     harpIO,
+    harpCore,
     RColorBrewer,
     ggsonde,
     fs,
@@ -32,8 +33,9 @@ Imports:
     meteogrid,
     viridis
 Remotes:
-    harphub/harpIO,
-    harphub/harpPoint,
+    harphub/harpCore,
+    harphub/harpIO@develop,
+    harphub/harpPoint@develop,
     harphub/ggsonde,
     harphub/meteogrid
 Encoding: UTF-8
