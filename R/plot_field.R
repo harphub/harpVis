@@ -161,6 +161,9 @@ plot_field.harp_spatial_fcst <- function(
 }
 
 #' @export
+plot_field.harp_grid_df <- plot_field.harp_spatial_fcst
+
+#' @export
 plot_field.harp_fcst <- function(
   .fcst,
   fcst_model,
