@@ -161,7 +161,116 @@ plot_field.harp_spatial_fcst <- function(
 }
 
 #' @export
-plot_field.harp_grid_df <- plot_field.harp_spatial_fcst
+plot_field.harp_grid_df <- function(
+    .fcst,
+    fcst_model,
+    plot_col,
+    fcdate,
+    lead_time,
+    filter_by   = NULL,
+    palette     = viridis::viridis(255),
+    num_breaks  = 15,
+    breaks      = NULL,
+    legend      = TRUE,
+    title       = "auto",
+    zoom_centre = NULL,
+    zoom_radius = 100
+) {
+
+  col <- rlang::enquo(plot_col)
+
+  if (rlang::quo_is_null(col) || rlang::quo_is_missing(col)) {
+    stop("plot_col must be supplied as an argument.")
+  }
+
+  if (missing(fcdate) && length(unique(.fcst[["fcst_dttm"]])) == 1) {
+    fcdate <- harpIO::unixtime_to_str_datetime(as.numeric(unique(.fcst[["fcst_dttm"]])), harpIO::YMDhms)
+  }
+
+  if (missing(lead_time) && length(unique(.fcst[["lead_time"]])) == 1) {
+    lead_time <- unique(.fcst[["lead_time"]])
+  }
+
+  if (missing(fcst_model)) {
+    fcst_model <- ""
+  }
+
+  if (!all(sapply(dplyr::pull(.fcst, !!col), meteogrid::is.geofield))) {
+    stop("Selected col: '", col, "' does not contain geofield objects.", call. = FALSE)
+  }
+
+  fcdate_filter    <- harpIO::str_datetime_to_datetime(fcdate)
+  lead_time_filter <- lead_time
+
+  filter_by_err  <- paste(
+    "filter_by must be wrapped in vars and unquoted,\n",
+    "e.g. filter_by = vars(members == 0)."
+  )
+  filter_by_null <- try(is.null(filter_by), silent = TRUE)
+
+  if (inherits(filter_by_null, "try-error")) {
+    stop(filter_by_err, call. = FALSE)
+  } else {
+    if (filter_by_null) {
+      filtering <- FALSE
+    } else {
+      if (inherits(filter_by, "quosures")) {
+        filtering <- TRUE
+      } else {
+        stop(filter_by_err, call. = FALSE)
+      }
+    }
+  }
+
+
+  .fcst <- dplyr::filter(
+    .fcst,
+    .data[["fcst_dttm"]]    == fcdate_filter,
+    .data[["lead_time"]] == lead_time_filter
+  )
+
+  if (filtering) {
+    .fcst <- dplyr::filter(.fcst, !!!filter_by)
+  }
+
+  if (nrow(.fcst) < 1) {
+    stop("Nothing to plot", call. = FALSE)
+  }
+
+  if (nrow(.fcst) > 1) {
+    message("Filtered data to plot:")
+    print(.fcst)
+    stop("Can only plot one field at a time. Use filter_by to filter to a single row.", call. = FALSE)
+  }
+
+  .field     <- dplyr::pull(.fcst, !!col)[[1]]
+  field_info <- attr(.field, "info")
+
+  if (is.element("parameter", colnames(.fcst))) {
+    field_info[["name"]] <- dplyr::pull(.fcst, .data[["parameter"]])
+    if (is.element("units", colnames(.fcst))) {
+      field_info[["name"]] <- paste0(field_info[["name"]], " [", dplyr::pull(.fcst, .data[["units"]]), "]")
+    }
+  }
+
+  if (is.element("lead_time", colnames(.fcst))) {
+    lt <- dplyr::pull(.fcst, .data[["lead_time"]])
+    if (is.numeric(lt)) {
+      lt <- paste0(lt, "h")
+    }
+    field_info[["time"]][["leadtime"]] <- lt
+  }
+
+  field_info[["name"]] <- paste(fcst_model, field_info[["name"]], sep = ": ")
+  attr(.field, "info") <- field_info
+
+  plot_field(
+    .field, palette, num_breaks, breaks, legend, title,
+    zoom_centre, zoom_radius
+  )
+
+}
+
 
 #' @export
 plot_field.harp_fcst <- function(
