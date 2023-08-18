@@ -17,8 +17,10 @@
 #' @param verif_type The type of verification to plot for ensemble verification
 #'   data. The default is "ens", but set to "det" to plot verification scores
 #'   for members. If set to "det", you should also set colour_by = member.
-#' @param x_axis The x-axis for the plot. The default is leadtime, but could
-#'   also be threshold. For some scores this is overrided.
+#' @param x_axis The x-axis for the plot. The default is lead_time, but could
+#'   also be threshold. For some scores this is overrided. Note that leadtime
+#'   will be treated exactly the same as lead_time for compatibility with older
+#'   versions.
 #' @param y_axis The y-axis for the plot. The default is to take the same as the
 #'   score input, and for most scores this is overrided.
 #' @param rank_is_relative Logical. If TRUE rank histograms are plotted with the
@@ -44,7 +46,7 @@
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
 #'   where there are many groups. For example, for reliability there should be
 #'   one plot for each lead time and threshold, so the data can be filtered with
-#'   e.g. \code{filter_by = vars(leadtime == 12, threshold == 280)}.
+#'   e.g. \code{filter_by = vars(lead_time == 12, threshold == 280)}.
 #' @param plot_title Title for the plot. Set to "auto" to automatically generate
 #'   the title. Set to "none" for no title. Anything else inside quotes will be
 #'   used as the plot title.
@@ -110,7 +112,7 @@ plot_point_verif <- function(
   verif_data,
   score,
   verif_type               = c("ens", "det"),
-  x_axis                   = leadtime,
+  x_axis                   = lead_time,
   y_axis                   = rlang::enquo(score),
   rank_is_relative         = FALSE,
   rank_hist_type           = c("bar", "lollipop", "line"),
@@ -223,7 +225,7 @@ plot_point_verif <- function(
 
   # the column(s) to filter data for before plotting
   filter_by_err  <- paste("filter_by must be wrapped in vars and unquoted,\n",
-    "e.g. filter_by = vars(leadtime == 12, threshold == 280).")
+    "e.g. filter_by = vars(lead_time == 12, threshold == 280).")
   filter_by_null <- try(is.null(filter_by), silent = TRUE)
   filter_vars    <- ""
   if (inherits(filter_by_null, "try-error")) {
@@ -234,7 +236,9 @@ plot_point_verif <- function(
     } else {
       if (inherits(filter_by, "quosures")) {
         filtering <- TRUE
-        filter_vars <- names(purrr::map_chr(rlang::eval_tidy(filter_by), rlang::quo_name))
+        filter_vars <- purrr::map_chr(
+          rlang::eval_tidy(filter_by),
+          ~ gsub("[^[:alnum:]].*$", "", rlang::quo_name(.x)))
       } else {
         stop(filter_by_err, call. = FALSE)
       }
@@ -313,12 +317,29 @@ plot_point_verif <- function(
   }
 
   if (nrow(plot_data) == 0) return()
+
+  ### Compatibility between old "leadtime" and new "lead_time" column names
+  if (is.element("leadtime", colnames(plot_data))) {
+    plot_data <- dplyr::rename(plot_data, lead_time = .data[["leadtime"]])
+    if (x_axis_name == "leadtime") {
+      x_axis_name <- "lead_time"
+      x_axis_quo  <- rlang::sym("lead_time")
+    }
+  }
+
   ###########################################################################
   # PREP DATA FOR PLOTTING
   ###########################################################################
 
   if (filtering) {
-    plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    if (is.element("leadtime", filter_vars)) {
+      plot_data <- dplyr::filter(
+        dplyr::rename(plot_data, leadtime = .data[["lead_time"]]), !!! filter_by
+      )
+      plot_data <- dplyr::rename(plot_data, lead_time = .data[["leadtime"]])
+    } else {
+      plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    }
   }
 
   plot_geom <- "line"
@@ -338,6 +359,10 @@ plot_point_verif <- function(
       plot_data,
       rank_histogram = lapply(.data$rank_histogram, add_rel_rank)
     )
+  }
+
+  has_lead <- function(x) {
+    length(intersect(c("leadtime", "lead_time"), x)) > 9
   }
 
   switch(
@@ -415,11 +440,9 @@ plot_point_verif <- function(
       }
     },
 
-
-
     "rank_histogram" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
-      if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
+      if (!has_lead(facet_vars) & !has_lead(filter_vars)) {
         grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
         plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank, .data$relative_rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count)) %>%
@@ -435,12 +458,12 @@ plot_point_verif <- function(
     "normalized_rank_histogram" = {
       data_column      <- rlang::sym("rank_histogram")
       plot_data        <- tidyr::unnest(plot_data, !! data_column)
-      if (!is.element("leadtime", facet_vars) & !is.element("leadtime", filter_vars)) {
+      if (!has_lead(facet_vars) & !has_lead(filter_vars)) {
         grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
         plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank, .data$relative_rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       } else {
-        grouping_vars  <- rlang::syms(union("leadtime", c(colour_by_name, facet_vars[nchar(facet_vars) > 0])))
+        grouping_vars  <- rlang::syms(union("lead_time", c(colour_by_name, facet_vars[nchar(facet_vars) > 0])))
       }
       plot_data        <- plot_data %>%
         dplyr::group_by(!!!grouping_vars) %>%
@@ -509,11 +532,11 @@ plot_point_verif <- function(
 
   ### Ensure that x and y axes are numeric
 
-  if (!grepl("rank_histogram", score_name)  && x_axis_name == "leadtime") {
+  if (!grepl("rank_histogram", score_name)  && x_axis_name == "lead_time") {
     plot_data <- dplyr::mutate(
       plot_data,
-      !! x_axis_quo := as.numeric(!! x_axis_quo),
-      !! y_axis_quo := as.numeric(!! y_axis_quo)
+      {{x_axis_name}} := as.numeric(!! x_axis_quo),
+      {{y_axis_name}} := as.numeric(!! y_axis_quo)
     )
   }
 
@@ -676,7 +699,7 @@ plot_point_verif <- function(
   if (log_scale_x) {
     gg <- gg + ggplot2::scale_x_log10()
   } else {
-    if (rlang::quo_name(x_axis_quo) == "leadtime") {
+    if (rlang::quo_name(x_axis_quo) == "lead_time") {
       gg <- gg + ggplot2::scale_x_continuous(breaks = seq(0, 1800, 6))
     }
   }
@@ -796,9 +819,10 @@ plot_point_verif <- function(
 
   }
 
+  facet_vars <- gsub("^leadtime$", "lead_time", facet_vars)
   if (faceting) {
     gg <- gg + ggplot2::facet_wrap(
-      facet_by,
+      facet_vars,
       ncol     = num_facet_cols,
       scales   = facet_scales,
       labeller = facet_labeller

@@ -8,7 +8,7 @@ plot_point_verif(
   verif_data,
   score,
   verif_type = c("ens", "det"),
-  x_axis = leadtime,
+  x_axis = lead_time,
   y_axis = rlang::enquo(score),
   rank_is_relative = FALSE,
   rank_hist_type = c("bar", "lollipop", "line"),
@@ -58,8 +58,10 @@ the verification tables or the name of a dervived score, such as
 data. The default is "ens", but set to "det" to plot verification scores
 for members. If set to "det", you should also set colour_by = member.}
 
-\item{x_axis}{The x-axis for the plot. The default is leadtime, but could
-also be threshold. For some scores this is overrided.}
+\item{x_axis}{The x-axis for the plot. The default is lead_time, but could
+also be threshold. For some scores this is overrided. Note that leadtime
+will be treated exactly the same as lead_time for compatibility with older
+versions.}
 
 \item{y_axis}{The y-axis for the plot. The default is to take the same as the
 score input, and for most scores this is overrided.}
@@ -122,7 +124,7 @@ default is 2.}
 \link[dplyr]{vars} function. This can be useful for making a single plot
 where there are many groups. For example, for reliability there should be
 one plot for each lead time and threshold, so the data can be filtered with
-e.g. \code{filter_by = vars(leadtime == 12, threshold == 280)}.}
+e.g. \code{filter_by = vars(lead_time == 12, threshold == 280)}.}
 
 \item{plot_title}{Title for the plot. Set to "auto" to automatically generate
 the title. Set to "none" for no title. Anything else inside quotes will be
