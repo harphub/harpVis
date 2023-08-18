@@ -139,7 +139,12 @@ dashboard_eps <- function(
     shiny::req(verif_data())
     shiny::req(colour_table())
 
-    leadtimes <- unique(verif_data()[[summary_table()]]$leadtime)
+    lead_time_var <- intersect(
+      c("leadtime", "lead_time"),
+      colnames(verif_data()[[summary_table()]])
+    )
+
+    leadtimes <- unique(verif_data()[[summary_table()]][[lead_time_var]])
     if (length(leadtimes) < 1) {
       return()
     }
@@ -207,7 +212,12 @@ dashboard_eps <- function(
         )
       )
       if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
-        lt <- unique(thresh_data_to_plot()[[thresh_table()]]$leadtime)
+        lead_time_var <- intersect(
+          c("leadtime", "lead_time"),
+          colnames(thresh_data_to_plot()[[thresh_table()]])
+        )
+
+        lt <- unique(thresh_data_to_plot()[[thresh_table()]][[lead_time_var]])
         lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
@@ -243,13 +253,20 @@ dashboard_eps <- function(
     thresh_data_attributes <- attributes(thresh_data_to_plot())
 
     if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
+
+      lead_time_var <- intersect(
+        c("leadtime", "lead_time"),
+        colnames(thresh_data_to_plot()[[thresh_table()]])
+      )
+
       shiny::req(input$leadtime)
+
       plot_data_thresh_lead <- purrr::map_at(
         thresh_data_to_plot(),
         thresh_table(),
         dplyr::filter,
-        leadtime == input$leadtime,
-        threshold == input$threshold
+        .data[[lead_time_var]] == input$leadtime,
+        .data[["threshold"]]   == input$threshold
       )
       attributes(plot_data_thresh_lead) <- thresh_data_attributes
     }

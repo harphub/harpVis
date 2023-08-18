@@ -109,7 +109,7 @@
 #' plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
 
 plot_point_verif <- function(
-  verif_data,
+    verif_data,
   score,
   verif_type               = c("ens", "det"),
   x_axis                   = lead_time,
@@ -236,9 +236,19 @@ plot_point_verif <- function(
     } else {
       if (inherits(filter_by, "quosures")) {
         filtering <- TRUE
-        filter_vars <- purrr::map_chr(
+        filter_expr <- purrr::map_chr(
           rlang::eval_tidy(filter_by),
-          ~ gsub("[^[:alnum:]].*$", "", rlang::quo_name(.x)))
+          rlang::quo_name
+        )
+        filter_vars <- expand.grid(
+          union(
+            c("lead_time", "leadtime"),
+            unique(unlist(lapply(verif_data, colnames)))
+          ),
+          filter_expr, stringsAsFactors = FALSE
+        ) |>
+          dplyr::filter(mapply(grepl, .data[["Var1"]], .data[["Var2"]])) |>
+          dplyr::pull(.data[["Var1"]])
       } else {
         stop(filter_by_err, call. = FALSE)
       }
@@ -316,15 +326,18 @@ plot_point_verif <- function(
     stop("score: ", score_name, " not found in data. Note that arguments are case sensitive.", call. = FALSE)
   }
 
-  if (nrow(plot_data) == 0) return()
+  if (nrow(plot_data) == 0) {
+    cli::cli_warn("No data to plot.")
+    return()
+  }
 
   ### Compatibility between old "leadtime" and new "lead_time" column names
   if (is.element("leadtime", colnames(plot_data))) {
     plot_data <- dplyr::rename(plot_data, lead_time = .data[["leadtime"]])
-    if (x_axis_name == "leadtime") {
-      x_axis_name <- "lead_time"
-      x_axis_quo  <- rlang::sym("lead_time")
-    }
+  }
+  if (x_axis_name == "leadtime") {
+    x_axis_name <- "lead_time"
+    x_axis_quo  <- rlang::sym("lead_time")
   }
 
   ###########################################################################
@@ -340,6 +353,11 @@ plot_point_verif <- function(
     } else {
       plot_data <- dplyr::filter(plot_data, !!! filter_by)
     }
+  }
+
+  if (nrow(plot_data) < 1) {
+    cli::cli_warn("No data to plot after filtering.")
+    return()
   }
 
   plot_geom <- "line"
@@ -442,8 +460,11 @@ plot_point_verif <- function(
 
     "rank_histogram" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
-      if (!has_lead(facet_vars) & !has_lead(filter_vars)) {
-        grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
+      if (!has_lead(facet_vars)) {#& !has_lead(filter_vars)) {
+        grouping_vars  <- rlang::syms(gsub(
+          "leadtime", "lead_time",
+          c(colour_by_name, facet_vars[nchar(facet_vars) > 0])
+        ))
         plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank, .data$relative_rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count)) %>%
           dplyr::ungroup()
@@ -458,8 +479,11 @@ plot_point_verif <- function(
     "normalized_rank_histogram" = {
       data_column      <- rlang::sym("rank_histogram")
       plot_data        <- tidyr::unnest(plot_data, !! data_column)
-      if (!has_lead(facet_vars) & !has_lead(filter_vars)) {
-        grouping_vars  <- rlang::syms(c(colour_by_name, facet_vars[nchar(facet_vars) > 0]))
+      if (!has_lead(facet_vars)) {#} & !has_lead(filter_vars)) {
+        grouping_vars  <- rlang::syms(gsub(
+          "leadtime", "lead_time",
+          c(colour_by_name, facet_vars[nchar(facet_vars) > 0])
+        ))
         plot_data      <- dplyr::group_by(plot_data, !!!grouping_vars, .data$rank, .data$relative_rank) %>%
           dplyr::summarise(rank_count = sum(.data$rank_count))
       } else {
@@ -483,27 +507,35 @@ plot_point_verif <- function(
       plot_data        <- tidyr::unnest(plot_data, !! score_quo) %>%
         dplyr::mutate(no_skill = (.data$forecast_probability - .data$bss_ref_climatology) / 2 + .data$bss_ref_climatology)
       x_axis_quo       <- rlang::quo(forecast_probability)
+      x_axis_name      <- "forecast_probability"
       y_axis_quo       <- rlang::quo(observed_frequency)
+      y_axis_name      <- "observed_frequency"
     },
 
     "sharpness" = {
       data_column      <- rlang::sym("reliability")
       plot_data        <- tidyr::unnest(plot_data, !! data_column)
       x_axis_quo       <- rlang::quo(forecast_probability)
+      x_axis_name      <- "forecast_probability"
       y_axis_quo       <- rlang::quo(proportion_occurred)
+      y_axis_name      <- "proportion_occurred"
       plot_geom        <- "bar"
     },
 
     "economic_value" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       x_axis_quo       <- rlang::quo(cost_loss_ratio)
+      x_axis_name      <- "cost_loss_ratio"
       y_axis_quo       <- rlang::quo(value)
+      y_axis_name      <- "value"
     },
 
     "roc" = {
       plot_data        <- tidyr::unnest(plot_data, !! score_quo)
       x_axis_quo       <- rlang::quo(false_alarm_rate)
+      x_axis_name      <- "false_alarm_rate"
       y_axis_quo       <- rlang::quo(hit_rate)
+      y_axis_name      <- "hit_rate"
     },
 
     "brier_score_decomposition" = {
@@ -611,6 +643,12 @@ plot_point_verif <- function(
   aspect1_score   <- score_name %in% c("reliability", "roc", "economic_value")
   plot_diagonal   <- score_name %in% c("reliability", "roc")
   plot_attributes <- score_name %in% c("reliability")
+
+  # If all are NA, they can be logical instead of numeric
+  if (aspect1_score) {
+    plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+    plot_data[[y_axis_name]] <- as.numeric(plot_data[[y_axis_name]])
+  }
 
   # Labeling
   x_label <- switch(tolower(x_label),

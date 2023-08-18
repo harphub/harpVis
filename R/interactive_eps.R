@@ -44,6 +44,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
   new_data <- shiny::reactiveVal(NULL)
 
+
   # Get the ui type we need from the score
 
   ui_type        <- shiny::reactiveVal("ens_summary")
@@ -142,7 +143,14 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     }
 
     if (ui_type() == "ens_rank_hist") {
-      lead_times <- c("All", sort(unique(verif_data()$ens_summary_scores$leadtime)))
+      lead_time_var <- intersect(
+        c("leadtime", "lead_time"),
+        colnames(verif_data()[["ens_summary_scores"]])
+      )
+      lead_times <- c(
+        "All",
+        sort(unique(verif_data()$ens_summary_scores[[lead_time_var]]))
+      )
       shiny::removeUI(paste0("#", ns("ens-summary")))
       shiny::removeUI(paste0("#", ns("ens-cat")))
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
@@ -191,7 +199,12 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     }
 
     if (ui_type() == "ens_cat") {
-      lt <- unique(verif_data()$ens_threshold_scores$leadtime)
+      lead_time_var <- intersect(
+        c("leadtime", "lead_time"),
+        colnames(verif_data()[["ens_threshold_scores"]])
+      )
+
+      lt <- unique(verif_data()$ens_threshold_scores[[lead_time_var]])
       lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
       thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
       shiny::removeUI(paste0("#", ns("ens-summary")))
@@ -334,7 +347,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
         } else {
 
-          lt <- unique(verif_data()$ens_threshold_scores$leadtime)
+          lead_time_var <- intersect(
+            c("leadtime", "lead_time"),
+            colnames(verif_data()[["ens_threshold_scores"]])
+          )
+          lt <- unique(verif_data()$ens_threshold_scores[[lead_time_var]])
           lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
           shiny::removeUI(paste0("#", ns("ens-cat-choose-x-thresh")))
           shiny::insertUI(
@@ -377,7 +394,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
         } else {
 
-          lt <- unique(verif_data()$ens_threshold_scores$leadtime)
+          lead_time_var <- intersect(
+            c("leadtime", "lead_time"),
+            colnames(verif_data()[["det_threshold_scores"]])
+          )
+          lt <- unique(verif_data()$det_threshold_scores[[lead_time_var]])
           lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
           shiny::removeUI(paste0("#", ns("det-cat-x-thresh")))
           shiny::insertUI(
@@ -703,7 +724,7 @@ make_score_list <- function(verif_list) {
     ~setdiff(
       names(.x),
       c(
-        "mname", "leadtime", "threshold", "member",
+        "mname", "leadtime", "lead_time", "threshold", "member",
         "cont_tab", "lat", "lon", "dates", "parameter",
         "sub_model", "num_stations", group_cols
       )
