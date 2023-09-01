@@ -2,7 +2,7 @@
 #'
 #' @param .fcst
 #' @param SID
-#' @param fcdate
+#' @param fcst_dttm
 #' @param lead_time
 #' @param y_axis
 #' @param skew_t
@@ -17,11 +17,11 @@
 plot_vertical_profile <- function(
   .fcst,
   SID,
-  fcdate,
+  fcst_dttm,
   lead_time,
   y_axis         = p,
   skew_t         = FALSE,
-  colour_by      = mname,
+  colour_by      = fcst_model,
   colours        = NULL,
   facet_by       = NULL,
   num_facet_cols = 2,
@@ -48,18 +48,18 @@ plot_vertical_profile <- function(
 
   ##
 
-  fcdate_unix <- harpIO::str_datetime_to_unixtime(fcdate)
+  fcst_dttm_unix <- harpCore::as_unixtime(fcst_dttm)
 
   plot_data <- purrr::map(
     .fcst,
     dplyr::filter,
     .data$SID      %in% SID_in,
-    .data$fcdate   %in% fcdate_unix,
+    .data$fcst_dttm   %in% fcst_dttm_unix,
     .data$leadtime %in% lead_time
   )
 
   if (all(purrr::map_int(plot_data, nrow)) < 1) {
-    stop("No data found for SID = ", SID, ", fcdate = ", fcdate, ", lead_time = ", lead_time, call. = FALSE)
+    stop("No data found for SID = ", SID, ", fcst_dttm = ", fcst_dttm, ", lead_time = ", lead_time, call. = FALSE)
   }
 
   if (all(purrr::map_lgl(plot_data, ~any(grepl("_det+$", colnames(.x)))))) {
@@ -69,11 +69,11 @@ plot_vertical_profile <- function(
     )
   }
 
-  plot_data <- dplyr::bind_rows(plot_data, .id = "mname")
+  plot_data <- dplyr::bind_rows(plot_data, .id = "fcst_model")
 
   if (any(grepl("_mbr[[:digit:]]+$", colnames(plot_data)))) {
     plot_data <- plot_data %>%
-      harpPoint::gather_members()
+      harpCore::pivot_members()
   } else if (any(grepl("_det+$", colnames(plot_data)))) {
     plot_data <- plot_data %>%
       dplyr::rename_at(dplyr::vars(dplyr::matches("_det+$")), ~ "forecast")

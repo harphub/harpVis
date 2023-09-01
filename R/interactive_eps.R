@@ -103,8 +103,12 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
   shiny::observeEvent(list(det_ens(), new_data()), {
     if (det_ens()) {
+      fcst_model_col <- intersect(
+        c("fcst_model", "mname"),
+        colnames(verif_data()[["det_summary_scores"]])
+      )
       all_members(sort(unique(verif_data()[["det_summary_scores"]][["member"]])))
-      all_models(sort(unique(verif_data()[["det_summary_scores"]][["mname"]])))
+      all_models(sort(unique(verif_data()[["det_summary_scores"]][[fcst_model_col]])))
     } else {
       all_members("")
       all_models("")
@@ -724,7 +728,7 @@ make_score_list <- function(verif_list) {
     ~setdiff(
       names(.x),
       c(
-        "mname", "leadtime", "lead_time", "threshold", "member",
+        "mname", "fcst_model", "leadtime", "lead_time", "threshold", "member",
         "cont_tab", "lat", "lon", "dates", "parameter",
         "sub_model", "num_stations", group_cols
       )

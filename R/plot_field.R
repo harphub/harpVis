@@ -8,7 +8,7 @@
 #'   in the plot title.
 #' @param plot_col The column of data to plot from. Should be unquoted, or if a
 #'   variable, wrapped in double curly brackets: \{\{\}\}.
-#' @param fcdate The forecast date to plot in "YYYYMMDDhh" or similar format.
+#' @param fcst_dttm The forecast date to plot in "YYYYMMDDhh" or similar format.
 #'   Can be omitted if there is only one date in the data.
 #' @param lead_time The lead time to plot. Can be omitted if there is only one
 #'   lead time in the data.
@@ -35,7 +35,7 @@ plot_field <- function(
   .fcst,
   fcst_model,
   plot_col,
-  fcdate,
+  fcst_dttm,
   lead_time,
   filter_by   = NULL,
   palette     = viridis::viridis(255),
@@ -54,7 +54,7 @@ plot_field.harp_spatial_fcst <- function(
   .fcst,
   fcst_model,
   plot_col,
-  fcdate,
+  fcst_dttm,
   lead_time,
   filter_by   = NULL,
   palette     = viridis::viridis(255),
@@ -72,8 +72,8 @@ plot_field.harp_spatial_fcst <- function(
     stop("plot_col must be supplied as an argument.")
   }
 
-  if (missing(fcdate) && length(unique(.fcst[["fcdate"]])) == 1) {
-    fcdate <- harpIO::unixtime_to_str_datetime(as.numeric(unique(.fcst[["fcdate"]])), harpIO::YMDhms)
+  if (missing(fcst_dttm) && length(unique(.fcst[["fcst_dttm"]])) == 1) {
+    fcst_dttm <- harpCore::unixtime_to_YMDhms(as.numeric(unique(.fcst[["fcst_dttm"]])))
   }
 
   if (missing(lead_time) && length(unique(.fcst[["lead_time"]])) == 1) {
@@ -88,7 +88,7 @@ plot_field.harp_spatial_fcst <- function(
     stop("Selected col: '", col, "' does not contain geofield objects.", call. = FALSE)
   }
 
-  fcdate_filter    <- harpIO::str_datetime_to_datetime(fcdate)
+  fcst_dttm_filter  <- harpCore::as_dttm(fcst_dttm)
   lead_time_filter <- lead_time
 
   filter_by_err  <- paste(
@@ -114,7 +114,7 @@ plot_field.harp_spatial_fcst <- function(
 
   .fcst <- dplyr::filter(
     .fcst,
-    .data[["fcdate"]]    == fcdate_filter,
+    .data[["fcst_dttm"]]    == fcst_dttm_filter,
     .data[["lead_time"]] == lead_time_filter
   )
 
@@ -165,7 +165,7 @@ plot_field.harp_grid_df <- function(
     .fcst,
     fcst_model,
     plot_col,
-    fcdate,
+    fcst_dttm,
     lead_time,
     filter_by   = NULL,
     palette     = viridis::viridis(255),
@@ -183,8 +183,8 @@ plot_field.harp_grid_df <- function(
     stop("plot_col must be supplied as an argument.")
   }
 
-  if (missing(fcdate) && length(unique(.fcst[["fcst_dttm"]])) == 1) {
-    fcdate <- harpIO::unixtime_to_str_datetime(as.numeric(unique(.fcst[["fcst_dttm"]])), harpIO::YMDhms)
+  if (missing(fcst_dttm) && length(unique(.fcst[["fcst_dttm"]])) == 1) {
+    fcst_dttm <- harpCore::unixtime_to_YMDhms(as.numeric(unique(.fcst[["fcst_dttm"]])))
   }
 
   if (missing(lead_time) && length(unique(.fcst[["lead_time"]])) == 1) {
@@ -199,7 +199,7 @@ plot_field.harp_grid_df <- function(
     stop("Selected col: '", col, "' does not contain geofield objects.", call. = FALSE)
   }
 
-  fcdate_filter    <- harpIO::str_datetime_to_datetime(fcdate)
+  fcst_dttm_filter <- harpCore::as_dttm(fcst_dttm)
   lead_time_filter <- lead_time
 
   filter_by_err  <- paste(
@@ -225,7 +225,7 @@ plot_field.harp_grid_df <- function(
 
   .fcst <- dplyr::filter(
     .fcst,
-    .data[["fcst_dttm"]]    == fcdate_filter,
+    .data[["fcst_dttm"]]    == fcst_dttm_filter,
     .data[["lead_time"]] == lead_time_filter
   )
 
@@ -277,7 +277,7 @@ plot_field.harp_fcst <- function(
   .fcst,
   fcst_model,
   plot_col,
-  fcdate,
+  fcst_dttm,
   lead_time,
   filter_by   = NULL,
   palette     = viridis::viridis(255),
@@ -305,7 +305,7 @@ plot_field.harp_fcst <- function(
     .fcst       = .fcst[[fcst_model]],
     fcst_model  = fcst_model,
     plot_col    = !!rlang::enquo(plot_col),
-    fcdate      = fcdate,
+    fcst_dttm      = fcst_dttm,
     lead_time   = lead_time,
     filter_by   = filter_by,
     palette     = palette,

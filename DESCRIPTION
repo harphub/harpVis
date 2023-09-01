@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.0.0.9072
+Version: 0.1.1
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
@@ -11,7 +11,8 @@ License: Apache License (>= 2.0)
 Depends:
     R (>= 3.3.1),
     ggplot2 (>= 3.0.0),
-    shiny
+    shiny,
+    harpCore (>= 0.1.1)
 Imports:
     dplyr,
     rlang,
@@ -20,12 +21,10 @@ Imports:
     hexbin,
     RadioSonde,
     magrittr,
-    harpIO,
     harpCore,
     RColorBrewer,
     ggsonde,
     fs,
-    harpPoint,
     purrr,
     scales,
     colourpicker,
@@ -33,9 +32,7 @@ Imports:
     meteogrid,
     viridis
 Remotes:
-    harphub/harpCore,
-    harphub/harpIO@develop,
-    harphub/harpPoint@develop,
+    harphub/harpCore@develop,
     harphub/ggsonde,
     harphub/meteogrid
 Encoding: UTF-8

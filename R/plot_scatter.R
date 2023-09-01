@@ -47,7 +47,7 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", facet_me
 
   if (any(grepl("_mbr", names(plot_data)))) {
     attr(plot_data, "dataframe_format") <- "wide"
-    plot_data <- harpPoint::gather_members(plot_data)
+    plot_data <- harpCore::pivot_members(plot_data)
     if (is.numeric(members)) {
       members   <- paste0("mbr", formatC(members, width = 3, flag = "0"))
       plot_data <- dplyr::filter(plot_data, .data$member %in% members)

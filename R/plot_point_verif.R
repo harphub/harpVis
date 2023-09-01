@@ -109,14 +109,14 @@
 #' plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
 
 plot_point_verif <- function(
-    verif_data,
+  verif_data,
   score,
   verif_type               = c("ens", "det"),
   x_axis                   = lead_time,
   y_axis                   = rlang::enquo(score),
   rank_is_relative         = FALSE,
   rank_hist_type           = c("bar", "lollipop", "line"),
-  colour_by                = mname,
+  colour_by                = fcst_model,
   colour_table             = NULL,
   extend_y_to_zero         = TRUE,
   plot_num_cases           = TRUE,
@@ -338,6 +338,15 @@ plot_point_verif <- function(
   if (x_axis_name == "leadtime") {
     x_axis_name <- "lead_time"
     x_axis_quo  <- rlang::sym("lead_time")
+  }
+
+  ### Compatibility between old "mname" and new "fcst_model" column names
+  if (is.element("mname", colnames(plot_data))) {
+    plot_data <- dplyr::rename(plot_data, fcst_model = .data[["mname"]])
+  }
+  if (colour_by_name == "mname") {
+    colour_by_name <- "fcst_model"
+    colour_by_quo  <- rlang::sym("fcst_model")
   }
 
   ###########################################################################
@@ -650,6 +659,8 @@ plot_point_verif <- function(
     plot_data[[y_axis_name]] <- as.numeric(plot_data[[y_axis_name]])
   }
 
+  attrs <- get_attrs(verif_data)
+
   # Labeling
   x_label <- switch(tolower(x_label),
     "auto" = totitle(gsub("_", " ", rlang::quo_name(x_axis_quo))),
@@ -664,19 +675,19 @@ plot_point_verif <- function(
   plot_title <- switch(tolower(plot_title),
     "auto" = paste(
       totitle(gsub("_", " ", score_name)),
-      ":",
-      paste0(date_to_char(attr(verif_data, "start_date")), " - ", date_to_char(attr(verif_data, "end_date")))
+      "::",
+      attrs[["dttm"]]
     ),
     "none" = "",
     plot_title
   )
   plot_subtitle <- switch(tolower(plot_subtitle),
-    "auto" = paste(attr(verif_data, "num_stations"), "stations"),
+    "auto" = attrs[["num_stations"]],
     "none" = "",
     plot_subtitle
   )
   plot_caption <- switch(tolower(plot_caption),
-    "auto" = paste("Verification for", attr(verif_data, "parameter")),
+    "auto" = attrs[["param"]],
     "none" = "",
     plot_caption
   )
@@ -803,6 +814,7 @@ plot_point_verif <- function(
         ggplot2::geom_smooth(
           ggplot2::aes(y = .data$bss_ref_climatology),
           method    = "lm",
+          formula   = y ~ x,
           se        = FALSE,
           fullrange = TRUE,
           colour    = "grey80",
@@ -812,6 +824,7 @@ plot_point_verif <- function(
         ggplot2::geom_smooth(
           ggplot2::aes(y = .data$no_skill),
           method    = "lm",
+          formula   = y ~ x,
           se        = FALSE,
           fullrange = TRUE,
           colour    = "grey80",
@@ -961,7 +974,41 @@ inf_to_na <- Vectorize(function(x) if (is.infinite(x)) { NA } else { x })
 
 # Function to convert date to a nice format
 date_to_char <- function(date_in) {
-  suppressMessages(harpIO::str_datetime_to_unixtime(date_in)) %>%
-    as.POSIXct(origin = "1970-01-01 00:00:00", tz = "UTC") %>%
+  suppressMessages(harpCore::as_dttm(date_in)) %>%
     format("%H:%M %d %b %Y")
+}
+
+# Compatibility for different attributes in new and old point verif outputs
+# for automatic plot title, subtitle and caption generation
+get_attrs <- function(x) {
+  UseMethod("get_attrs")
+}
+
+get_attrs.default <- function(x) {
+  list(
+    dttm = paste0(
+      date_to_char(attr(x, "start_date")),
+      " - ",
+      date_to_char(attr(x, "end_date"))
+    ),
+    num_stations = paste(attr(x, "num_stations"), "stations"),
+    param = paste("Verification for", attr(x, "parameter"))
+  )
+}
+
+get_attrs.harp_verif <- function(x) {
+  list(
+    dttm = paste(
+      date_to_char(
+        harpCore::as_str_dttm(
+          sort(harpCore::as_dttm(range(attr(x, "dttm"))))
+        )
+      ),
+      collapse = " - "
+    ),
+    num_stations = paste(
+      length(Reduce(union, attr(x, "stations"))), "stations"
+    ),
+    param = paste("Verification for", attr(x, "parameter"))
+  )
 }
