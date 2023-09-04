@@ -354,13 +354,21 @@ plot_point_verif <- function(
   ###########################################################################
 
   if (filtering) {
+    has_leadtime <- FALSE
+    has_mname <- FALSE
     if (is.element("leadtime", filter_vars)) {
-      plot_data <- dplyr::filter(
-        dplyr::rename(plot_data, leadtime = .data[["lead_time"]]), !!! filter_by
-      )
+      plot_data <- dplyr::rename(plot_data, leadtime = .data[["lead_time"]])
+      has_leadtime <- TRUE
+    if (is.element("mname", filter_vars)) {
+      plot_data <- dplyr::rename(plot_data, mname = .data[["fcst_model"]])
+      has_mname <- TRUE
+    }
+    plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    if (has_leadtime)
       plot_data <- dplyr::rename(plot_data, lead_time = .data[["leadtime"]])
-    } else {
-      plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    }
+    if (has_mname) {
+      plot_data <- dplyr::rename(plot_data, fcst_model = .data[["mname"]])
     }
   }
 
@@ -611,6 +619,10 @@ plot_point_verif <- function(
 
   } else {
 
+    colour_table <- dplyr::rename_with(
+      colour_table, ~gsub("mname", "fcst_model", .x)
+    )
+
     if (!all(c(colour_by_name, "colour") %in% tolower(names(colour_table)))) {
       warning(paste0(
         "colour_table must include columns with names `", colour_by_name, "` and `colour`.\n",
@@ -787,10 +799,12 @@ plot_point_verif <- function(
   # GEOMS
   ###########################################################################
 
+  colour_vec <- colour_table[["colour"]]
+  names(colour_vec) <- colour_table[[colour_by_name]]
   if (plot_geom %in% c("line", "lollipop")) {
-    gg                <- gg + ggplot2::scale_colour_manual(values = colour_table$colour)
+    gg                <- gg + ggplot2::scale_colour_manual(values = colour_vec)#table$colour)
   } else {
-    gg                <- gg + ggplot2::scale_fill_manual(values = colour_table$colour)
+    gg                <- gg + ggplot2::scale_fill_manual(values = colour_vec)#table$colour)
   }
 
   if (nchar(gsub("[[:space:]]", "", plot_title)) > 0) {
@@ -870,7 +884,11 @@ plot_point_verif <- function(
 
   }
 
-  facet_vars <- gsub("^leadtime$", "lead_time", facet_vars)
+  facet_vars <- suppressWarnings(harpCore::psub(
+    facet_vars,
+    c("^leadtime$", "^mname$"),
+    c("lead_time", "fcst_model")
+  ))
   if (faceting) {
     gg <- gg + ggplot2::facet_wrap(
       facet_vars,

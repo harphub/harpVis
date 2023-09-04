@@ -63,6 +63,7 @@ group_selectors <- function(input, output, session, verif_data) {
   std_columns <- union(
     std_columns,
     c(
+      "fcst_model",
       "lead_time",
       "sub_model",
       "member",

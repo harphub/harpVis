@@ -57,7 +57,13 @@ colour_choices <- function(input, output, session, verif_data) {
         "#111111"
       )
     } else if (input$colour_palette == "Custom") {
-      fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
+      fcst_model_col <- intersect(
+        c("mname", "fcst_model"),
+        Reduce(union, lapply(verif_data(), colnames))
+      )
+      fcst_models <- unique(unlist(
+        lapply(verif_data(), function(x) unique(x[[fcst_model_col]]))
+      ))
       if (is.null(colour_table()) | nrow(colour_table()) < length(fcst_models)) {
         available_colours <- palette_colours()
       } else {
@@ -82,7 +88,13 @@ colour_choices <- function(input, output, session, verif_data) {
       allowed_cols <- palette_colours()
     }
 
-    fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
+    fcst_model_col <- intersect(
+      c("mname", "fcst_model"),
+      Reduce(union, lapply(verif_data(), colnames))
+    )
+    fcst_models <- unique(unlist(
+      lapply(verif_data(), function(x) unique(x[[fcst_model_col]]))
+    ))
     lapply(
       seq_along(fcst_models),
       function(i) {
@@ -102,9 +114,23 @@ colour_choices <- function(input, output, session, verif_data) {
   colour_table <- shiny::reactiveVal(NULL)
   shiny::observeEvent(verif_data(), {
     shiny::req(verif_data())
-    fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
+    fcst_model_col <- intersect(
+      c("mname", "fcst_model"),
+      Reduce(union, lapply(verif_data(), colnames))
+    )
+    fcst_models <- unique(unlist(
+      lapply(verif_data(), function(x) unique(x[[fcst_model_col]]))
+    ))
     colour_table_modal(
-      data.frame(mname = fcst_models, colour = palette_colours()[1:length(fcst_models)], stringsAsFactors = FALSE)
+      dplyr::rename_with(
+        data.frame(
+          mname = fcst_models,
+          colour = palette_colours()[1:length(fcst_models)],
+          stringsAsFactors = FALSE
+        ),
+        ~gsub("mname", fcst_model_col, .x),
+        "mname"
+      )
     )
     colour_table(colour_table_modal())
     lapply(
@@ -112,7 +138,7 @@ colour_choices <- function(input, output, session, verif_data) {
       function(i) shiny::observeEvent(input[[paste0("colour_", i)]], {
         modified_colours <- colour_table_modal()
         new_colour       <- input[[paste0("colour_", i)]]
-        modified_colours$colour[modified_colours$mname == fcst_models[i]] <- new_colour
+        modified_colours$colour[modified_colours[[fcst_model_col]] == fcst_models[i]] <- new_colour
         colour_table_modal(modified_colours)
       })
     )
@@ -121,7 +147,13 @@ colour_choices <- function(input, output, session, verif_data) {
   # function for color selector modal - this sets the initial colours and spawns the selectors
   colour_modal <- function() {
 
-    fcst_models <- unique(unlist(lapply(verif_data(), function(x) unique(x[["mname"]]))))
+    fcst_model_col <- intersect(
+      c("mname", "fcst_model"),
+      Reduce(union, lapply(verif_data(), colnames))
+    )
+    fcst_models <- unique(unlist(
+      lapply(verif_data(), function(x) unique(x[[fcst_model_col]]))
+    ))
     if (selected_palette() == "Custom") {
       palette      <- "square"
       allowed_cols <- NULL

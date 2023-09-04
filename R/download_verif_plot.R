@@ -51,17 +51,14 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
 
   shiny::observeEvent(list(verif_data(), score_options()$score, input$close_save_modal), {
     plot_score <- gsub("[[:alpha:]]+_[[:alpha:]]+_scores_", "", score_options()$score)
+    attrs <- get_attrs(verif_data())
     plot_options$title <- paste(
       totitle(gsub("_", " ", plot_score)),
-      ":",
-      paste0(
-        date_to_char(attr(verif_data(), "start_date")),
-        " - ",
-        date_to_char(attr(verif_data(), "end_date"))
-      )
+      "::",
+      attrs[["dttm"]]
     )
-    plot_options$subtitle <- paste(attr(verif_data(), "num_stations"), "stations")
-    plot_options$caption  <- paste("Verification for", attr(verif_data(), "parameter"))
+    plot_options$subtitle <- attrs[["num_stations"]]
+    plot_options$caption  <- attrs[["param"]]
     plot_models <- unique(unlist(purrr::map(verif_data(), ~ unique(.x$mname))))
     save_options$filename <- paste0(
       paste(
@@ -305,7 +302,12 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           plot_data[["det_summary_scores"]],
           member == highlight_member,
           !!!score_options()$filters
-        )
+        )|>
+          dplyr::rename_with(
+            ~suppressWarnings(harpCore::psub(
+              .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
+            ))
+          )
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
           ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)

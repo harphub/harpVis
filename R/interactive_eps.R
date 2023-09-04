@@ -462,6 +462,11 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       shiny::req(ui_type())
       highlight <- NULL
 
+      fcst_model_col <- intersect(
+        c("mname", "fcst_model"),
+        Reduce(union, lapply(verif_data(), colnames))
+      )
+
       if (ui_type() == "ens_summary") {
 
         n_cases   <- input[["ens-summary-num-cases"]]
@@ -552,8 +557,12 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         line_cols <- "mname"
         if (det_ens()) {
           n_cases   <- FALSE
-          facets    <- ggplot2::vars(mname)
-          filters   <- ggplot2::vars(mname %in% shiny::req(input[["det-models"]]))
+          facets    <- ggplot2::vars({{fcst_model_col}})
+          if (fcst_model_col == "mname") {
+            filters <- ggplot2::vars(mname %in% shiny::req(input[["det-models"]]))
+          } else {
+            filters <- ggplot2::vars(fcst_model %in% shiny::req(input[["det-models"]]))
+          }
           line_cols <- "member"
           highlight <- input[["det-member"]]
         } else {
@@ -648,6 +657,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       highlight_cols <- c(RColorBrewer::brewer.pal(8, "Set1"), RColorBrewer::brewer.pal(8, "Dark2"))
       highlight_mems <- c(
         paste0("mbr", formatC(seq(0, 1500), width = 3, flag = "0")),
+        paste0("mbr", formatC(seq(0, 1500), width = 3, flag = "0"), "_lag"),
         "Other members"
       )
       num_vec        <- floor(length(highlight_mems) / length(highlight_cols))
@@ -697,7 +707,12 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           plot_data[["det_summary_scores"]],
           member == highlight_member,
           !!!score_options()$filters
-        )
+        ) |>
+          dplyr::rename_with(
+            ~suppressWarnings(harpCore::psub(
+              .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
+            ))
+          )
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
           ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
