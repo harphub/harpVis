@@ -359,12 +359,13 @@ plot_point_verif <- function(
     if (is.element("leadtime", filter_vars)) {
       plot_data <- dplyr::rename(plot_data, leadtime = .data[["lead_time"]])
       has_leadtime <- TRUE
+    }
     if (is.element("mname", filter_vars)) {
       plot_data <- dplyr::rename(plot_data, mname = .data[["fcst_model"]])
       has_mname <- TRUE
     }
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
-    if (has_leadtime)
+    if (has_leadtime) {
       plot_data <- dplyr::rename(plot_data, lead_time = .data[["leadtime"]])
     }
     if (has_mname) {
