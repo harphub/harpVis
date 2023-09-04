@@ -242,12 +242,12 @@ plot_point_verif <- function(
         )
         filter_vars <- expand.grid(
           union(
-            c("lead_time", "leadtime"),
+            c("lead_time", "leadtime", "mname", "fcst_model"),
             unique(unlist(lapply(verif_data, colnames)))
           ),
           filter_expr, stringsAsFactors = FALSE
-        ) |>
-          dplyr::filter(mapply(grepl, .data[["Var1"]], .data[["Var2"]])) |>
+        ) %>%
+          dplyr::filter(mapply(grepl, .data[["Var1"]], .data[["Var2"]])) %>%
           dplyr::pull(.data[["Var1"]])
       } else {
         stop(filter_by_err, call. = FALSE)

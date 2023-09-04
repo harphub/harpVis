@@ -707,7 +707,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           plot_data[["det_summary_scores"]],
           member == highlight_member,
           !!!score_options()$filters
-        ) |>
+        ) %>%
           dplyr::rename_with(
             ~suppressWarnings(harpCore::psub(
               .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")

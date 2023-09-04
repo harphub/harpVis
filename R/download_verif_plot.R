@@ -302,7 +302,7 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           plot_data[["det_summary_scores"]],
           member == highlight_member,
           !!!score_options()$filters
-        )|>
+        ) %>%
           dplyr::rename_with(
             ~suppressWarnings(harpCore::psub(
               .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
