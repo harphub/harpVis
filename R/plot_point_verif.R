@@ -353,6 +353,9 @@ plot_point_verif <- function(
   # PREP DATA FOR PLOTTING
   ###########################################################################
 
+  plot_data <- filter_for_x(plot_data, x_axis_name)
+
+
   if (filtering) {
     has_leadtime <- FALSE
     has_mname <- FALSE
@@ -517,6 +520,7 @@ plot_point_verif <- function(
       #plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
       x_axis_quo       <- rlang::quo(rank)
       if (rank_is_relative) x_axis_quo <- rlang::quo(relative_rank)
+      x_axis_name      <- rlang::as_name(x_axis_quo)
       y_axis_quo       <- rlang::quo(normalized_frequency)
       plot_geom        <- match.arg(rank_hist_type)
     },
@@ -761,8 +765,13 @@ plot_point_verif <- function(
   if (log_scale_x) {
     gg <- gg + ggplot2::scale_x_log10()
   } else {
-    if (rlang::quo_name(x_axis_quo) == "lead_time") {
-      gg <- gg + ggplot2::scale_x_continuous(breaks = seq(0, 1800, 6))
+    if (x_axis_name %in% c("lead_time", "valid_hour")) {
+      break_step <- switch(
+        x_axis_name,
+        "lead_time"  = 6,
+        "valid_hour" = 3
+      )
+      gg <- gg + ggplot2::scale_x_continuous(breaks = seq(0, 1800, break_step))
     }
   }
   if (log_scale_y) {
@@ -1030,4 +1039,32 @@ get_attrs.harp_verif <- function(x) {
     ),
     param = paste("Verification for", attr(x, "parameter"))
   )
+}
+
+# There can be multiple possible x axes in the data depending on the
+# grouping. We need to make sure that the axes are numeric, or in a date-time
+# format - removing all rows with an "All" entry
+
+filter_for_x <- function(plot_data, x_axis_name) {
+  possible_x_axes <- intersect(
+    c("lead_time", "valid_dttm", "fcst_dttm", "valid_hour"),
+    colnames(plot_data)
+  )
+
+  if (length(possible_x_axes) > 1) {
+    other_x_names <- possible_x_axes[possible_x_axes != x_axis_name]
+    plot_data <- dplyr::filter(plot_data, .data[[x_axis_name]] != "All")
+    if (grepl("dttm", x_axis_name)) {
+      plot_data[[x_axis_name]] <- do.call(
+        c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
+      )
+    } else {
+      plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+    }
+    plot_data <- dplyr::filter(
+      plot_data,
+      dplyr::if_all(other_x_names, ~ .x == "All")
+    )
+  }
+  plot_data
 }
