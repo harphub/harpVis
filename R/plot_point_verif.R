@@ -28,8 +28,17 @@
 #' @param rank_hist_type For rank histograms, the plot can be done as a bar
 #'   chart, lollipop chart or a line chart.
 #' @param colour_by The column to colour the plot lines or bars by. The default
-#'   is mname, for the model name. Set to NULL for all lines / bars to have the
-#'   same colour.
+#'   is `fcst_model`, for the model name. Set to NULL for all lines / bars to
+#'   have the same colour.
+#' @param colour_table A data frame with column names equal to the value of
+#'   \code{colour_by} and "colour". The colour column should contain colour
+#'   names or hex codes. There should be one row for each value in the
+#'   \code{colour_by} column. If set to NULL, the default colour table is used.
+
+#' @param hex_palette The colour palette to use for `hexbin`. This should be a
+#'   vector of colours. The default is \link[viridisLite]{plasma}.
+#' @param hex_colour The outline colour of hexagons for hexbin plots. The
+#'   default is "grey20".
 #' @param extend_y_to_zero Logical. Whether to extend the y-axis to include
 #'   zero.
 #' @param facet_by The column(s) to facet the plot by. Faceting is a term used
@@ -71,10 +80,6 @@
 #'   (see \link[ggplo2]{theme_grey}), or "theme_harp_grey",
 #'   "theme_harp_midnight", or "theme_harp_black".
 #' @param ... Arguments to \link[ggplot2]{aes} e.g. group = ...
-#' @param colour_table A data frame with column names equal to the value of
-#'   \code{colour_by} and "colour". The colour column should contain colour
-#'   names or hex codes. There should be one row for each value in the
-#'   \code{colour_by} column. If set to NULL, the default colour table is used.
 #' @param plot_num_cases Logical of whether to inlcude the number of cases as a
 #'   panel in the plot. Only currently works for summary scores, and if
 #'   \code{facet_by} is set, the number of cases panel is not drawn since it
@@ -118,6 +123,8 @@ plot_point_verif <- function(
   rank_hist_type           = c("bar", "lollipop", "line"),
   colour_by                = fcst_model,
   colour_table             = NULL,
+  hex_palette              = viridisLite::plasma(256),
+  hex_colour               = "grey20",
   extend_y_to_zero         = TRUE,
   plot_num_cases           = TRUE,
   extend_num_cases_to_zero = FALSE,
@@ -401,7 +408,7 @@ plot_point_verif <- function(
   }
 
   has_lead <- function(x) {
-    length(intersect(c("leadtime", "lead_time"), x)) > 9
+    length(intersect(c("leadtime", "lead_time"), x)) > 0
   }
 
   switch(
@@ -493,6 +500,7 @@ plot_point_verif <- function(
       #plot_data        <- dplyr::mutate(plot_data, rank = formatC(.data$rank, width = 3, flag = "0"))
       x_axis_quo       <- rlang::quo(rank)
       if (rank_is_relative) x_axis_quo <- rlang::quo(relative_rank)
+      x_axis_name      <- rlang::as_name(x_axis_quo)
       y_axis_quo       <- rlang::quo(rank_count)
       plot_geom        <- match.arg(rank_hist_type)
     },
@@ -523,6 +531,31 @@ plot_point_verif <- function(
       x_axis_name      <- rlang::as_name(x_axis_quo)
       y_axis_quo       <- rlang::quo(normalized_frequency)
       plot_geom        <- match.arg(rank_hist_type)
+    },
+
+    "hexbin" = {
+      plot_data <- tidyr::unnest(plot_data, dplyr::all_of(score_name))
+      if (is.null(facet_by)) {
+        facet_vars <- "fcst_model"
+        if (has_lead(colnames(plot_data))) {
+          facet_vars <- c(facet_vars, "lead_time")
+        }
+        if (verif_type == "det" && is.element("member", colnames(plot_data))) {
+          facet_vars <- c(facet_vars, "member")
+        }
+        faceting <- TRUE
+        num_facet_cols <- NULL
+      }
+      colnames(plot_data) <- harpCore::psub(
+        colnames(plot_data), c("obs", "fcst"), c("observed", "forecast")
+      )
+      x_axis_quo  <- rlang::sym("observed")
+      x_axis_name <- "observed"
+      y_axis_quo  <- rlang::sym("forecast")
+      y_axis_name <- "forecast"
+      plot_geom   <- "hex"
+      colour_by_name <- "none"
+      legend_position <- "right"
     },
 
     "reliability" = {
@@ -598,76 +631,78 @@ plot_point_verif <- function(
   # COLOURS
   ###########################################################################
 
-  col_factors          <- unique(plot_data[[colour_by_name]])
-  num_factors          <- length(col_factors)
-  num_colours          <- num_factors
-  if (num_colours < 3) {
-    num_colours <- 3
-  }
-  colour_by_sym <- rlang::sym(colour_by_name)
-  if (num_colours > 8) {
-    num_colours <- 8
-  }
-  colours <- rep(RColorBrewer::brewer.pal(num_colours, "Dark2"), 7)
-  default_colour_table <- data.frame(
-    col_factor        = col_factors,
-    colour            = colours[1:num_factors]
-  )
-  colnames(default_colour_table) <- c(colour_by_name, "colour")
-
-  if (is.null(colour_table)) {
-
-    if (num_factors > 8) {
-      warning("The default colour table has 8 colours. Recycling colours.", call. = FALSE)
+  if (colour_by_name != "none") {
+    col_factors          <- unique(plot_data[[colour_by_name]])
+    num_factors          <- length(col_factors)
+    num_colours          <- num_factors
+    if (num_colours < 3) {
+      num_colours <- 3
     }
-    colour_table <- default_colour_table
-
-  } else {
-
-    colour_table <- dplyr::rename_with(
-      colour_table, ~gsub("mname", "fcst_model", .x)
+    colour_by_sym <- rlang::sym(colour_by_name)
+    if (num_colours > 8) {
+      num_colours <- 8
+    }
+    colours <- rep(RColorBrewer::brewer.pal(num_colours, "Dark2"), 7)
+    default_colour_table <- data.frame(
+      col_factor        = col_factors,
+      colour            = colours[1:num_factors]
     )
+    colnames(default_colour_table) <- c(colour_by_name, "colour")
 
-    if (!all(c(colour_by_name, "colour") %in% tolower(names(colour_table)))) {
-      warning(paste0(
-        "colour_table must include columns with names `", colour_by_name, "` and `colour`.\n",
-        "  Assigning colours automatically."
-      ))
+    if (is.null(colour_table)) {
+
       if (num_factors > 8) {
         warning("The default colour table has 8 colours. Recycling colours.", call. = FALSE)
       }
       colour_table <- default_colour_table
+
+    } else {
+
+      colour_table <- dplyr::rename_with(
+        colour_table, ~gsub("mname", "fcst_model", .x)
+      )
+
+      if (!all(c(colour_by_name, "colour") %in% tolower(names(colour_table)))) {
+        warning(paste0(
+          "colour_table must include columns with names `", colour_by_name, "` and `colour`.\n",
+          "  Assigning colours automatically."
+        ))
+        if (num_factors > 8) {
+          warning("The default colour table has 8 colours. Recycling colours.", call. = FALSE)
+        }
+        colour_table <- default_colour_table
+      }
+
+      colour_table <- dplyr::filter(colour_table, !! colour_by_quo %in% col_factors)
+
+      if (!all(as.character(plot_data[[colour_by_name]]) %in% as.character(colour_table[[colour_by_name]]))){
+        warning(paste0(
+          "Not all ", colour_by_name, " entries in data have been assigned colours in colour_table.\n",
+          "  Assigning colours automatically"
+        ))
+        colour_table <- default_colour_table
+      } else if (!is.character(colour_table$colour) & !is.factor(colour_table$colour)) {
+        warning(paste0(
+          "Colours in colour_table must be strings - e.g. \"red\" or \"#FF6542\".\n",
+          "  Assigning colours automatcally."
+        ))
+        colour_table <- default_colour_table
+      }
+
     }
 
-    colour_table <- dplyr::filter(colour_table, !! colour_by_quo %in% col_factors)
-
-    if (!all(as.character(plot_data[[colour_by_name]]) %in% as.character(colour_table[[colour_by_name]]))){
-      warning(paste0(
-        "Not all ", colour_by_name, " entries in data have been assigned colours in colour_table.\n",
-        "  Assigning colours automatically"
-      ))
-      colour_table <- default_colour_table
-    } else if (!is.character(colour_table$colour) & !is.factor(colour_table$colour)) {
-      warning(paste0(
-        "Colours in colour_table must be strings - e.g. \"red\" or \"#FF6542\".\n",
-        "  Assigning colours automatcally."
-      ))
-      colour_table <- default_colour_table
-    }
-
+    colour_table <- dplyr::arrange(colour_table, !! colour_by_quo)
+    colour_table[[colour_by_name]] <- factor(colour_table[[colour_by_name]])
+    colour_table$colour            <- as.character(colour_table$colour)
+    plot_data[[colour_by_name]]    <- factor(plot_data[[colour_by_name]], levels = levels(colour_table[[colour_by_name]]))
   }
-
-  colour_table <- dplyr::arrange(colour_table, !! colour_by_quo)
-  colour_table[[colour_by_name]] <- factor(colour_table[[colour_by_name]])
-  colour_table$colour            <- as.character(colour_table$colour)
-  plot_data[[colour_by_name]]    <- factor(plot_data[[colour_by_name]], levels = levels(colour_table[[colour_by_name]]))
 
   ###########################################################################
   # SET UP THE BASIC PLOT SPACE
   ###########################################################################
 
   aspect1_score   <- score_name %in% c("reliability", "roc", "economic_value")
-  plot_diagonal   <- score_name %in% c("reliability", "roc")
+  plot_diagonal   <- score_name %in% c("reliability", "roc", "hexbin")
   plot_attributes <- score_name %in% c("reliability")
 
   # If all are NA, they can be logical instead of numeric
@@ -754,10 +789,15 @@ plot_point_verif <- function(
   gg <- gg + ggplot2::xlab(x_label)
   gg <- gg + ggplot2::ylab(y_label)
   gg <- gg + ggplot2::theme(legend.position = legend_position)
+
+  fill_guide <- ggplot2::guide_legend
+  if (score_name == "hexbin") {
+    fill_guide <- ggplot2::guide_colourbar
+  }
   gg <- gg + ggplot2::guides(
+    fill     = fill_guide(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     colour   = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     shape    = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
-    fill     = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     linetype = ggplot2::guide_legend(title = NULL)
   )
 
@@ -782,6 +822,14 @@ plot_point_verif <- function(
       ggplot2::scale_x_continuous(limits = c(-0.1, 1.1)) +
       ggplot2::scale_y_continuous(limits = c(-0.1, 1.1)) +
       ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
+  }
+
+  if (score_name == "hexbin") {
+    lims <- range(
+      range(plot_data[["observed"]]), range(plot_data[["forecast"]])
+    )
+    gg <- gg + ggplot2::coord_equal(xlim = lims, ylim = lims)
+    aspect1_score <- TRUE
   }
 
   if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
@@ -809,12 +857,16 @@ plot_point_verif <- function(
   # GEOMS
   ###########################################################################
 
-  colour_vec <- colour_table[["colour"]]
-  names(colour_vec) <- colour_table[[colour_by_name]]
-  if (plot_geom %in% c("line", "lollipop")) {
-    gg                <- gg + ggplot2::scale_colour_manual(values = colour_vec)#table$colour)
+  if (score_name == "hexbin") {
+    gg <- gg + ggplot2::scale_fill_gradientn(colours = hex_palette)
   } else {
-    gg                <- gg + ggplot2::scale_fill_manual(values = colour_vec)#table$colour)
+    colour_vec <- colour_table[["colour"]]
+    names(colour_vec) <- colour_table[[colour_by_name]]
+    if (plot_geom %in% c("line", "lollipop")) {
+      gg                <- gg + ggplot2::scale_colour_manual(values = colour_vec)#table$colour)
+    } else {
+      gg                <- gg + ggplot2::scale_fill_manual(values = colour_vec)#table$colour)
+    }
   }
 
   if (nchar(gsub("[[:space:]]", "", plot_title)) > 0) {
@@ -887,6 +939,16 @@ plot_point_verif <- function(
         key_glyph = "point"
       ) +
       ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo)))
+
+  } else if (plot_geom == "hex") {
+    gg <- gg + ggplot2::geom_hex(
+      aes(fill = .data[["count"]]), stat = "identity", colour = hex_colour
+    )
+    if (plot_diagonal) {
+      gg <- gg + ggplot2::geom_abline(
+        slope = 1, intercept = 0, colour = "grey20", size = line_width * 0.5
+      )
+    }
 
   } else {
 
@@ -1047,7 +1109,7 @@ get_attrs.harp_verif <- function(x) {
 
 filter_for_x <- function(plot_data, x_axis_name) {
   possible_x_axes <- intersect(
-    c("lead_time", "valid_dttm", "fcst_dttm", "valid_hour"),
+    c("lead_time", "valid_dttm", "valid_hour"),
     colnames(plot_data)
   )
 

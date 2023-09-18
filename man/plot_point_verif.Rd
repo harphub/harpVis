@@ -12,7 +12,7 @@ plot_point_verif(
   y_axis = rlang::enquo(score),
   rank_is_relative = FALSE,
   rank_hist_type = c("bar", "lollipop", "line"),
-  colour_by = mname,
+  colour_by = fcst_model,
   colour_table = NULL,
   extend_y_to_zero = TRUE,
   plot_num_cases = TRUE,
