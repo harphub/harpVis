@@ -52,33 +52,9 @@ group_selectors <- function(input, output, session, verif_data) {
 
   ns <- session$ns
 
-  # The standard (std) column names come from the built in data
-
-  std_ens_tables <- grep("ens_", names(harpVis::ens_verif_data))
-  std_det_tables <- grep("det_", names(harpVis::det_verif_data))
-  std_columns    <- unique(c(
-    unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)),
-    unlist(lapply(harpVis::det_verif_data[std_det_tables], names))
-  ))
   std_columns <- union(
-    std_columns,
-    c(
-      "fcst_model",
-      "lead_time",
-      "sub_model",
-      "member",
-      "spread_skill_ratio",
-      "dropped_members_spread_skill_ratio",
-      "dropped_members_spread",
-      "parameter",
-      "dates",
-      "num_stations",
-      "fair_crps",
-      "fair_brier_score",
-      "lon",
-      "lat",
-      "elev"
-    )
+    get("meta_colnames", envir = harpVis_data),
+    get("score_colnames", envir = harpVis_data)
   )
 
   # When there is new data get the grouping columns and remove all inserted UI
@@ -109,20 +85,35 @@ group_selectors <- function(input, output, session, verif_data) {
   # function to spawn observers for new group columns
 
   generate_observers <- function() {
-    res <- lapply(
+    filtered_data <- verif_data()
+    lapply(
       seq_along(grp_columns()),
-      function(x) {
-        shiny::observeEvent(input[[paste0("group_", x)]], {
+      function(i) {
+        shiny::observeEvent(input[[paste0("group_", i)]], {
           verif_attr <- attributes(verif_data())
-          filtered_data <- verif_data()
-          for (i in seq_along(grp_columns())) {
-            filter_col <- rlang::sym(grp_columns()[i])
-            filtered_data <- purrr::map_at(
-              filtered_data,
-              which(sapply(filtered_data, nrow) > 0),
-              dplyr::filter,
-              !! filter_col == input[[paste0("group_", i)]]
+          # filter all the columns and update the selectInput for the
+          # other columns based on the new filtered data
+          for (j in seq_along(grp_columns())) {
+            grp_col <- grp_columns()[j]
+            grp_input <- input[[paste0("group_", j)]]
+            filtered_data <- lapply(
+              filtered_data, filter_group, grp_col, grp_input
             )
+            other_cols <- seq_along(grp_columns())
+            other_cols <- other_cols[other_cols != j]
+            for (k in other_cols) {
+              shiny::updateSelectInput(
+                session,
+                paste0("group_", k),
+                choices = run_sort_choices(Reduce(
+                  union,
+                  lapply(
+                    lapply(verif_data(), filter_group, grp_col, grp_input),
+                    function(x) x[[grp_columns()[k]]])
+                )),
+                selected = input[[paste0("group_", k)]]
+              )
+            }
           }
           attributes(filtered_data) <- c(
             verif_attr, list(group_cols = grp_columns())
@@ -134,7 +125,6 @@ group_selectors <- function(input, output, session, verif_data) {
         })
       }
     )
-    res
   }
 
   # When there are new data, insert selectors for the group columns
@@ -209,7 +199,7 @@ group_selectors <- function(input, output, session, verif_data) {
     if (length(grp_columns()) > 0) generate_observers()
   })
 
-  return(out_data)
+  return(shiny::debounce(out_data, 100))
 
 }
 
@@ -242,3 +232,15 @@ run_sort_choices <- function(choices_to_sort) {
   select_choices
 }
 
+filter_group <- function(data, group_col, group_input) {
+  if (is.null(group_input)) {
+    return(data)
+  }
+  if (!is.element(group_col, colnames(data))) {
+    if (group_input != "All") {
+      return(data[0, ])
+    }
+    return(data)
+  }
+  dplyr::filter(data, .data[[group_col]] == group_input)
+}

@@ -7,11 +7,11 @@
 plot_vertical_profile(
   .fcst,
   SID,
-  fcdate,
+  fcst_dttm,
   lead_time,
   y_axis = p,
   skew_t = FALSE,
-  colour_by = mname,
+  colour_by = fcst_model,
   colours = NULL,
   facet_by = NULL,
   num_facet_cols = 2,

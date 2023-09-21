@@ -70,7 +70,8 @@ dashboard_eps <- function(
   output,
   session,
   verif_data,
-  colour_table
+  colour_table,
+  time_axis
 ) {
 
   # bg_colour = "#D5D5D5"
@@ -135,10 +136,10 @@ dashboard_eps <- function(
     new_data(new_data() * -1)
   })
 
-  shiny::observeEvent(list(new_data(), colour_table()), {
+  shiny::observeEvent(list(new_data(), colour_table(), time_axis()), {
     shiny::req(verif_data())
     shiny::req(colour_table())
-
+    shiny::req(time_axis())
     lead_time_var <- intersect(
       c("leadtime", "lead_time"),
       colnames(verif_data()[[summary_table()]])
@@ -147,6 +148,9 @@ dashboard_eps <- function(
     leadtimes <- unique(verif_data()[[summary_table()]][[lead_time_var]])
     if (length(leadtimes) < 1) {
       return()
+    }
+    if (is.character(leadtimes)) {
+      leadtimes <- as.numeric(leadtimes[!leadtimes %in% "All"])
     }
     closest_to_twelve <- which(abs(leadtimes - 12) == min(abs(leadtimes - 12)))
     selected_leadtime <- leadtimes[closest_to_twelve]
@@ -167,6 +171,7 @@ dashboard_eps <- function(
         verif_data(),
         !!rlang::sym(names(summary_scores())[i]),
         verif_type      = verif_type(),
+        x_axis          = !!rlang::sym(time_axis()),
         plot_num_cases  = FALSE,
         rank_is_relative = TRUE,
         rank_hist_type   = "lollipop",
@@ -187,11 +192,15 @@ dashboard_eps <- function(
 
   })
 
-  observeEvent(thresh_data_to_plot(), {
+  shiny::observeEvent(list(thresh_data_to_plot(), time_axis()), {
 
 
     shiny::removeUI(selector = paste0("#", ns("thresh_selectors")))
     if (!is.null(thresh_data_to_plot())) {
+      thresh_col <- "threshold"
+      if (is.element("percentile", colnames(thresh_data_to_plot()))) {
+        thresh_col <- "percentile"
+      }
       shiny::insertUI(
         selector = paste0("#", ns("dashboard_thresh")),
         where    = "beforeEnd",
@@ -203,8 +212,12 @@ dashboard_eps <- function(
                 shiny::selectInput(
                   ns("threshold"),
                   "Threshold",
-                  sort(unique(thresh_data_to_plot()[[thresh_table()]]$threshold)),
-                  sort(unique(thresh_data_to_plot()[[thresh_table()]]$threshold))[1]
+                  sort(unique(
+                    thresh_data_to_plot()[[thresh_table()]][[thresh_col]]
+                  )),
+                  sort(unique(
+                    thresh_data_to_plot()[[thresh_table()]][[thresh_col]]
+                  ))[1]
                 )
               )
             )
@@ -212,22 +225,33 @@ dashboard_eps <- function(
         )
       )
       if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
-        lead_time_var <- intersect(
-          c("leadtime", "lead_time"),
+        time_var <- intersect(
+          time_axis(),
           colnames(thresh_data_to_plot()[[thresh_table()]])
         )
 
-        lt <- unique(thresh_data_to_plot()[[thresh_table()]][[lead_time_var]])
-        lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
+        time_label <- gsub(
+          "Dttm", "Date-Time", totitle(gsub("_", " ", time_var))
+        )
+
+        times <- unique(thresh_data_to_plot()[[thresh_table()]][[time_var]])
+        times <- times[times != "All"]
+        if (grepl("dttm", time_var)) {
+          times_dttm <- do.call(c, lapply(times, as.POSIXct, tz = "UTC"))
+          times <- times[order(match(times, times_dttm))]
+          names(times) <- format(times_dttm, "%H:%M %d %b %Y")
+        } else {
+          times <- sort(as.numeric(times))
+        }
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
           where    = "beforeEnd",
           ui       =  shiny::column(6,
             shiny::selectInput(
               ns("leadtime"),
-              "Lead Time",
-              lead_times,
-              lead_times[1]
+              time_label,
+              times,
+              times[1]
             )
           )
         )
@@ -238,7 +262,11 @@ dashboard_eps <- function(
   }, ignoreNULL = FALSE)
 
 
-  observeEvent(list(input$threshold, input$leadtime, thresh_data_to_plot(), colour_table()), {
+  shiny::observeEvent(
+    list(
+      input$threshold, input$leadtime, thresh_data_to_plot(),
+      colour_table(), time_axis()
+    ), {
 
     if (is.null(thresh_data_to_plot())) {
       for (i in 1:3) {
@@ -254,8 +282,8 @@ dashboard_eps <- function(
 
     if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
 
-      lead_time_var <- intersect(
-        c("leadtime", "lead_time"),
+      time_var <- intersect(
+        time_axis(),
         colnames(thresh_data_to_plot()[[thresh_table()]])
       )
 
@@ -265,7 +293,7 @@ dashboard_eps <- function(
         thresh_data_to_plot(),
         thresh_table(),
         dplyr::filter,
-        .data[[lead_time_var]] == input$leadtime,
+        .data[[time_var]] == input$leadtime,
         .data[["threshold"]]   == input$threshold
       )
       attributes(plot_data_thresh_lead) <- thresh_data_attributes
@@ -294,6 +322,7 @@ dashboard_eps <- function(
           plot_data,
           !!rlang::sym(names(thresh_scores())[i]),
           verif_type       = verif_type(),
+          x_axis           = !!rlang::sym(time_axis()),
           plot_num_cases   = FALSE,
           rank_is_relative = TRUE,
           rank_hist_type   = "lollipop",

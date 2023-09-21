@@ -14,6 +14,8 @@ plot_point_verif(
   rank_hist_type = c("bar", "lollipop", "line"),
   colour_by = fcst_model,
   colour_table = NULL,
+  hex_palette = viridisLite::plasma(256),
+  hex_colour = "grey20",
   extend_y_to_zero = TRUE,
   plot_num_cases = TRUE,
   extend_num_cases_to_zero = FALSE,
@@ -73,13 +75,19 @@ relative rank (between 0 and 1) on the x-axis. The default is FALSE.}
 chart, lollipop chart or a line chart.}
 
 \item{colour_by}{The column to colour the plot lines or bars by. The default
-is mname, for the model name. Set to NULL for all lines / bars to have the
-same colour.}
+is `fcst_model`, for the model name. Set to NULL for all lines / bars to
+have the same colour.}
 
 \item{colour_table}{A data frame with column names equal to the value of
 \code{colour_by} and "colour". The colour column should contain colour
 names or hex codes. There should be one row for each value in the
 \code{colour_by} column. If set to NULL, the default colour table is used.}
+
+\item{hex_palette}{The colour palette to use for `hexbin`. This should be a
+vector of colours. The default is \link[viridisLite]{plasma}.}
+
+\item{hex_colour}{The outline colour of hexagons for hexbin plots. The
+default is "grey20".}
 
 \item{extend_y_to_zero}{Logical. Whether to extend the y-axis to include
 zero.}

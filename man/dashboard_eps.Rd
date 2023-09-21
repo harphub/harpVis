@@ -4,7 +4,7 @@
 \alias{dashboard_eps}
 \title{Title}
 \usage{
-dashboard_eps(input, output, session, verif_data, colour_table)
+dashboard_eps(input, output, session, verif_data, colour_table, time_axis)
 }
 \arguments{
 \item{session}{}

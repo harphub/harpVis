@@ -7,7 +7,7 @@
 plot_station_eps(
   .fcst,
   SID,
-  fcdate,
+  fcst_dttm,
   type = c("ribbon", "boxplot", "violin", "stacked_prob", "ridge", "spaghetti"),
   x_axis = c("leadtime", "validtime"),
   parameter = "",

@@ -19,6 +19,12 @@ server <- function(input, output, session) {
   filtered_data <- shiny::callModule(harpVis::group_selectors, "group_selectors", verif_data)
 
   ############################################################
+  # GET TIME AXIS                                            #
+  ############################################################
+
+  time_axis <- shiny::callModule(harpVis::time_axis, "time_axis", filtered_data)
+
+  ############################################################
   # GET COLOUR TABLE                                         #
   ############################################################
 
@@ -28,7 +34,7 @@ server <- function(input, output, session) {
   # DASHBOARD PLOTS                                          #
   ############################################################
 
-  shiny::callModule(harpVis::dashboard_eps, "dashboard", filtered_data, colour_table)
+  shiny::callModule(harpVis::dashboard_eps, "dashboard", filtered_data, colour_table, time_axis)
 
   ############################################################
   # INTERACTIVE PLOT                                         #
@@ -39,6 +45,7 @@ server <- function(input, output, session) {
     "interactive",
     filtered_data,
     colour_table,
+    time_axis,
     bg_colour = bg_colour
   )
 

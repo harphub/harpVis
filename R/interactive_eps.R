@@ -38,7 +38,9 @@ interactive_epsUI <- function(id) {
 #' @export
 #'
 #' @examples
-interactive_eps <- function(input, output, session, verif_data, colour_table, bg_colour) {
+interactive_eps <- function(
+  input, output, session, verif_data, colour_table, time_axis, bg_colour
+) {
 
   ns <- session$ns
 
@@ -117,16 +119,20 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
   # Update the UI based on the score
 
-  shiny::observeEvent(list(ui_type(), all_members()), {
+  shiny::observeEvent(list(ui_type(), all_members(), time_axis()), {
 
     shiny::req(ui_type())
 
+    shiny::removeUI(paste0("#", ns("ens-summary")))
+    shiny::removeUI(paste0("#", ns("ens-rank-hist")))
+    shiny::removeUI(paste0("#", ns("ens-hexbin")))
+    shiny::removeUI(paste0("#", ns("ens-cat")))
+    shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
+    shiny::removeUI(paste0("#", ns("det-summary")))
+    shiny::removeUI(paste0("#", ns("det-hexbin")))
+    shiny::removeUI(paste0("#", ns("det-cat")))
+
     if (ui_type() == "ens_summary") {
-      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
-      shiny::removeUI(paste0("#", ns("ens-cat")))
-      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
-      shiny::removeUI(paste0("#", ns("det-summary")))
-      shiny::removeUI(paste0("#", ns("det-cat")))
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -147,28 +153,27 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
     }
 
     if (ui_type() == "ens_rank_hist") {
-      lead_time_var <- intersect(
-        c("leadtime", "lead_time"),
-        colnames(verif_data()[["ens_summary_scores"]])
-      )
-      lead_times <- c(
-        "All",
-        sort(unique(verif_data()$ens_summary_scores[[lead_time_var]]))
-      )
-      shiny::removeUI(paste0("#", ns("ens-summary")))
-      shiny::removeUI(paste0("#", ns("ens-cat")))
-      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
-      shiny::removeUI(paste0("#", ns("det-summary")))
-      shiny::removeUI(paste0("#", ns("det-cat")))
+      times <- get_times(verif_data()[["ens_summary_scores"]], time_axis())
+
+      times[["times"]] <- c("All", times[["times"]])
+
+      selected_time <- input[["ens-rank-hist-leadtime"]]
+      if (
+        any(is.null(selected_time)) ||
+          !all(is.element(selected_time, times[["times"]]))
+      ) {
+        selected_time <- times[["times"]][1]
+      }
+
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
-        ui       = shiny::tags$div(
+        ui = shiny::tags$div(
           id = ns("ens-rank-hist"),
           shiny::selectInput(
             ns("ens-rank-hist-leadtime"),
-            "Lead Time",
-            lead_times,
-            lead_times[1],
+            times[["time_label"]],
+            times[["times"]],
+            selected_time,
             multiple = TRUE
           )
         )
@@ -176,12 +181,60 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       more_selectors(FALSE)
     }
 
+    if (ui_type() == "ens_hexbin") {
+
+      times <- get_times(verif_data()[["ens_summary_scores"]], time_axis())
+      fcst_model <- unique(verif_data()[["ens_summary_scores"]][["fcst_model"]])
+
+      selected_time <- input[["ens-hexbin-time"]]
+      if (
+        any(is.null(selected_time)) ||
+        !all(is.element(selected_time, times[["times"]]))
+      ) {
+        selected_time <- times[["times"]][1]
+      }
+
+      selected_fcst_model <- input[["ens-hexbin-fcst-model"]]
+      if (
+        any(is.null(selected_fcst_model)) ||
+          !all(is.element(selected_fcst_model, fcst_model))
+      ) {
+        selected_fcst_model <- fcst_model[1]
+      }
+
+      shiny::insertUI(
+        selector = paste0("#", ns("placeholder")),
+        ui = shiny::tags$div(
+          id = ns("ens-hexbin")
+        )
+      )
+
+      shiny::insertUI(
+        selector = paste0("#", ns("ens-hexbin")),
+        ui = shiny::checkboxGroupInput(
+          ns("ens-hexbin-fcst-model"),
+          "Forecast model",
+          fcst_model,
+          selected_fcst_model
+        )
+      )
+
+      shiny::insertUI(
+        selector = paste0("#", ns("ens-hexbin")),
+        ui = shiny::selectInput(
+          ns("ens-hexbin-time"),
+          times[["time_label"]],
+          times[["times"]],
+          selected_time,
+          multiple = TRUE
+        )
+      )
+
+      more_selectors(FALSE)
+    }
+
+
     if (ui_type() == "ens_cat_choose_x") {
-      shiny::removeUI(paste0("#", ns("ens-summary")))
-      shiny::removeUI(paste0("#", ns("ens-cat")))
-      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
-      shiny::removeUI(paste0("#", ns("det-summary")))
-      shiny::removeUI(paste0("#", ns("det-cat")))
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -211,11 +264,6 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       lt <- unique(verif_data()$ens_threshold_scores[[lead_time_var]])
       lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
       thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
-      shiny::removeUI(paste0("#", ns("ens-summary")))
-      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
-      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
-      shiny::removeUI(paste0("#", ns("det-summary")))
-      shiny::removeUI(paste0("#", ns("det-cat")))
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -241,11 +289,6 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
     if (ui_type() == "det_summary") {
 
-      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
-      shiny::removeUI(paste0("#", ns("ens-cat")))
-      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
-      shiny::removeUI(paste0("#", ns("ens-summary")))
-      shiny::removeUI(paste0("#", ns("det-cat")))
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -295,12 +338,81 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
     }
 
+    if (ui_type() == "det_hexbin") {
+
+      times <- get_times(verif_data()[["det_summary_scores"]], time_axis())
+      fcst_model <- unique(verif_data()[["det_summary_scores"]][["fcst_model"]])
+
+      selected_time <- input[["det-hexbin-time"]]
+      if (
+        any(is.null(selected_time)) ||
+          !all(is.element(selected_time, times[["times"]]))
+      ) {
+        selected_time <- times[["times"]][1]
+      }
+
+      selected_fcst_model <- input[["det-hexbin-fcst-model"]]
+      if (
+        any(is.null(selected_fcst_model)) ||
+          !all(is.element(selected_fcst_model, fcst_model))
+      ) {
+        selected_fcst_model <- fcst_model[1]
+      }
+
+      shiny::insertUI(
+        selector = paste0("#", ns("placeholder")),
+        ui = shiny::tags$div(
+          id = ns("det-hexbin")
+        )
+      )
+
+      shiny::insertUI(
+        selector = paste0("#", ns("det-hexbin")),
+        ui = shiny::checkboxGroupInput(
+          ns("det-hexbin-fcst-model"),
+          "Forecast model",
+          fcst_model,
+          selected_fcst_model
+        )
+      )
+
+      shiny::insertUI(
+        selector = paste0("#", ns("det-hexbin")),
+        ui = shiny::selectInput(
+          ns("det-hexbin-time"),
+          times[["time_label"]],
+          times[["times"]],
+          selected_time,
+          multiple = TRUE
+        )
+      )
+
+      if (any(nchar(all_members()) > 0)) {
+
+        selected_member <- input[["det-hexbin-member"]]
+        if (
+          any(is.null(selected_member)) ||
+            !all(is.element(selected_member, all_members()))
+        ) {
+          selected_member <- all_members()[1]
+        }
+
+        shiny::insertUI(
+          selector = paste0("#", ns("det-hexbin")),
+          ui = shiny::selectInput(
+            ns("det-hexbin-member"),
+            "Member",
+            all_members(),
+            selected_member,
+            multiple = TRUE
+          )
+        )
+      }
+
+      more_selectors(FALSE)
+    }
+
     if (ui_type() == "det_cat") {
-      shiny::removeUI(paste0("#", ns("ens-summary")))
-      shiny::removeUI(paste0("#", ns("ens-cat")))
-      shiny::removeUI(paste0("#", ns("ens-rank-hist")))
-      shiny::removeUI(paste0("#", ns("det-summary")))
-      shiny::removeUI(paste0("#", ns("ens-cat-choose-x")))
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -439,10 +551,13 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
   score_options <- shiny::eventReactive(
     list(
       ui_type(),
+      time_axis(),
       input[["score"]],
       input[["ens-summary-num-cases"]],
       input[["ens-extend-to-zero"]],
       input[["ens-rank-hist-leadtime"]],
+      input[["ens-hexbin-time"]],
+      input[["ens-hexbin-fcst-model"]],
       input[["ens-cat-choose-x-x_axis"]],
       input[["ens-cat-choose-x-leadtime"]],
       input[["ens-cat-choose-x-threshold"]],
@@ -452,6 +567,9 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
       input[["det-summary-num-cases"]],
       input[["det-member"]],
       input[["det-models"]],
+      input[["det-hexbin-time"]],
+      input[["det-hexbin-fcst-model"]],
+      input[["det-hexbin-member"]],
       input[["det-cat-x_axis"]],
       input[["det-cat-x-leadtime"]],
       input[["det-cat-x-threshold"]]
@@ -473,33 +591,62 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         to_zero   <- input[["ens-extend-to-zero"]]
         facets    <- NULL
         filters   <- NULL
-        x_axis    <- "leadtime"
+        x_axis    <- time_axis()
         line_cols <- "mname"
 
       } else if (ui_type() == "ens_rank_hist") {
 
         n_cases   <- FALSE
         to_zero   <- TRUE
-        leadtimes <- shiny::req(input[["ens-rank-hist-leadtime"]])
-        x_axis    <- "leadtime"
+        times     <- shiny::req(input[["ens-rank-hist-leadtime"]])
+        x_axis    <- time_axis()
+        x_sym     <- rlang::sym(x_axis)
         line_cols <- "mname"
 
-        if (length(leadtimes) == 1) {
-          if (leadtimes == "All") {
+        if (length(times) == 1) {
+          if (times == "All") {
             facets  <- NULL
-            filters <- ggplot2::vars(as.character(leadtime) != "All")
+            filters <- ggplot2::vars(as.character(!!x_sym) != "All")
           } else {
             facets  <- NULL
-            filters <- ggplot2::vars(as.character(leadtime) == leadtimes)
+            filters <- ggplot2::vars(as.character(!!x_sym) == times)
           }
         } else {
-          if (is.element("All", leadtimes)) {
+          if (is.element("All", times)) {
             facets  <- NULL
-            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes[leadtimes != "All"])
+            filters <- ggplot2::vars(as.character(!!x_sym) %in% times[times != "All"])
           } else {
-            facets  <- ggplot2::vars(leadtime)
-            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes)
+            facets  <- ggplot2::vars(!!x_sym)
+            filters <- ggplot2::vars(as.character(!!x_sym) %in% times)
           }
+        }
+
+      } else if (ui_type() == "ens_hexbin") {
+
+        n_cases   <- FALSE
+        to_zero   <- FALSE
+        times     <- shiny::req(input[["ens-hexbin-time"]])
+        f_model   <- shiny::req(input[["ens-hexbin-fcst-model"]])
+        x_axis    <- time_axis()
+        x_sym     <- rlang::sym(x_axis)
+        fmc_sym   <- rlang::sym(fcst_model_col)
+        line_cols <- "mname"
+
+        if (length(times) == 1 && length(f_model) == 1) {
+          facets  <- NULL
+          filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym == times)
+        }
+        if (length(times) > 1 && length(f_model) == 1) {
+          facets  <- ggplot2::vars(!!x_sym)
+          filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym %in% times)
+        }
+        if (length(times) == 1 && length(f_model) > 1) {
+          facets  <- ggplot2::vars(!!fmc_sym)
+          filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym == times)
+        }
+        if (length(times) > 1 && length(f_model) > 1) {
+          facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
+          filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym %in% times)
         }
 
       } else if (ui_type() == "ens_cat_choose_x") {
@@ -533,7 +680,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
         to_zero    <- FALSE
         n_cases    <- FALSE
-        x_axis     <- "leadtime"
+        x_axis     <- time_axis()
         line_cols  <- "mname"
         leadtimes  <- shiny::req(input[["ens-cat-leadtime"]])
         thresholds <- shiny::req(input[["ens-cat-threshold"]])
@@ -553,7 +700,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         to_zero   <- input[["det-extend-to-zero"]]
         facets    <- NULL
         filters   <- NULL
-        x_axis    <- "leadtime"
+        x_axis    <- time_axis()
         line_cols <- "mname"
         if (det_ens()) {
           n_cases   <- FALSE
@@ -567,6 +714,99 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
           highlight <- input[["det-member"]]
         } else {
           n_cases   <- input[["det-summary-num-cases"]]
+        }
+
+      } else if (ui_type() == "det_hexbin") {
+
+        n_cases   <- FALSE
+        to_zero   <- FALSE
+        times     <- shiny::req(input[["det-hexbin-time"]])
+        f_model   <- shiny::req(input[["det-hexbin-fcst-model"]])
+        x_axis    <- time_axis()
+        x_sym     <- rlang::sym(x_axis)
+        fmc_sym   <- rlang::sym(fcst_model_col)
+        line_cols <- "mname"
+
+        n_tim <- length(times)
+        n_mod <- length(f_model)
+
+        if (det_ens()) {
+
+          members <- shiny::req(input[["det-hexbin-member"]])
+
+          n_mem <- length(members)
+          mem_sym <- rlang::sym("member")
+
+          if (n_tim == 1 && n_mod == 1 && n_mem == 1) {
+            facets  <- NULL
+            filters <- ggplot2::vars(
+              !!fmc_sym == f_model, !!x_sym == times, !!mem_sym == members
+            )
+          }
+          if (n_tim > 1 && n_mod == 1 && n_mem == 1) {
+            facets  <- ggplot2::vars(!!x_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym == f_model, !!x_sym %in% times, !!mem_sym == members
+            )
+
+          }
+          if (n_tim == 1 && n_mod > 1 && n_mem == 1) {
+            facets  <- ggplot2::vars(!!fmc_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym %in% f_model, !!x_sym == times, !!mem_sym == members
+            )
+          }
+          if (n_tim > 1 && n_mod > 1 && n_mem == 1) {
+            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym %in% f_model, !!x_sym %in% times, !!mem_sym == members
+            )
+          }
+          if (n_tim == 1 && n_mod == 1 && n_mem > 1) {
+            facets  <- ggplot2::vars(!!mem_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym == f_model, !!x_sym == times, !!mem_sym %in% members
+            )
+          }
+          if (n_tim > 1 && n_mod == 1 && n_mem > 1) {
+            facets  <- ggplot2::vars(!!x_sym, !!mem_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym == f_model, !!x_sym %in% times, !!mem_sym %in% members
+            )
+
+          }
+          if (n_tim == 1 && n_mod > 1 && n_mem > 1) {
+            facets  <- ggplot2::vars(!!fmc_sym, !!mem_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym %in% f_model, !!x_sym == times, !!mem_sym %in% members
+            )
+          }
+          if (n_tim > 1 && n_mod > 1 && n_mem > 1) {
+            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym, !!mem_sym)
+            filters <- ggplot2::vars(
+              !!fmc_sym %in% f_model, !!x_sym %in% times, !!mem_sym %in% members
+            )
+          }
+
+        } else {
+
+          if (n_tim == 1 && n_mod == 1) {
+            facets  <- NULL
+            filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym == times)
+          }
+          if (n_tim > 1 && n_mod == 1) {
+            facets  <- ggplot2::vars(!!x_sym)
+            filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym %in% times)
+          }
+          if (n_tim == 1 && n_mod > 1) {
+            facets  <- ggplot2::vars(!!fmc_sym)
+            filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym == times)
+          }
+          if (n_tim > 1 && n_mod > 1) {
+            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
+            filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym %in% times)
+          }
+
         }
 
       } else if (ui_type() == "det_cat") {
@@ -647,6 +887,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
 
       line_cols <- rlang::sym("member_highlight")
       plot_data <- shiny::req(verif_data())
+      if (is.null(score_options()$highlight)) return()
 
       plot_data[["det_summary_scores"]][["member_highlight"]] <- forcats::fct_other(
         plot_data[["det_summary_scores"]][["member"]],
@@ -705,7 +946,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
         group_colour <- member_cols[["colour"]][member_cols[["member_highlight"]] == highlight_member]
         group_data   <- dplyr::filter(
           plot_data[["det_summary_scores"]],
-          member == highlight_member,
+          .data[["member"]] == highlight_member,
           !!!score_options()$filters
         ) %>%
           dplyr::rename_with(
@@ -713,6 +954,7 @@ interactive_eps <- function(input, output, session, verif_data, colour_table, bg
               .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
             ))
           )
+        group_data <- filter_for_x(group_data, score_options()$x_axis)
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
           ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
@@ -741,14 +983,11 @@ make_score_list <- function(verif_list) {
   verif_names <- purrr::map(
     verif_list,
     ~setdiff(
-      names(.x),
-      c(
-        "mname", "fcst_model", "leadtime", "lead_time", "threshold", "member",
-        "cont_tab", "lat", "lon", "dates", "parameter",
-        "sub_model", "num_stations", group_cols
-      )
+      colnames(.x),
+      union(get("meta_colnames", envir = harpVis_data), group_cols)
     )
   )
+
 
   # Add derived scores if the required data are available in verif_list
 
@@ -810,11 +1049,15 @@ make_score_list <- function(verif_list) {
 
 get_ui_type <- function(verif_name) {
 
-  ens_cat_choose_x <- paste(c("brier", "roc_area", "threshold", "climatology"), collapse = "|")
+  ens_cat_choose_x <- paste(
+    c("brier", "roc_area", "threshold", "climatology"), collapse = "|"
+  )
 
   if (grepl("ens_summary", verif_name)) {
     if (grepl("rank_histogram", verif_name)) {
       "ens_rank_hist"
+    } else if (grepl("hexbin", verif_name)) {
+      "ens_hexbin"
     } else {
       "ens_summary"
     }
@@ -825,11 +1068,56 @@ get_ui_type <- function(verif_name) {
       "ens_cat"
     }
   } else if (grepl("det_summary", verif_name)) {
-    "det_summary"
+    if (grepl("hexbin", verif_name)) {
+      "det_hexbin"
+    } else {
+      "det_summary"
+    }
   } else if (grepl("det_threshold", verif_name)) {
     "det_cat"
   } else {
     NULL
   }
 
+}
+
+get_times <- function(df, time_var) {
+
+  time_var <- intersect(
+    time_var,
+    colnames(df)
+  )
+
+  time_label <- gsub(
+    "Dttm", "Date-Time", totitle(gsub("_", " ", time_var))
+  )
+
+  times <- as.character(unique(df[[time_var]]))
+
+  times <- times[times != "All"]
+  if (grepl("dttm", time_var)) {
+    times_dttm <- do.call(c, lapply(times, as.POSIXct, tz = "UTC"))
+    times <- times[order(match(times, times_dttm))]
+    names(times) <- format(times_dttm, "%H:%M %d %b %Y")
+  } else {
+    times <- sort(as.numeric(times))
+  }
+  list(times = times, time_label = time_label)
+}
+
+# Function for combining a list of hexbins into a single hexbin
+combine_hexbins <- function(l) {
+  l <- dplyr::bind_rows(l)
+
+  hbin <- hexbin::hexbin(l$obs, l$fcst, IDs = TRUE)
+
+  l <- dplyr::mutate(l, cell_id = hbin@cID) %>%
+    dplyr::summarise(count = sum(.data[["count"]]), .by = "cell_id")
+
+  res <- dplyr::inner_join(
+    tibble::as_tibble(c(hexbin::hcell2xy(hbin), list(cell_id = hbin@cell))),
+    l, by = "cell_id"
+  )
+
+  dplyr::rename(res, obs = "x", fcst = "y")
 }

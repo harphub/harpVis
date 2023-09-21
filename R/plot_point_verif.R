@@ -536,16 +536,23 @@ plot_point_verif <- function(
     "hexbin" = {
       plot_data <- tidyr::unnest(plot_data, dplyr::all_of(score_name))
       if (is.null(facet_by)) {
-        facet_vars <- "fcst_model"
+        if (length(unique(plot_data[["fcst_model"]])) > 1) {
+          facet_vars <- "fcst_model"
+        }
         if (has_lead(colnames(plot_data))) {
-          facet_vars <- c(facet_vars, "lead_time")
+          if (length(unique(plot_data[["lead_time"]])) > 1) {
+            facet_vars <- c(facet_vars, "lead_time")
+          }
         }
         if (verif_type == "det" && is.element("member", colnames(plot_data))) {
           facet_vars <- c(facet_vars, "member")
         }
-        faceting <- TRUE
-        num_facet_cols <- NULL
+        facet_vars <- facet_vars[vapply(facet_vars, nchar, integer(1)) > 0]
+        if (!all(nchar(facet_vars)) == 0) {
+          faceting <- TRUE
+        }
       }
+      num_facet_cols <- NULL
       colnames(plot_data) <- harpCore::psub(
         colnames(plot_data), c("obs", "fcst"), c("observed", "forecast")
       )
@@ -715,7 +722,10 @@ plot_point_verif <- function(
 
   # Labeling
   x_label <- switch(tolower(x_label),
-    "auto" = totitle(gsub("_", " ", rlang::quo_name(x_axis_quo))),
+    "auto" = gsub(
+      "Dttm", "Date-time",
+      totitle(gsub("_", " ", rlang::quo_name(x_axis_quo)))
+    ),
     "none" = "",
     x_label
   )
@@ -1070,32 +1080,38 @@ date_to_char <- function(date_in) {
 
 # Compatibility for different attributes in new and old point verif outputs
 # for automatic plot title, subtitle and caption generation
-get_attrs <- function(x) {
+get_attrs <- function(x, readable_dttm = TRUE) {
   UseMethod("get_attrs")
 }
 
-get_attrs.default <- function(x) {
-  list(
-    dttm = paste0(
+get_attrs.default <- function(x, readable_dttm = TRUE) {
+  if (readable_dttm) {
+    dttm <- paste0(
       date_to_char(attr(x, "start_date")),
       " - ",
       date_to_char(attr(x, "end_date"))
-    ),
+    )
+  } else {
+    dttm <- paste(attr(x, "start_date"), attr(x, "end_data"), sep = "-")
+  }
+  list(
+    dttm = dttm,
     num_stations = paste(attr(x, "num_stations"), "stations"),
     param = paste("Verification for", attr(x, "parameter"))
   )
 }
 
-get_attrs.harp_verif <- function(x) {
+get_attrs.harp_verif <- function(x, readable_dttm = TRUE) {
+  dttm <- harpCore::as_YMDhm(
+    sort(harpCore::as_dttm(range(attr(x, "dttm"))))
+  )
+  collapser <- "-"
+  if (readable_dttm) {
+    dttm <- date_to_char(dttm)
+    collapser <- " - "
+  }
   list(
-    dttm = paste(
-      date_to_char(
-        harpCore::as_str_dttm(
-          sort(harpCore::as_dttm(range(attr(x, "dttm"))))
-        )
-      ),
-      collapse = " - "
-    ),
+    dttm = paste(dttm, collapse = collapser),
     num_stations = paste(
       length(Reduce(union, attr(x, "stations"))), "stations"
     ),

@@ -4,7 +4,15 @@
 \alias{interactive_eps}
 \title{Title}
 \usage{
-interactive_eps(input, output, session, verif_data, colour_table, bg_colour)
+interactive_eps(
+  input,
+  output,
+  session,
+  verif_data,
+  colour_table,
+  time_axis,
+  bg_colour
+)
 }
 \arguments{
 \item{bg_colour}{}

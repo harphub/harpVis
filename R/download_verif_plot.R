@@ -57,15 +57,21 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
       "::",
       attrs[["dttm"]]
     )
+    fcst_model_col <- intersect(
+      c("mname", "fcst_model"),
+      Reduce(union, lapply(verif_data(), colnames))
+    )
     plot_options$subtitle <- attrs[["num_stations"]]
     plot_options$caption  <- attrs[["param"]]
-    plot_models <- unique(unlist(purrr::map(verif_data(), ~ unique(.x$mname))))
+    plot_models <- Reduce(
+      union, purrr::map(verif_data(), ~ unique(.x[[fcst_model_col]]))
+    )
     save_options$filename <- paste0(
       paste(
         score_options()$score,
         attr(verif_data(), "parameter"),
         paste(plot_models, collapse = "+"),
-        paste(attr(verif_data(), "start_date"), attr(verif_data(), "end_date"), sep = "-"),
+        attrs[["dttm"]],
         sep = "_"
       ),
       ".",
@@ -308,6 +314,7 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
               .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
             ))
           )
+        group_data <- filter_for_x(group_data, score_options()$x_axis)
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
           ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
@@ -422,9 +429,15 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           group_colour <- member_cols[["colour"]][member_cols[["member_highlight"]] == highlight_member]
           group_data   <- dplyr::filter(
             plot_data[["det_summary_scores"]],
-            member == highlight_member,
+            .data[["member"]] == highlight_member,
             !!!score_options()$filters
-          )
+          ) %>%
+            dplyr::rename_with(
+              ~suppressWarnings(harpCore::psub(
+                .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
+              ))
+            )
+          group_data <- filter_for_x(group_data, score_options()$x_axis)
           score_plot <- score_plot +
             ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
             ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)

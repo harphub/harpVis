@@ -30,7 +30,7 @@ Imports:
     colourpicker,
     forcats,
     meteogrid,
-    viridis
+    viridisLite
 Remotes:
     harphub/harpCore@develop,
     harphub/ggsonde,

@@ -45,8 +45,12 @@ ui <- shiny::tags$html(
 
       harpVis::options_barUI("options_bar"),
 
-      fluidRow(
-        harpVis::group_selectorsUI("group_selectors"),
+      shiny::fluidRow(
+        harpVis::group_selectorsUI("group_selectors")
+      ),
+
+      shiny::fluidRow(
+        harpVis::time_axisUI("time_axis"),
         harpVis::colour_choicesUI("colour_choices")
       ),
 

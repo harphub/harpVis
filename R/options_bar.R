@@ -166,7 +166,7 @@ options_bar <- function(input, output, session) {
 
   verif_file <- shiny::reactiveVal()
 
-  shiny::observeEvent(list(input$parameter, input$dates, input$models), {
+  shiny::observeEvent(list(input$parameter, input$dates, input$models, data_dir()), {
     shiny::req(input$models)
     models <- gsub(" \\+ ", ".model.", input$models)
     regexp <- paste0(
@@ -183,7 +183,7 @@ options_bar <- function(input, output, session) {
     modal_footer <- shiny::tags$button(
       type = "button", class = "btn btn-danger", `data-dismiss` = "modal", shiny:::validateIcon(NULL), "Dismiss"
     )
-    if(is.null(verif_file()) || length(verif_file()) < 1 || !file.exists(verif_file())) {
+    if (is.null(verif_file()) || length(verif_file()) < 1 || !file.exists(verif_file())) {
       shiny::showModal(
         shiny::modalDialog(title = "ERROR", "Cannot find file", size = "s", footer = modal_footer)
       )

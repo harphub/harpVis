@@ -8,10 +8,10 @@ plot_field(
   .fcst,
   fcst_model,
   plot_col,
-  fcdate,
+  fcst_dttm,
   lead_time,
   filter_by = NULL,
-  palette = viridis::viridis(255),
+  palette = viridisLite::viridis(255),
   num_breaks = 15,
   breaks = NULL,
   legend = TRUE,
@@ -32,7 +32,7 @@ in the plot title.}
 \item{plot_col}{The column of data to plot from. Should be unquoted, or if a
 variable, wrapped in double curly brackets: \{\{\}\}.}
 
-\item{fcdate}{The forecast date to plot in "YYYYMMDDhh" or similar format.
+\item{fcst_dttm}{The forecast date to plot in "YYYYMMDDhh" or similar format.
 Can be omitted if there is only one date in the data.}
 
 \item{lead_time}{The lead time to plot. Can be omitted if there is only one
