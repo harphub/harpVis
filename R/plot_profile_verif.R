@@ -30,24 +30,37 @@
 plot_profile_verif <- function(
   verif_data,
   score,
-  y_axis             = p,
+  y_axis             = "p",
   lead_time          = NA,
   plot_num_cases     = TRUE,
   num_cases_position = c("right", "left"),
   ...
 ) {
 
-  score  <- rlang::enquo(score)
-  y_axis <- rlang::enquo(y_axis)
+  score  <- rlang::ensym(score)
+  y_axis <- rlang::ensym(y_axis)
 
   if (all(!is.na(lead_time))) {
+    # Ensure lead_time var isn't a column in the data
+    .lt <- lead_time
+    lead_time_col <- intersect(
+      c("lead_time", "leadtime"),
+      Reduce(union, lapply(verif_data, colnames))
+    )
     verif_attributes <- attributes(verif_data)
     verif_data <- purrr::map(
       verif_data,
       dplyr::filter,
-      leadtime %in% lead_time
+      .data[[lead_time_col]] %in% .lt
     )
     attributes(verif_data) <- verif_attributes
+  }
+
+  if (all(vapply(verif_data, nrow, integer(1)) < 1)) {
+    cli::cli_abort(c(
+      "No data to plot",
+      "x" = "{.arg lead_time} == {lead_time} not found in {.arg verif_data}"
+    ))
   }
 
   plot_point_verif(

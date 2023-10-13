@@ -95,22 +95,29 @@ group_selectors <- function(input, output, session, verif_data) {
           # other columns based on the new filtered data
           for (j in seq_along(grp_columns())) {
             grp_col <- grp_columns()[j]
-            grp_input <- input[[paste0("group_", j)]]
-            filtered_data <- lapply(
-              filtered_data, filter_group, grp_col, grp_input
-            )
+            grp_input <- shiny::req(input[[paste0("group_", j)]])
+            if (grp_input != ".vp") {
+              filtered_data <- lapply(
+                filtered_data, filter_group, grp_col, grp_input
+              )
+            }
             other_cols <- seq_along(grp_columns())
             other_cols <- other_cols[other_cols != j]
             for (k in other_cols) {
+              select_choices <- run_sort_choices(Reduce(
+                union,
+                lapply(
+                  lapply(verif_data(), filter_group, grp_col, grp_input),
+                  function(x) x[[grp_columns()[k]]])
+              ))
+              if (grp_columns()[k] == "p" && !is.element("All", select_choices)) {
+                select_choices <- c(".vp", select_choices)
+                names(select_choices) <- sub(".vp", "Profile", select_choices)
+              }
               shiny::updateSelectInput(
                 session,
                 paste0("group_", k),
-                choices = run_sort_choices(Reduce(
-                  union,
-                  lapply(
-                    lapply(verif_data(), filter_group, grp_col, grp_input),
-                    function(x) x[[grp_columns()[k]]])
-                )),
+                choices = select_choices,
                 selected = input[[paste0("group_", k)]]
               )
             }
@@ -137,16 +144,25 @@ group_selectors <- function(input, output, session, verif_data) {
       div_num        <- (group_num - 1) %% 4 + 1
       select_label   <- grp_columns()[group_num]
 
+
       verif_df <- verif_data()$ens_summary_scores
       if (is.null(verif_df)) {
         verif_df <- verif_data()$det_summary_scores
       }
 
       select_choices <- run_sort_choices(verif_df[[grp_columns()[group_num]]])
+      if (select_label == "p" && !is.element("All", select_choices)) {
+        select_choices <- c(".vp", select_choices)
+        names(select_choices) <- sub(".vp", "Profile", select_choices)
+      }
 
       if (group_num > 4) {
         select_choices_before <- run_sort_choices(verif_df[[grp_columns()[group_num - 4]]])
         select_label_before   <- grp_columns()[group_num - 4]
+        if (select_label_before == "p" && !is.element("All", select_choices_before)) {
+          select_choices_before <- c(".vp", select_choices_before)
+          names(select_choices_before) <- sub(".vp", "Profile", select_choices_before)
+        }
       }
 
       ui_arg <- shiny::div(
@@ -196,6 +212,7 @@ group_selectors <- function(input, output, session, verif_data) {
 
     }
 
+    #print(length(grp_columns()))
     if (length(grp_columns()) > 0) generate_observers()
   })
 

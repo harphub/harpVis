@@ -132,7 +132,20 @@ interactive_eps <- function(
     shiny::removeUI(paste0("#", ns("det-hexbin")))
     shiny::removeUI(paste0("#", ns("det-cat")))
 
+    profile_verif <- attr(verif_data(), "is_profile")
+    if (is.null(profile_verif)) {
+      profile_verif <- FALSE
+    }
+
     if (ui_type() == "ens_summary") {
+      selected_y_to_zero <- input[["ens-extend-to-zero"]]
+      if (is.null(selected_y_to_zero)) {
+        selected_y_to_zero <- TRUE
+      }
+      selected_num_cases <- input[["ens-summary-num-cases"]]
+      if (is.null(selected_num_cases)) {
+        selected_num_cases <- FALSE
+      }
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -140,12 +153,12 @@ interactive_eps <- function(
           shiny::checkboxInput(
             ns("ens-extend-to-zero"),
             "y-axis to zero",
-            TRUE
+            selected_y_to_zero
           ),
           shiny::checkboxInput(
             ns("ens-summary-num-cases"),
             "Show number of cases",
-            FALSE
+            selected_num_cases
           )
         )
       )
@@ -153,47 +166,52 @@ interactive_eps <- function(
     }
 
     if (ui_type() == "ens_rank_hist") {
-      times <- get_times(verif_data()[["ens_summary_scores"]], time_axis())
 
-      times[["times"]] <- c("All", times[["times"]])
+      if (!profile_verif) {
+        times <- get_times(verif_data()[["ens_summary_scores"]], time_axis())
 
-      selected_time <- input[["ens-rank-hist-leadtime"]]
-      if (
-        any(is.null(selected_time)) ||
-          !all(is.element(selected_time, times[["times"]]))
-      ) {
-        selected_time <- times[["times"]][1]
-      }
+        times[["times"]] <- c("All", times[["times"]])
 
-      shiny::insertUI(
-        selector = paste0("#", ns("placeholder")),
-        ui = shiny::tags$div(
-          id = ns("ens-rank-hist"),
-          shiny::selectInput(
-            ns("ens-rank-hist-leadtime"),
-            times[["time_label"]],
-            times[["times"]],
-            selected_time,
-            multiple = TRUE
+        selected_time <- input[["ens-rank-hist-leadtime"]]
+        if (
+          any(is.null(selected_time)) ||
+            !all(is.element(selected_time, times[["times"]]))
+        ) {
+          selected_time <- times[["times"]][1]
+        }
+
+        shiny::insertUI(
+          selector = paste0("#", ns("placeholder")),
+          ui = shiny::tags$div(
+            id = ns("ens-rank-hist"),
+            shiny::selectInput(
+              ns("ens-rank-hist-leadtime"),
+              times[["time_label"]],
+              times[["times"]],
+              selected_time,
+              multiple = TRUE
+            )
           )
         )
-      )
+      }
       more_selectors(FALSE)
     }
 
     if (ui_type() == "ens_hexbin") {
 
-      times <- get_times(verif_data()[["ens_summary_scores"]], time_axis())
-      fcst_model <- unique(verif_data()[["ens_summary_scores"]][["fcst_model"]])
+      if (!profile_verif) {
+        times <- get_times(verif_data()[["ens_summary_scores"]], time_axis())
 
-      selected_time <- input[["ens-hexbin-time"]]
-      if (
-        any(is.null(selected_time)) ||
-        !all(is.element(selected_time, times[["times"]]))
-      ) {
-        selected_time <- times[["times"]][1]
+        selected_time <- input[["ens-hexbin-time"]]
+        if (
+          any(is.null(selected_time)) ||
+            !all(is.element(selected_time, times[["times"]]))
+        ) {
+          selected_time <- times[["times"]][1]
+        }
       }
 
+      fcst_model <- unique(verif_data()[["ens_summary_scores"]][["fcst_model"]])
       selected_fcst_model <- input[["ens-hexbin-fcst-model"]]
       if (
         any(is.null(selected_fcst_model)) ||
@@ -219,16 +237,18 @@ interactive_eps <- function(
         )
       )
 
-      shiny::insertUI(
-        selector = paste0("#", ns("ens-hexbin")),
-        ui = shiny::selectInput(
-          ns("ens-hexbin-time"),
-          times[["time_label"]],
-          times[["times"]],
-          selected_time,
-          multiple = TRUE
+      if (!profile_verif) {
+        shiny::insertUI(
+          selector = paste0("#", ns("ens-hexbin")),
+          ui = shiny::selectInput(
+            ns("ens-hexbin-time"),
+            times[["time_label"]],
+            times[["times"]],
+            selected_time,
+            multiple = TRUE
+          )
         )
-      )
+      }
 
       more_selectors(FALSE)
     }
@@ -340,17 +360,19 @@ interactive_eps <- function(
 
     if (ui_type() == "det_hexbin") {
 
-      times <- get_times(verif_data()[["det_summary_scores"]], time_axis())
-      fcst_model <- unique(verif_data()[["det_summary_scores"]][["fcst_model"]])
+      if (!profile_verif) {
+        times <- get_times(verif_data()[["det_summary_scores"]], time_axis())
 
-      selected_time <- input[["det-hexbin-time"]]
-      if (
-        any(is.null(selected_time)) ||
-          !all(is.element(selected_time, times[["times"]]))
-      ) {
-        selected_time <- times[["times"]][1]
+        selected_time <- input[["det-hexbin-time"]]
+        if (
+          any(is.null(selected_time)) ||
+            !all(is.element(selected_time, times[["times"]]))
+        ) {
+          selected_time <- times[["times"]][1]
+        }
       }
 
+      fcst_model <- unique(verif_data()[["det_summary_scores"]][["fcst_model"]])
       selected_fcst_model <- input[["det-hexbin-fcst-model"]]
       if (
         any(is.null(selected_fcst_model)) ||
@@ -376,16 +398,18 @@ interactive_eps <- function(
         )
       )
 
-      shiny::insertUI(
-        selector = paste0("#", ns("det-hexbin")),
-        ui = shiny::selectInput(
-          ns("det-hexbin-time"),
-          times[["time_label"]],
-          times[["times"]],
-          selected_time,
-          multiple = TRUE
+      if (!profile_verif) {
+        shiny::insertUI(
+          selector = paste0("#", ns("det-hexbin")),
+          ui = shiny::selectInput(
+            ns("det-hexbin-time"),
+            times[["time_label"]],
+            times[["times"]],
+            selected_time,
+            multiple = TRUE
+          )
         )
-      )
+      }
 
       if (any(nchar(all_members()) > 0)) {
 
@@ -585,68 +609,100 @@ interactive_eps <- function(
         Reduce(union, lapply(verif_data(), colnames))
       )
 
+      is_profile <- attr(verif_data(), "is_profile")
+      if (is.null(is_profile)) {
+        is_profile <- FALSE
+      }
+
+      flip_axes <- FALSE
+      num_cases_position <- "below"
+
       if (ui_type() == "ens_summary") {
 
         n_cases   <- input[["ens-summary-num-cases"]]
         to_zero   <- input[["ens-extend-to-zero"]]
         facets    <- NULL
         filters   <- NULL
-        x_axis    <- time_axis()
+        x_axis    <- ifelse(is_profile, "p", time_axis())
         line_cols <- "mname"
+        if (is_profile) {
+          flip_axes <- TRUE
+          num_cases_position <- "right"
+        }
 
       } else if (ui_type() == "ens_rank_hist") {
 
         n_cases   <- FALSE
         to_zero   <- TRUE
-        times     <- shiny::req(input[["ens-rank-hist-leadtime"]])
+        if (!is_profile) {
+          times     <- shiny::req(input[["ens-rank-hist-leadtime"]])
+        }
         x_axis    <- time_axis()
         x_sym     <- rlang::sym(x_axis)
         line_cols <- "mname"
 
-        if (length(times) == 1) {
-          if (times == "All") {
-            facets  <- NULL
-            filters <- ggplot2::vars(as.character(!!x_sym) != "All")
+        if (!is_profile) {
+          if (length(times) == 1) {
+            if (times == "All") {
+              facets  <- NULL
+              filters <- ggplot2::vars(as.character(!!x_sym) != "All")
+            } else {
+              facets  <- NULL
+              filters <- ggplot2::vars(as.character(!!x_sym) == times)
+            }
           } else {
-            facets  <- NULL
-            filters <- ggplot2::vars(as.character(!!x_sym) == times)
+            if (is.element("All", times)) {
+              facets  <- NULL
+              filters <- ggplot2::vars(as.character(!!x_sym) %in% times[times != "All"])
+            } else {
+              facets  <- ggplot2::vars(!!x_sym)
+              filters <- ggplot2::vars(as.character(!!x_sym) %in% times)
+            }
           }
         } else {
-          if (is.element("All", times)) {
-            facets  <- NULL
-            filters <- ggplot2::vars(as.character(!!x_sym) %in% times[times != "All"])
-          } else {
-            facets  <- ggplot2::vars(!!x_sym)
-            filters <- ggplot2::vars(as.character(!!x_sym) %in% times)
-          }
+          facets  <- NULL
+          filters <- NULL
         }
 
       } else if (ui_type() == "ens_hexbin") {
 
         n_cases   <- FALSE
         to_zero   <- FALSE
-        times     <- shiny::req(input[["ens-hexbin-time"]])
+        if (!is_profile) {
+          times   <- shiny::req(input[["ens-hexbin-time"]])
+        }
         f_model   <- shiny::req(input[["ens-hexbin-fcst-model"]])
         x_axis    <- time_axis()
         x_sym     <- rlang::sym(x_axis)
         fmc_sym   <- rlang::sym(fcst_model_col)
         line_cols <- "mname"
 
-        if (length(times) == 1 && length(f_model) == 1) {
-          facets  <- NULL
-          filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym == times)
-        }
-        if (length(times) > 1 && length(f_model) == 1) {
-          facets  <- ggplot2::vars(!!x_sym)
-          filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym %in% times)
-        }
-        if (length(times) == 1 && length(f_model) > 1) {
-          facets  <- ggplot2::vars(!!fmc_sym)
-          filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym == times)
-        }
-        if (length(times) > 1 && length(f_model) > 1) {
-          facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
-          filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym %in% times)
+        if (is_profile) {
+          if (length(f_model) == 1) {
+            facets  <- NULL
+            filters <- ggplot2::vars(!!fmc_sym == f_model)
+          }
+          if (length(f_model) > 1) {
+            facets  <- ggplot2::vars(!!fmc_sym)
+            filters <- ggplot2::vars(!!fmc_sym %in% f_model)
+          }
+        } else {
+          if (length(times) == 1 && length(f_model) == 1) {
+            facets  <- NULL
+            filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym == times)
+          }
+          if (length(times) > 1 && length(f_model) == 1) {
+            facets  <- ggplot2::vars(!!x_sym)
+            filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym %in% times)
+          }
+          if (length(times) == 1 && length(f_model) > 1) {
+            facets  <- ggplot2::vars(!!fmc_sym)
+            filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym == times)
+          }
+          if (length(times) > 1 && length(f_model) > 1) {
+            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
+            filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym %in% times)
+          }
         }
 
       } else if (ui_type() == "ens_cat_choose_x") {
@@ -700,8 +756,12 @@ interactive_eps <- function(
         to_zero   <- input[["det-extend-to-zero"]]
         facets    <- NULL
         filters   <- NULL
-        x_axis    <- time_axis()
+        x_axis    <- ifelse(is_profile, "p", time_axis())
         line_cols <- "mname"
+        if (is_profile) {
+          flip_axes <- TRUE
+          num_cases_position <- "right"
+        }
         if (det_ens()) {
           n_cases   <- FALSE
           facets    <- ggplot2::vars({{fcst_model_col}})
@@ -720,14 +780,16 @@ interactive_eps <- function(
 
         n_cases   <- FALSE
         to_zero   <- FALSE
-        times     <- shiny::req(input[["det-hexbin-time"]])
+        if (!is_profile) {
+          times   <- shiny::req(input[["det-hexbin-time"]])
+          n_tim   <- length(times)
+        }
         f_model   <- shiny::req(input[["det-hexbin-fcst-model"]])
         x_axis    <- time_axis()
         x_sym     <- rlang::sym(x_axis)
         fmc_sym   <- rlang::sym(fcst_model_col)
         line_cols <- "mname"
 
-        n_tim <- length(times)
         n_mod <- length(f_model)
 
         if (det_ens()) {
@@ -737,74 +799,115 @@ interactive_eps <- function(
           n_mem <- length(members)
           mem_sym <- rlang::sym("member")
 
-          if (n_tim == 1 && n_mod == 1 && n_mem == 1) {
-            facets  <- NULL
-            filters <- ggplot2::vars(
-              !!fmc_sym == f_model, !!x_sym == times, !!mem_sym == members
-            )
-          }
-          if (n_tim > 1 && n_mod == 1 && n_mem == 1) {
-            facets  <- ggplot2::vars(!!x_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym == f_model, !!x_sym %in% times, !!mem_sym == members
-            )
+          if (is_profile) {
 
-          }
-          if (n_tim == 1 && n_mod > 1 && n_mem == 1) {
-            facets  <- ggplot2::vars(!!fmc_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym %in% f_model, !!x_sym == times, !!mem_sym == members
-            )
-          }
-          if (n_tim > 1 && n_mod > 1 && n_mem == 1) {
-            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym %in% f_model, !!x_sym %in% times, !!mem_sym == members
-            )
-          }
-          if (n_tim == 1 && n_mod == 1 && n_mem > 1) {
-            facets  <- ggplot2::vars(!!mem_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym == f_model, !!x_sym == times, !!mem_sym %in% members
-            )
-          }
-          if (n_tim > 1 && n_mod == 1 && n_mem > 1) {
-            facets  <- ggplot2::vars(!!x_sym, !!mem_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym == f_model, !!x_sym %in% times, !!mem_sym %in% members
-            )
+            if (n_mod == 1 && n_mem == 1) {
+              facets  <- NULL
+              filters <- ggplot2::vars(
+                !!fmc_sym == f_model, !!mem_sym == members
+              )
+            }
+            if (n_mod > 1 && n_mem == 1) {
+              facets  <- ggplot2::vars(!!fmc_sym)
+              filters <- ggplot2::vars(!!mem_sym == members)
+            }
+            if (n_mod == 1 && n_mem > 1) {
+              facets  <- ggplot2::vars(!!mem_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym == f_model, !!mem_sym %in% members
+              )
+            }
+            if (n_mod > 1 && n_mem > 1) {
+              facets  <- ggplot2::vars(!!fmc_sym, !!mem_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym %in% f_model, !!mem_sym %in% members
+              )
+            }
 
-          }
-          if (n_tim == 1 && n_mod > 1 && n_mem > 1) {
-            facets  <- ggplot2::vars(!!fmc_sym, !!mem_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym %in% f_model, !!x_sym == times, !!mem_sym %in% members
-            )
-          }
-          if (n_tim > 1 && n_mod > 1 && n_mem > 1) {
-            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym, !!mem_sym)
-            filters <- ggplot2::vars(
-              !!fmc_sym %in% f_model, !!x_sym %in% times, !!mem_sym %in% members
-            )
+          } else {
+
+            if (n_tim == 1 && n_mod == 1 && n_mem == 1) {
+              facets  <- NULL
+              filters <- ggplot2::vars(
+                !!fmc_sym == f_model, !!x_sym == times, !!mem_sym == members
+              )
+            }
+            if (n_tim > 1 && n_mod == 1 && n_mem == 1) {
+              facets  <- ggplot2::vars(!!x_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym == f_model, !!x_sym %in% times, !!mem_sym == members
+              )
+
+            }
+            if (n_tim == 1 && n_mod > 1 && n_mem == 1) {
+              facets  <- ggplot2::vars(!!fmc_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym %in% f_model, !!x_sym == times, !!mem_sym == members
+              )
+            }
+            if (n_tim > 1 && n_mod > 1 && n_mem == 1) {
+              facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym %in% f_model, !!x_sym %in% times, !!mem_sym == members
+              )
+            }
+            if (n_tim == 1 && n_mod == 1 && n_mem > 1) {
+              facets  <- ggplot2::vars(!!mem_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym == f_model, !!x_sym == times, !!mem_sym %in% members
+              )
+            }
+            if (n_tim > 1 && n_mod == 1 && n_mem > 1) {
+              facets  <- ggplot2::vars(!!x_sym, !!mem_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym == f_model, !!x_sym %in% times, !!mem_sym %in% members
+              )
+
+            }
+            if (n_tim == 1 && n_mod > 1 && n_mem > 1) {
+              facets  <- ggplot2::vars(!!fmc_sym, !!mem_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym %in% f_model, !!x_sym == times, !!mem_sym %in% members
+              )
+            }
+            if (n_tim > 1 && n_mod > 1 && n_mem > 1) {
+              facets  <- ggplot2::vars(!!x_sym, !!fmc_sym, !!mem_sym)
+              filters <- ggplot2::vars(
+                !!fmc_sym %in% f_model, !!x_sym %in% times,
+                !!mem_sym %in% members
+              )
+            }
+
           }
 
         } else {
 
-          if (n_tim == 1 && n_mod == 1) {
-            facets  <- NULL
-            filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym == times)
-          }
-          if (n_tim > 1 && n_mod == 1) {
-            facets  <- ggplot2::vars(!!x_sym)
-            filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym %in% times)
-          }
-          if (n_tim == 1 && n_mod > 1) {
-            facets  <- ggplot2::vars(!!fmc_sym)
-            filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym == times)
-          }
-          if (n_tim > 1 && n_mod > 1) {
-            facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
-            filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym %in% times)
+          if (is_profile) {
+            if (n_mod == 1) {
+              facets  <- NULL
+              filters <- ggplot2::vars(!!fmc_sym == f_model)
+            }
+            if (n_mod > 1) {
+              facets  <- ggplot2::vars(!!fmc_sym)
+              filters <- ggplot2::vars(!!fmc_sym %in% f_model)
+            }
+          } else {
+            if (n_tim == 1 && n_mod == 1) {
+              facets  <- NULL
+              filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym == times)
+            }
+            if (n_tim > 1 && n_mod == 1) {
+              facets  <- ggplot2::vars(!!x_sym)
+              filters <- ggplot2::vars(!!fmc_sym == f_model, !!x_sym %in% times)
+            }
+            if (n_tim == 1 && n_mod > 1) {
+              facets  <- ggplot2::vars(!!fmc_sym)
+              filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym == times)
+            }
+            if (n_tim > 1 && n_mod > 1) {
+              facets  <- ggplot2::vars(!!x_sym, !!fmc_sym)
+              filters <- ggplot2::vars(!!fmc_sym %in% f_model, !!x_sym %in% times)
+            }
           }
 
         }
@@ -839,14 +942,16 @@ interactive_eps <- function(
       }
 
       list(
-        score     = input[["score"]],
-        num_cases = n_cases,
-        to_y_zero = to_zero,
-        x_axis    = x_axis,
-        facets    = facets,
-        filters   = filters,
-        line_cols = line_cols,
-        highlight = highlight
+        score       = input[["score"]],
+        num_cases   = n_cases,
+        to_y_zero   = to_zero,
+        x_axis      = x_axis,
+        facets      = facets,
+        filters     = filters,
+        line_cols   = line_cols,
+        highlight   = highlight,
+        flip_axes   = flip_axes,
+        n_cases_pos = num_cases_position
       )
 
     }
@@ -857,31 +962,41 @@ interactive_eps <- function(
 
   output$plot <- shiny::renderPlot({
     shiny::req(score_options())
+    shiny::req(verif_data())
 
     score_type <- strsplit(score_options()$score, "_")[[1]][1]
     plot_score <- gsub("^[[:alpha:]]+_[[:alpha:]]+_scores_", "", score_options()$score)
 
+    score_name  <- plot_score
     plot_score  <- rlang::sym(plot_score)
     plot_x_axis <- rlang::sym(score_options()$x_axis)
+
+    aspect_ratio <- NULL
+    if (score_options()$flip_axes) {
+      aspect_ratio <- 1.25
+    }
 
     if (score_options()$line_cols == "mname") {
 
       line_cols  <- rlang::sym(score_options()$line_cols)
       score_plot <- harpVis::plot_point_verif(
-        shiny::req(verif_data()),
+        verif_data(),
         !!plot_score,
-        verif_type       = score_type,
-        x_axis           = !!plot_x_axis,
-        colour_by        = !!line_cols,
-        plot_num_cases   = score_options()$num_cases,
-        extend_y_to_zero = score_options()$to_y_zero,
-        facet_by         = score_options()$facets,
-        filter_by        = score_options()$filters,
-        rank_is_relative = TRUE,
-        rank_hist_type   = "lollipop",
-        colour_theme     = "harp_midnight",
-        colour_table     = colour_table()
-      )
+        verif_type         = score_type,
+        x_axis             = !!plot_x_axis,
+        colour_by          = !!line_cols,
+        plot_num_cases     = score_options()$num_cases,
+        extend_y_to_zero   = score_options()$to_y_zero,
+        facet_by           = score_options()$facets,
+        filter_by          = score_options()$filters,
+        rank_is_relative   = TRUE,
+        rank_hist_type     = "lollipop",
+        colour_theme       = "harp_midnight",
+        colour_table       = colour_table(),
+        num_cases_position = score_options()$n_cases_pos,
+        flip_axes          = score_options()$flip_axes
+      ) +
+        ggplot2::theme(aspect.ratio = aspect_ratio)
 
     } else {
 
@@ -924,17 +1039,20 @@ interactive_eps <- function(
       score_plot <- harpVis::plot_point_verif(
         plot_data,
         !! plot_score,
-        verif_type       = score_type,
-        x_axis           = !!plot_x_axis,
-        colour_by        = !!line_cols,
-        plot_num_cases   = score_options()$num_cases,
-        extend_y_to_zero = score_options()$to_y_zero,
-        facet_by         = score_options()$facets,
-        filter_by        = score_options()$filters,
-        colour_theme     = "harp_midnight",
-        colour_table     = member_cols,
-        group            = member
-      )
+        verif_type         = score_type,
+        x_axis             = !!plot_x_axis,
+        colour_by          = !!line_cols,
+        plot_num_cases     = score_options()$num_cases,
+        extend_y_to_zero   = score_options()$to_y_zero,
+        facet_by           = score_options()$facets,
+        filter_by          = score_options()$filters,
+        colour_theme       = "harp_midnight",
+        colour_table       = member_cols,
+        group              = member,
+        num_cases_position = score_options()$n_cases_pos,
+        flip_axes          = score_options()$flip_axes
+      ) +
+        ggplot2::theme(aspect.ratio = aspect_ratio)
 
       all_highlights <- grep(
         "mbr[[:digit:]]+$",
@@ -1105,19 +1223,3 @@ get_times <- function(df, time_var) {
   list(times = times, time_label = time_label)
 }
 
-# Function for combining a list of hexbins into a single hexbin
-combine_hexbins <- function(l) {
-  l <- dplyr::bind_rows(l)
-
-  hbin <- hexbin::hexbin(l$obs, l$fcst, IDs = TRUE)
-
-  l <- dplyr::mutate(l, cell_id = hbin@cID) %>%
-    dplyr::summarise(count = sum(.data[["count"]]), .by = "cell_id")
-
-  res <- dplyr::inner_join(
-    tibble::as_tibble(c(hexbin::hcell2xy(hbin), list(cell_id = hbin@cell))),
-    l, by = "cell_id"
-  )
-
-  dplyr::rename(res, obs = "x", fcst = "y")
-}

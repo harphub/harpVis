@@ -221,25 +221,33 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
     plot_score  <- rlang::sym(plot_score)
     plot_x_axis <- rlang::sym(score_options()$x_axis)
 
+    aspect_ratio <- NULL
+    if (score_options()$flip_axes) {
+      aspect_ratio <- 1.25
+    }
+
     if (score_options()$line_cols == "mname") {
 
       line_cols  <- rlang::sym(score_options()$line_cols)
       score_plot <- harpVis::plot_point_verif(
         verif_data(),
         !!plot_score,
-        verif_type       = score_type,
-        x_axis           = !!plot_x_axis,
-        colour_by        = !!line_cols,
-        plot_num_cases   = score_options()$num_cases,
-        extend_y_to_zero = score_options()$to_y_zero,
-        facet_by         = score_options()$facets,
-        filter_by        = score_options()$filters,
-        colour_theme     = plot_options$bg,
-        colour_table     = colour_table(),
-        plot_title       = plot_options$title,
-        plot_subtitle    = plot_options$subtitle,
-        plot_caption     = plot_options$caption
-      )
+        verif_type         = score_type,
+        x_axis             = !!plot_x_axis,
+        colour_by          = !!line_cols,
+        plot_num_cases     = score_options()$num_cases,
+        extend_y_to_zero   = score_options()$to_y_zero,
+        facet_by           = score_options()$facets,
+        filter_by          = score_options()$filters,
+        colour_theme       = plot_options$bg,
+        colour_table       = colour_table(),
+        plot_title         = plot_options$title,
+        plot_subtitle      = plot_options$subtitle,
+        plot_caption       = plot_options$caption,
+        num_cases_position = score_options()$n_cases_pos,
+        flip_axes          = score_options()$flip_axes
+      ) +
+        ggplot2::theme(aspect.ratio = aspect_ratio)
 
     } else {
 
@@ -281,20 +289,23 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
       score_plot <- harpVis::plot_point_verif(
         plot_data,
         !! plot_score,
-        verif_type       = score_type,
-        x_axis           = !!plot_x_axis,
-        colour_by        = !!line_cols,
-        plot_num_cases   = score_options()$num_cases,
-        extend_y_to_zero = score_options()$to_y_zero,
-        facet_by         = score_options()$facets,
-        filter_by        = score_options()$filters,
-        colour_theme     = plot_options$bg,
-        colour_table     = member_cols,
-        plot_title       = plot_options$title,
-        plot_subtitle    = plot_options$subtitle,
-        plot_caption     = plot_options$caption,
-        group            = member
-      )
+        verif_type         = score_type,
+        x_axis             = !!plot_x_axis,
+        colour_by          = !!line_cols,
+        plot_num_cases     = score_options()$num_cases,
+        extend_y_to_zero   = score_options()$to_y_zero,
+        facet_by           = score_options()$facets,
+        filter_by          = score_options()$filters,
+        colour_theme       = plot_options$bg,
+        colour_table       = member_cols,
+        plot_title         = plot_options$title,
+        plot_subtitle      = plot_options$subtitle,
+        plot_caption       = plot_options$caption,
+        group              = member,
+        num_cases_position = score_options()$n_cases_pos,
+        flip_axes          = score_options()$flip_axes
+      ) +
+        ggplot2::theme(aspect.ratio = aspect_ratio)
 
       all_highlights <- grep(
         "mbr[[:digit:]]+$",
@@ -344,25 +355,33 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
       plot_score  <- rlang::sym(plot_score)
       plot_x_axis <- rlang::sym(score_options()$x_axis)
 
+      aspect_ratio <- NULL
+      if (score_options()$flip_axes) {
+        aspect_ratio <- 1.25
+      }
+
       if (score_options()$line_cols == "mname") {
 
         line_cols  <- rlang::sym(score_options()$line_cols)
         score_plot <- harpVis::plot_point_verif(
           verif_data(),
           !!plot_score,
-          verif_type       = score_type,
-          x_axis           = !!plot_x_axis,
-          colour_by        = !!line_cols,
-          plot_num_cases   = score_options()$num_cases,
-          extend_y_to_zero = score_options()$to_y_zero,
-          facet_by         = score_options()$facets,
-          filter_by        = score_options()$filters,
-          colour_theme     = plot_options$bg,
-          colour_table     = colour_table(),
-          plot_title       = plot_options$title,
-          plot_subtitle    = plot_options$subtitle,
-          plot_caption     = plot_options$caption
-        )
+          verif_type         = score_type,
+          x_axis             = !!plot_x_axis,
+          colour_by          = !!line_cols,
+          plot_num_cases     = score_options()$num_cases,
+          extend_y_to_zero   = score_options()$to_y_zero,
+          facet_by           = score_options()$facets,
+          filter_by          = score_options()$filters,
+          colour_theme       = plot_options$bg,
+          colour_table       = colour_table(),
+          plot_title         = plot_options$title,
+          plot_subtitle      = plot_options$subtitle,
+          plot_caption       = plot_options$caption,
+          num_cases_position = score_options()$n_cases_pos,
+          flip_axes          = score_options()$flip_axes
+        ) +
+          ggplot2::theme(aspect.ratio = aspect_ratio)
 
       } else {
 
@@ -404,20 +423,24 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
         score_plot <- harpVis::plot_point_verif(
           plot_data,
           !! plot_score,
-          verif_type       = score_type,
-          x_axis           = !!plot_x_axis,
-          colour_by        = !!line_cols,
-          plot_num_cases   = score_options()$num_cases,
-          extend_y_to_zero = score_options()$to_y_zero,
-          facet_by         = score_options()$facets,
-          filter_by        = score_options()$filters,
-          colour_theme     = plot_options$bg,
-          colour_table     = member_cols,
-          plot_title       = plot_options$title,
-          plot_subtitle    = plot_options$subtitle,
-          plot_caption     = plot_options$caption,
-          group            = member
-        )
+          verif_type         = score_type,
+          x_axis             = !!plot_x_axis,
+          colour_by          = !!line_cols,
+          plot_num_cases     = score_options()$num_cases,
+          extend_y_to_zero   = score_options()$to_y_zero,
+          facet_by           = score_options()$facets,
+          filter_by          = score_options()$filters,
+          colour_theme       = plot_options$bg,
+          colour_table       = member_cols,
+          plot_title         = plot_options$title,
+          plot_subtitle      = plot_options$subtitle,
+          plot_caption       = plot_options$caption,
+          group              = member,
+          num_cases_position = score_options()$n_cases_pos,
+          flip_axes          = score_options()$flip_axes
+        ) +
+          ggplot2::theme(aspect.ratio = aspect_ratio)
+
 
         all_highlights <- grep(
           "mbr[[:digit:]]+$",

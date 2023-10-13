@@ -534,7 +534,6 @@ plot_point_verif <- function(
     },
 
     "hexbin" = {
-      plot_data <- tidyr::unnest(plot_data, dplyr::all_of(score_name))
       if (is.null(facet_by)) {
         if (length(unique(plot_data[["fcst_model"]])) > 1) {
           facet_vars <- "fcst_model"
@@ -553,6 +552,20 @@ plot_point_verif <- function(
         }
       }
       num_facet_cols <- NULL
+
+      if (faceting) {
+        plot_data <- dplyr::summarise(
+          plot_data,
+          hexbin  = list(combine_hexbins(.data[["hexbin"]])),
+          .by     = dplyr::all_of(facet_vars)
+        )
+      }
+
+      if (nrow(plot_data) < 2) {
+        faceting <- FALSE
+      }
+
+      plot_data <- tidyr::unnest(plot_data, dplyr::all_of(score_name))
       colnames(plot_data) <- harpCore::psub(
         colnames(plot_data), c("obs", "fcst"), c("observed", "forecast")
       )
@@ -744,7 +757,13 @@ plot_point_verif <- function(
     plot_title
   )
   plot_subtitle <- switch(tolower(plot_subtitle),
-    "auto" = attrs[["num_stations"]],
+    "auto" = {
+      if (is.element("num_stations", colnames(plot_data))) {
+        paste(max(plot_data[["num_stations"]]), "stations")
+      } else {
+        attrs[["num_stations"]]
+      }
+    },
     "none" = "",
     plot_subtitle
   )
@@ -1145,4 +1164,21 @@ filter_for_x <- function(plot_data, x_axis_name) {
     )
   }
   plot_data
+}
+
+# Function for combining a list of hexbins into a single hexbin
+combine_hexbins <- function(l) {
+  l <- dplyr::bind_rows(l)
+
+  hbin <- hexbin::hexbin(l$obs, l$fcst, IDs = TRUE)
+
+  l <- dplyr::mutate(l, cell_id = hbin@cID) %>%
+    dplyr::summarise(count = sum(.data[["count"]]), .by = "cell_id")
+
+  res <- dplyr::inner_join(
+    tibble::as_tibble(c(hexbin::hcell2xy(hbin), list(cell_id = hbin@cell))),
+    l, by = "cell_id"
+  )
+
+  dplyr::rename(res, obs = "x", fcst = "y")
 }

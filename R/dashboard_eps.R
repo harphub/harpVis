@@ -75,7 +75,6 @@ dashboard_eps <- function(
 ) {
 
   # bg_colour = "#D5D5D5"
-  bg_colour = "#0A0A2C"
 
   ns <- session$ns
 
@@ -95,6 +94,22 @@ dashboard_eps <- function(
   thresh_table        <- shiny::reactiveVal(NULL)
   thresh_scores       <- shiny::reactiveVal(NULL)
   verif_type          <- shiny::reactiveVal(NULL)
+
+  set_height <- function() {
+    if (is.null(verif_data())) {
+      return("auto")
+    }
+    if (is.null(attr(verif_data(), "is_profile"))) {
+      return("auto")
+    }
+    if (attr(verif_data(), "is_profile")) {
+      return(600)
+    }
+    "auto"
+  }
+
+  get_bg_colour = function() "#0A0A2C"
+
 
   shiny::observeEvent(verif_data(), {
     shiny::req(verif_data())
@@ -167,11 +182,24 @@ dashboard_eps <- function(
     }
 
     for (i in seq_along(summary_scores())) {
+      plot_x_axis <- rlang::sym(time_axis())
+      plot_flip_axes <- FALSE
+      is_profile <- attr(verif_data(), "is_profile")
+      if (!is.null(is_profile) && is_profile) {
+        if (summary_scores()[i] != "Rank Histogram") {
+          plot_x_axis <- rlang::sym("p")
+          plot_flip_axes <- TRUE
+        }
+      }
+      aspect_ratio <- NULL
+      if (plot_flip_axes) {
+        aspect_ratio <- 1.25
+      }
       dashboard_plots[[paste0("summary_", i)]] <- harpVis::plot_point_verif(
         verif_data(),
         !!rlang::sym(names(summary_scores())[i]),
         verif_type      = verif_type(),
-        x_axis          = !!rlang::sym(time_axis()),
+        x_axis          = !!plot_x_axis,
         plot_num_cases  = FALSE,
         rank_is_relative = TRUE,
         rank_hist_type   = "lollipop",
@@ -180,8 +208,10 @@ dashboard_eps <- function(
         plot_caption    = "none",
         colour_theme    = "harp_midnight",
         plot_title      = summary_scores()[i],
-        colour_table    = colour_table()
-      )
+        colour_table    = colour_table(),
+        flip_axes       = plot_flip_axes
+      ) +
+        ggplot2::theme(aspect.ratio = aspect_ratio)
     }
 
     if (show_thresh_data) {
@@ -341,27 +371,27 @@ dashboard_eps <- function(
 
   output$dashboard_summary_1 <- shiny::renderPlot({
     shiny::req(dashboard_plots$summary_1)
-  }, height = "auto", res = 96, bg = bg_colour)
+  }, height = "auto", res = 96, bg = get_bg_colour())
 
   output$dashboard_summary_2 <- shiny::renderPlot({
     shiny::req(dashboard_plots$summary_2)
-  }, height = "auto", res = 96, bg = bg_colour)
+  }, height = "auto", res = 96, bg = get_bg_colour())
 
   output$dashboard_summary_3 <- shiny::renderPlot({
     shiny::req(dashboard_plots$summary_3)
-  }, height = "auto", res = 96, bg = bg_colour)
+  }, height = "auto", res = 96, bg = get_bg_colour())
 
   output$dashboard_thresh_1 <- shiny::renderPlot({
     shiny::req(dashboard_plots$thresh_1)
-  }, height = "auto", res = 96, bg = bg_colour)
+  }, height = "auto", res = 96, bg = get_bg_colour())
 
   output$dashboard_thresh_2 <- shiny::renderPlot({
     shiny::req(dashboard_plots$thresh_2)
-  }, height = "auto", res = 96, bg = bg_colour)
+  }, height = "auto", res = 96, bg = get_bg_colour())
 
   output$dashboard_thresh_3 <- shiny::renderPlot({
     shiny::req(dashboard_plots$thresh_3)
-  }, height = "auto", res = 96, bg = bg_colour)
+  }, height = "auto", res = 96, bg = get_bg_colour())
 
 
 }
