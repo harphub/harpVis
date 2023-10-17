@@ -265,14 +265,7 @@ dashboard_eps <- function(
         )
 
         times <- unique(thresh_data_to_plot()[[thresh_table()]][[time_var]])
-        times <- times[times != "All"]
-        if (grepl("dttm", time_var)) {
-          times_dttm <- do.call(c, lapply(times, as.POSIXct, tz = "UTC"))
-          times <- times[order(match(times, times_dttm))]
-          names(times) <- format(times_dttm, "%H:%M %d %b %Y")
-        } else {
-          times <- sort(as.numeric(times))
-        }
+        times <- parse_times(times, time_var)
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
           where    = "beforeEnd",

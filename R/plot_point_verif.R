@@ -1148,6 +1148,14 @@ filter_for_x <- function(plot_data, x_axis_name) {
     colnames(plot_data)
   )
 
+  x_axes_lengths <- vapply(
+    possible_x_axes,
+    function(x) length(unique(plot_data[[x]])),
+    numeric(1)
+  )
+
+  possible_x_axes <- possible_x_axes[x_axes_lengths > 1]
+
   if (length(possible_x_axes) > 1) {
     other_x_names <- possible_x_axes[possible_x_axes != x_axis_name]
     plot_data <- dplyr::filter(plot_data, .data[[x_axis_name]] != "All")

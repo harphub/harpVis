@@ -23,7 +23,7 @@ time_axis <- function(input, output, session, verif_data) {
 
   possible_time_axes <- c(
     "lead_time", "leadtime",
-    "valid_dttm", "valid_dttm",
+    "valid_dttm", "validdate",
     "valid_hour"
   )
 
@@ -63,6 +63,7 @@ time_axis <- function(input, output, session, verif_data) {
         data_times    <- Reduce(
           union, lapply(verif_data(), function(x) x[[time_col_names]])
         )
+        data_times <- parse_times(data_times, time_col_names)
         if (is.null(selected_time) || !is.element(selected_time, data_times)) {
           selected_time <- data_times[1]
         }
@@ -87,6 +88,11 @@ time_axis <- function(input, output, session, verif_data) {
       return()
     }
 
+    time_col <- input[["time_axis"]]
+    if (is.null(time_col) || !is.element(time_col, time_col_names)) {
+      time_col <- time_col_names[1]
+    }
+
     shiny::insertUI(
       selector = paste0("#", ns("time-axis-div-sel")),
       where = "beforeEnd",
@@ -98,7 +104,7 @@ time_axis <- function(input, output, session, verif_data) {
             ns("time_axis"),
             "Time axis",
             time_col_names,
-            input[["time_axis"]]
+            time_col
           )
         )
       )
@@ -107,8 +113,9 @@ time_axis <- function(input, output, session, verif_data) {
     if (is_profile()) {
       selected_time <- input[["profile_time_select"]]
       data_times    <- Reduce(
-        union, lapply(verif_data(), function(x) x[[input[["time_axis"]]]])
+        union, lapply(verif_data(), function(x) x[[time_col]])
       )
+      data_times <- parse_times(data_times, time_col)
       if (is.null(selected_time) || !is.element(selected_time, data_times)) {
         selected_time <- data_times[1]
       }
@@ -119,7 +126,7 @@ time_axis <- function(input, output, session, verif_data) {
           class = "col-lg-4",
           shiny::selectInput(
             ns("profile_time_select"),
-            names(time_col_names)[time_col_names == input[["time_axis"]]],
+            names(time_col_names)[time_col_names == time_col],
             data_times,
             selected_time
           )
@@ -141,6 +148,7 @@ time_axis <- function(input, output, session, verif_data) {
       data_times    <- Reduce(
         union, lapply(verif_data(), function(x) x[[time_axis_name()]])
       )
+      data_times <- parse_times(data_times, time_axis_name())
       if (is.null(selected_time) || !is.element(selected_time, data_times)) {
         selected_time <- data_times[1]
       }
@@ -177,4 +185,16 @@ time_axis <- function(input, output, session, verif_data) {
     time_axis = time_axis_name,
     filtered_data = shiny::debounce(out_data, 200)
   ))
+}
+
+parse_times <- function(times, time_var) {
+  times <- times[times != "All"]
+  if (grepl("dttm|validdate|fcdate", time_var)) {
+    times_dttm <- do.call(c, lapply(times, as.POSIXct, tz = "UTC"))
+    times <- times[order(match(times, times_dttm))]
+    names(times) <- format(times_dttm, "%H:%M %d %b %Y")
+  } else {
+    times <- sort(as.numeric(times))
+  }
+  times
 }

@@ -201,6 +201,18 @@ options_bar <- function(input, output, session) {
           )
         )
         verif_data(NULL)
+      } else {
+        check_tbl <- function(x) {
+          !is.null(x) && nrow(x) > 1
+        }
+        verif_attrs <- attributes(verif_data())
+        good_elmnts <- which(vapply(verif_data(), check_tbl, logical(1)))
+        verif_attrs[["names"]] <- verif_attrs[["names"]][good_elmnts]
+        verif_data(
+          do.call(
+            structure, c(list(.Data = verif_data()[good_elmnts]), verif_attrs)
+          )
+        )
       }
     }
   })

@@ -74,6 +74,7 @@ score_colnames <- c(
 meta_colnames <- c(
   "mname",
   "leadtime",
+  "validdate",
   "valid_dttm",
   "valid_year",
   "valid_month",
