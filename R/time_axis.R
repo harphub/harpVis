@@ -5,7 +5,7 @@ time_axisUI <- function(id) {
 
   ns <- shiny::NS(id)
   shiny::div(class = "col-sm-10 col-lg-11",
-    shiny::div(class = "row", id = ns("time-axis-div-sel"))
+    shiny::div(id = ns("time-axis-div-sel"))
   )
 
 }

@@ -98,43 +98,43 @@ points by \code{x} first before computing the splines.
 }
 \details{
 This is an extension of \link[ggalt]{geom_xspline} to apply
-  x-splines to  ribbon plots. An X-spline is a line drawn relative to control
-  points. For each control point, the line may pass through (interpolate) the
-  control point or it may only approach (approximate) the control point; the
-  behaviour is determined by a shape parameter for each control point.
+x-splines to  ribbon plots. An X-spline is a line drawn relative to control
+points. For each control point, the line may pass through (interpolate) the
+control point or it may only approach (approximate) the control point; the
+behaviour is determined by a shape parameter for each control point.
 
-  If the shape parameter is greater than zero, the spline approximates the
-  control points (and is very similar to a cubic B-spline when the shape is
-  1). If the shape parameter is less than zero, the spline interpolates the
-  control points (and is very similar to a Catmull-Rom spline when the shape
-  is -1). If the shape parameter is 0, the spline forms a sharp corner at
-  that control point.
+If the shape parameter is greater than zero, the spline approximates the
+control points (and is very similar to a cubic B-spline when the shape is
+1). If the shape parameter is less than zero, the spline interpolates the
+control points (and is very similar to a Catmull-Rom spline when the shape
+is -1). If the shape parameter is 0, the spline forms a sharp corner at
+that control point.
 
-  For open X-splines, the start and end control points must have a shape of 0
-  (and non-zero values are silently converted to zero).
+For open X-splines, the start and end control points must have a shape of 0
+(and non-zero values are silently converted to zero).
 
-  For open X-splines, by default the start and end control points are
-  replicated before the curve is drawn. A curve is drawn between
-  (interpolating or approximating) the second and third of each set of four
-  control points, so this default behaviour ensures that the resulting curve
-  starts at the first control point you have specified and ends at the last
-  control point. The default behaviour can be turned off via the repEnds
-  argument.
+For open X-splines, by default the start and end control points are
+replicated before the curve is drawn. A curve is drawn between
+(interpolating or approximating) the second and third of each set of four
+control points, so this default behaviour ensures that the resulting curve
+starts at the first control point you have specified and ends at the last
+control point. The default behaviour can be turned off via the repEnds
+argument.
 }
 \section{Aesthetics}{
  \code{geom_ribbonspline} understands the following
-  aesthetics (required aesthetics are in bold): \itemize{ \item
-  \strong{\code{x}} \item \strong{\code{ymin}} \item \strong{\code{ymax}}
-  \item \code{alpha} \item \code{color} \item \strong{\code{fill}} \item
-  \strong{\code{group}} \item \code{linetype} \item \code{size} }
+aesthetics (required aesthetics are in bold): \itemize{ \item
+\strong{\code{x}} \item \strong{\code{ymin}} \item \strong{\code{ymax}}
+\item \code{alpha} \item \code{color} \item \strong{\code{fill}} \item
+\strong{\code{group}} \item \code{linetype} \item \code{size} }
 }
 
 \section{Computed variables}{
 
 \itemize{
-  \item{x}
-  \item{ymin}
-  \item{ymax}
+\item{x}
+\item{ymin}
+\item{ymax}
 }
 }
 
@@ -187,16 +187,16 @@ ggplot(dat, aes(x, y, group=group, color=factor(group))) +
 }
 \references{
 Blanc, C. and Schlick, C. (1995), "X-splines : A Spline Model
-  Designed for the End User", in \emph{Proceedings of SIGGRAPH 95}, pp.
-  377-386. \url{http://dept-info.labri.fr/~schlick/DOC/sig1.html}
+Designed for the End User", in \emph{Proceedings of SIGGRAPH 95}, pp.
+377-386. \url{http://dept-info.labri.fr/~schlick/DOC/sig1.html}
 }
 \seealso{
 \code{\link[ggplot2]{geom_ribbon}}: Ribbons and area plots;
-  \code{\link[ggplot2]{geom_path}}: Connect observations;
-  \code{\link[ggplot2]{geom_polygon}}: Filled paths (polygons);
-  \code{\link[ggplot2]{geom_segment}}: Line segments;
-  \code{\link[ggalt]{geom_xspline}}: Connect control points/observations with
-  an X-spline; \code{\link[graphics]{xspline}};
-  \code{\link[grid]{grid.xspline}}
+\code{\link[ggplot2]{geom_path}}: Connect observations;
+\code{\link[ggplot2]{geom_polygon}}: Filled paths (polygons);
+\code{\link[ggplot2]{geom_segment}}: Line segments;
+\code{\link[ggalt]{geom_xspline}}: Connect control points/observations with
+an X-spline; \code{\link[graphics]{xspline}};
+\code{\link[grid]{grid.xspline}}
 }
 \concept{xspline implementations}

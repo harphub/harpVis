@@ -75,7 +75,7 @@ relative rank (between 0 and 1) on the x-axis. The default is FALSE.}
 chart, lollipop chart or a line chart.}
 
 \item{colour_by}{The column to colour the plot lines or bars by. The default
-is `fcst_model`, for the model name. Set to NULL for all lines / bars to
+is \code{fcst_model}, for the model name. Set to NULL for all lines / bars to
 have the same colour.}
 
 \item{colour_table}{A data frame with column names equal to the value of
@@ -83,7 +83,7 @@ have the same colour.}
 names or hex codes. There should be one row for each value in the
 \code{colour_by} column. If set to NULL, the default colour table is used.}
 
-\item{hex_palette}{The colour palette to use for `hexbin`. This should be a
+\item{hex_palette}{The colour palette to use for \code{hexbin}. This should be a
 vector of colours. The default is \link[viridisLite]{plasma}.}
 
 \item{hex_colour}{The outline colour of hexagons for hexbin plots. The

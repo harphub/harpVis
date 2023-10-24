@@ -6,9 +6,9 @@
 \title{Ensemble verification scores example data.}
 \format{
 A list with 2 data frames: \describe{
-  \item{ens_summary_scores}{Summary scores for the ensembles.}
-  \item{ens_threshold_scores}{Categorical scores for the ensembles based on
-  threshold exceedence categories.}}
+\item{ens_summary_scores}{Summary scores for the ensembles.}
+\item{ens_threshold_scores}{Categorical scores for the ensembles based on
+threshold exceedence categories.}}
 }
 \source{
 MetCoOp / HIRLAM

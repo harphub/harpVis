@@ -30,7 +30,8 @@ Imports:
     colourpicker,
     forcats,
     meteogrid,
-    viridisLite
+    viridisLite,
+    lifecycle
 Remotes:
     harphub/harpCore@develop,
     harphub/ggsonde,
@@ -44,3 +45,4 @@ Suggests:
     svglite,
     ggalt,
     ggridges
+Roxygen: list(markdown = TRUE)

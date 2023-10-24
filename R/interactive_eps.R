@@ -32,17 +32,32 @@ interactive_epsUI <- function(id) {
 #' @param output
 #' @param session
 #' @param verif_data
-#' @param bg_colour
 #'
 #' @return
 #' @export
 #'
 #' @examples
 interactive_eps <- function(
-  input, output, session, verif_data, colour_table, time_axis, bg_colour
+  input, output, session, verif_data, colour_table, time_axis
 ) {
 
   ns <- session$ns
+
+  theme_opt <- shiny::getShinyOption("theme")
+
+  plot_theme <- switch(
+    theme_opt,
+    "dark"  = "harp_midnight",
+    "light" = "harp_light",
+    "white" = "bw"
+  )
+
+  bg_colour = switch(
+    theme_opt,
+    "dark"  = "#0A0A2C",
+    "light" = "#F0F1F2",
+    "white" = "white"
+  )
 
   new_data <- shiny::reactiveVal(NULL)
 
@@ -991,7 +1006,7 @@ interactive_eps <- function(
         filter_by          = score_options()$filters,
         rank_is_relative   = TRUE,
         rank_hist_type     = "lollipop",
-        colour_theme       = "harp_midnight",
+        colour_theme       = plot_theme,
         colour_table       = colour_table(),
         num_cases_position = score_options()$n_cases_pos,
         flip_axes          = score_options()$flip_axes
@@ -1046,7 +1061,7 @@ interactive_eps <- function(
         extend_y_to_zero   = score_options()$to_y_zero,
         facet_by           = score_options()$facets,
         filter_by          = score_options()$filters,
-        colour_theme       = "harp_midnight",
+        colour_theme       = plot_theme,
         colour_table       = member_cols,
         group              = member,
         num_cases_position = score_options()$n_cases_pos,

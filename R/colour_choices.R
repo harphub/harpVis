@@ -1,11 +1,7 @@
-#' Title
+#' @param id An ID string for the module's UI
+#' @rdname colour_choices
 #'
-#' @param id
-#'
-#' @return
 #' @export
-#'
-#' @examples
 colour_choicesUI <- function(id) {
 
   ns <- shiny::NS(id)
@@ -16,17 +12,49 @@ colour_choicesUI <- function(id) {
 
 }
 
-#' Title
+#' Shiny module for picking colours
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param verif_data
+#' The UI includes a button for opening a modal to pick colours for a plot. The
+#' output is a data frame that can be used to control colours in plotting
+#' point verification scores using the \code{\link{plot_point_verif}} function.
 #'
-#' @return
+#' Note that the module uses the "old" semantics for shiny modules so should be
+#' called with \code{\link[shiny]{callModule}} rather than
+#' \code{\link[shiny]{moduleServer}}.
+#'
+#' @param input input reactive
+#' @param output output reactive
+#' @inheritParams shiny::moduleServer
+#' @param verif_data verification data as a reactive value
+#'
+#' @return A reactive data frame to be used as input to the `colour_table`
+#' argument in \code{\link{plot_point_verif}}.
+#'
 #' @export
-#'
 #' @examples
+#' library(shiny)
+#' library(ggplot2)
+#'
+#' ui <- fluidPage(
+#'   colour_choicesUI("cols"),
+#'   plotOutput("verifPlot")
+#' )
+#'
+#' server <- function(input, output, session) {
+#'   col_table <- callModule(colour_choices, "cols", reactive(ens_verif_data))
+#'   output$verifPlot <- renderPlot({
+#'     plot_point_verif(
+#'       ens_verif_data, mean_bias, colour_table = col_table(),
+#'       plot_num_cases = FALSE
+#'     )
+#'   })
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
+#'
+#'
 colour_choices <- function(input, output, session, verif_data) {
 
   ns <- session$ns

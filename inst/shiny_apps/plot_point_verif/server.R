@@ -2,10 +2,6 @@
 
 server <- function(input, output, session) {
 
-  # bg_colour = "#D5D5D5"
-  bg_colour = "#0A0A2C"
-
-
   ############################################################
   # LOAD DATA                                                #
   ############################################################
@@ -39,7 +35,7 @@ server <- function(input, output, session) {
   ############################################################
 
   shiny::callModule(
-    harpVis::dashboard_eps, "dashboard", time_axis_out$filtered_data,
+    harpVis::dashboard_point_verif, "dashboard", time_axis_out$filtered_data,
     colour_table, time_axis_out$time_axis
   )
 
@@ -52,8 +48,7 @@ server <- function(input, output, session) {
     "interactive",
     time_axis_out$filtered_data,
     colour_table,
-    time_axis_out$time_axis,
-    bg_colour = bg_colour
+    time_axis_out$time_axis
   )
 
   ############################################################

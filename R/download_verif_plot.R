@@ -1,17 +1,13 @@
-#' Title
+#' @inheritParams colour_choicesUI
+#' @rdname download_verif_plot
 #'
-#' @param id
-#'
-#' @return
 #' @export
-#'
-#' @examples
 download_verif_plotUI <- function(id) {
 
   ns <- shiny::NS(id)
 
   shiny::fluidRow(
-     shiny::div(class = "col-sm-2 col-sm-offset-10", id = ns("save_plot_div"),
+    shiny::div(class = "col-sm-2 col-sm-offset-10", id = ns("save_plot_div"),
       customActionButton(
         ns("save_plot"),
         "Save",
@@ -22,19 +18,71 @@ download_verif_plotUI <- function(id) {
 
 }
 
-#' Title
+#' Download module for point verification plots in a Shiny app
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param verif_data
-#' @param score_options
-#' @param colour_table
+#' @description
 #'
-#' @return
+#' The module's UI is a "Save" button that opens a modal where the user can
+#' select some options related to the download plot. When passing a list of
+#' options, the following elements must be included:
+#'
+#' * "score"     - The score to plot.Must be preceded by the name of the element
+#'   in the verification list, e.g. "ens_summary_scores_mean_bias".
+#' * "num_cases" - TRUE/FALSE - whether to include a number of cases panel.
+#' * "to_y_zero" - TRUE/FALSE - whether to include 0 on the y axis.
+#' * "x_axis"    - the variable to plot on the x axis.
+#' * "facets"    - the variables to facet by - should be unquoted and wrapped in
+#'   \code{\link[ggplot2]{vars}}. Set to NULL for no faceting.
+#' * "filters"   - filtering expressions - should be unquoted and wrapped in
+#'   \code{\link[ggplot2]{vars}}. Set to NULL for no filtering.
+#' * "line_cols" - The variable to set the line colour aesthetic.
+#' * "highlight" - For deterministic verification of ensemble members - the
+#'   member to highlight.
+#' * "flip_axes" - TRUE/FALSE - whether to flip the x and y axes.
+#' * n_cases_pos - The position of the number of cases panel.
+
+#'
+#' @inheritParams dashboard_point_verif
+#' @param score_options A reactive list of options for the plot. This list is
+#'   output by \code{\link{interactive_point_verif}}.
+#'
 #' @export
 #'
 #' @examples
+#' library(shiny)
+#'
+#' ui <- fluidPage(
+#'   download_verif_plotUI("dwnld")
+#' )
+#'
+#' server <- function(input, output, session) {
+#'   # Set options
+#'   opts <- list(
+#'     score       = "ens_summary_scores_mean_bias",
+#'     num_cases   = FALSE,
+#'     to_y_zero   = FALSE,
+#'     x_axis      = "lead_time",
+#'     facets      = NULL,
+#'     filters     = NULL,
+#'     line_cols   = "fcst_model",
+#'     highlight   = NULL,
+#'     flip_axes   = FALSE,
+#'     n_cases_pos = "bottom"
+#'   )
+#'
+#'   fcst_model_col <- intersect(
+#'     c("fcst_model", "mname"), colnames(ens_verif_data$ens_summary_scores)
+#'   )
+#'   col_tbl <- data.frame(
+#'     fcst_model = unique(ens_verif_data$ens_summary_scores[[fcst_model_col]]),
+#'     colour     = c("red", "green", "blue")
+#'   )
+#'
+#'   callModule(
+#'     download_verif_plot, "dwnld", reactive(ens_verif_data),
+#'     reactive(opts), reactive(col_tbl)
+#'   )
+#' }
 download_verif_plot <- function(input, output, session, verif_data, score_options, colour_table) {
 
   ns <- session$ns
@@ -84,41 +132,47 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
       shiny::modalDialog(
         title = "Save Options",
         shiny::fluidRow(
-          shiny::radioButtons(
-            ns("bg_colour"),
-            "Background",
-            choices = c(white = "bw", grey = "grey", dark = "harp_midnight"),
-            inline = TRUE
-          ),
-          shiny::textInput(
-            ns("plot_title"),
-            "Title",
-            value = plot_options$title,
-            width = "100%"
-          ),
-          shiny::textInput(
-            ns("plot_subtitle"),
-            "Subtitle",
-            value = plot_options$subtitle,
-            width = "100%"
-          ),
-          shiny::textInput(
-            ns("plot_caption"),
-            "Caption",
-            value = plot_options$caption,
-            width = "100%"
+          shiny::column(12,
+            shiny::radioButtons(
+              ns("bg_colour"),
+              "Background",
+              choices = c(white = "bw", grey = "grey", dark = "harp_midnight"),
+              inline = TRUE
+            ),
+            shiny::textInput(
+              ns("plot_title"),
+              "Title",
+              value = plot_options$title,
+              width = "100%"
+            ),
+            shiny::textInput(
+              ns("plot_subtitle"),
+              "Subtitle",
+              value = plot_options$subtitle,
+              width = "100%"
+            ),
+            shiny::textInput(
+              ns("plot_caption"),
+              "Caption",
+              value = plot_options$caption,
+              width = "100%"
+            )
           )
         ),
         shiny::fluidRow(
-          shiny::plotOutput(ns("verif_plot"), height = "333px")
+          shiny::column(12,
+            shiny::plotOutput(ns("verif_plot"), height = "333px")
+          )
         ),
         shiny::fluidRow(
-          shiny::br(),
-          shiny::radioButtons(
-            ns("plot_format"),
-            "Format",
-            choices = c("png", "pdf", "eps", "svg"),
-            inline  = TRUE
+          shiny::column(12,
+            shiny::br(),
+            shiny::radioButtons(
+              ns("plot_format"),
+              "Format",
+              choices = c("png", "pdf", "eps", "svg"),
+              inline  = TRUE
+            )
           )
         ),
         shiny::fluidRow(
@@ -151,11 +205,13 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           )
         ),
         shiny::fluidRow(
-          shiny::textInput(
-            ns("plot_filename"),
-            "File name",
-            value = save_options$filename,
-            width = "100%"
+          shiny::column(12,
+            shiny::textInput(
+              ns("plot_filename"),
+              "File name",
+              value = save_options$filename,
+              width = "100%"
+            )
           )
         ),
         footer = shiny::tagList(
@@ -226,7 +282,7 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
       aspect_ratio <- 1.25
     }
 
-    if (score_options()$line_cols == "mname") {
+    if (score_options()$line_cols %in% c("mname", "fcst_model")) {
 
       line_cols  <- rlang::sym(score_options()$line_cols)
       score_plot <- harpVis::plot_point_verif(
@@ -484,7 +540,7 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
 }
 
 customDownloadButton <- function(
-  outputId,
+    outputId,
   label      = "Download",
   class      = NULL,
   bs_btn     = "default",
@@ -505,7 +561,7 @@ customDownloadButton <- function(
 }
 
 customActionButton <- function(
-  inputId,
+    inputId,
   label,
   icon      = NULL,
   width     = NULL,

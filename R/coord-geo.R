@@ -95,25 +95,19 @@ CoordGeo <- ggproto("CoordGeo", CoordSf,
 
 )
 
-#' Title
+#' Co-ordinates for geofield geoms
 #'
-#' @param xlim
-#' @param ylim
-#' @param expand
-#' @param crs
-#' @param default_crs
-#' @param datum
-#' @param label_graticule
-#' @param label_axes
-#' @param lims_method
-#' @param ndiscr
-#' @param default
-#' @param clip
+#' @description
+#' `r lifecycle::badge("experimental")`
 #'
-#' @return
+#' This is basically just an implementation of \code{\link[ggplot2]{coord_sf()}}
+#' for \code{\link{geom_georaster}}. It requires the \code{\link[sf]} package
+#' and should very much be considered experimental. It is recommended to use
+#' \code{\link[ggplot2]{coord_equal()}} for the time being as errors are likely.
+#'
+#' @inheritParams ggplot2::coord_sf
 #' @export
 #'
-#' @examples
 coord_geo <- function(xlim = NULL, ylim = NULL, expand = TRUE,
   crs = NULL, default_crs = sf::st_crs(4326),
   datum = sf::st_crs(4326),

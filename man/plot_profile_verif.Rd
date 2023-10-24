@@ -7,7 +7,7 @@
 plot_profile_verif(
   verif_data,
   score,
-  y_axis = p,
+  y_axis = "p",
   lead_time = NA,
   plot_num_cases = TRUE,
   num_cases_position = c("right", "left"),
@@ -41,7 +41,7 @@ to the score panel. For profile scores, this can only be "left", or
 }
 \value{
 A \link[ggplot2]{ggplot} object of vertical profiles of verification
-  scores.
+scores.
 }
 \description{
 This is a wrapper for \link{plot_point_verif} that ensures the coordinate

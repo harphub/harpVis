@@ -1,14 +1,6 @@
-# Shiny modeule file for eps dashboard - calls nested modules.
-
-#' Title
-#'
-#' @param id
-#'
-#' @return
+#' @rdname dashboard_point_verif
 #' @export
-#'
-#' @examples
-dashboard_epsUI <- function(id) {
+dashboard_point_verifUI <- function(id) {
 
   ns <- shiny::NS(id)
 
@@ -55,17 +47,55 @@ dashboard_epsUI <- function(id) {
   )
 }
 
-#' Title
+#' Shiny module for point verification dashboard
 #'
-#' @param input
-#' @param output
-#' @param session
-#'
-#' @return
+#' @inheritParams colour_choices
+#' @param colour_table A reactive data frame in a format suitable for the
+#'   `colour_table` argument to \code{\link{plot_point_verif}}
+#' @param time_axis A reactive string giving the name of the time axis to
+#'   use as the x-axis in the dashboard. Mut be one of "lead_time",
+#'   "valid_dttm", or "valid_hour" and the column must exist in `verif_data`.
 #' @export
 #'
 #' @examples
-dashboard_eps <- function(
+#'
+#' # Run examples link doesn't work for shiny apps in RStudio. Copy-paste
+#' # example to console to run.
+#'
+#' library(shiny)
+#'
+#' # Set the theme to white
+#' shinyOptions(theme = "white")
+#'
+#' ui <- fluidPage(
+#'   fluidRow(
+#'     column(12, dashboard_point_verifUI("dshbrd"))
+#'   )
+#' )
+#'
+#' server <- function(input, output, session) {
+#'   # Data could have "fcst_model" or "mname" and "leadtime" or "lead_time" as
+#'   # column names depending on the harp version
+#'   fcst_model_col <- intersect(
+#'     c("fcst_model", "mname"), colnames(ens_verif_data$ens_summary_scores)
+#'   )
+#'   lt_col <- intersect(
+#'     c("lead_time", "leadtime"), colnames(ens_verif_data$ens_summary_scores)
+#'   )
+#'   col_tbl <- data.frame(
+#'     fcst_model = unique(ens_verif_data$ens_summary_scores[[fcst_model_col]]),
+#'     colour     = c("red", "green", "blue")
+#'   )
+#'   callModule(
+#'     dashboard_point_verif, "dshbrd", reactive(ens_verif_data),
+#'     reactive(col_tbl), reactive(lt_col)
+#'   )
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
+dashboard_point_verif <- function(
   input,
   output,
   session,
@@ -108,7 +138,23 @@ dashboard_eps <- function(
     "auto"
   }
 
-  get_bg_colour = function() "#0A0A2C"
+  theme_opt <- shiny::getShinyOption("theme")
+  if (is.null(theme_opt)) {
+    theme_opt <- "white"
+  }
+  plot_theme <- switch(
+    theme_opt,
+    "dark"  = "harp_midnight",
+    "light" = "harp_light",
+    "white" = "bw"
+  )
+
+  bg_colour = switch(
+    theme_opt,
+    "dark"  = "#0A0A2C",
+    "light" = "#F0F1F2",
+    "white" = "white"
+  )
 
 
   shiny::observeEvent(verif_data(), {
@@ -206,7 +252,7 @@ dashboard_eps <- function(
         legend_position = ifelse(i < length(summary_scores()), "none", legend_summary),
         num_legend_rows = nrow(colour_table()),
         plot_caption    = "none",
-        colour_theme    = "harp_midnight",
+        colour_theme    = plot_theme,
         plot_title      = summary_scores()[i],
         colour_table    = colour_table(),
         flip_axes       = plot_flip_axes
@@ -352,7 +398,7 @@ dashboard_eps <- function(
           legend_position  = ifelse(i < length(thresh_scores()), "none", "right"),
           num_legend_rows  = nrow(colour_table()),
           plot_caption     = "none",
-          colour_theme     = "harp_midnight",
+          colour_theme     = plot_theme,
           plot_title       = thresh_scores()[i],
           colour_table     = colour_table()
         )
@@ -364,27 +410,27 @@ dashboard_eps <- function(
 
   output$dashboard_summary_1 <- shiny::renderPlot({
     shiny::req(dashboard_plots$summary_1)
-  }, height = "auto", res = 96, bg = get_bg_colour())
+  }, height = 300, res = 96, bg = bg_colour)
 
   output$dashboard_summary_2 <- shiny::renderPlot({
     shiny::req(dashboard_plots$summary_2)
-  }, height = "auto", res = 96, bg = get_bg_colour())
+  }, height = 300, res = 96, bg = bg_colour)
 
   output$dashboard_summary_3 <- shiny::renderPlot({
     shiny::req(dashboard_plots$summary_3)
-  }, height = "auto", res = 96, bg = get_bg_colour())
+  }, height = 300, res = 96, bg = bg_colour)
 
   output$dashboard_thresh_1 <- shiny::renderPlot({
     shiny::req(dashboard_plots$thresh_1)
-  }, height = "auto", res = 96, bg = get_bg_colour())
+  }, height = 300, res = 96, bg = bg_colour)
 
   output$dashboard_thresh_2 <- shiny::renderPlot({
     shiny::req(dashboard_plots$thresh_2)
-  }, height = "auto", res = 96, bg = get_bg_colour())
+  }, height = 300, res = 96, bg = bg_colour)
 
   output$dashboard_thresh_3 <- shiny::renderPlot({
     shiny::req(dashboard_plots$thresh_3)
-  }, height = "auto", res = 96, bg = get_bg_colour())
+  }, height = 300, res = 96, bg = bg_colour)
 
 
 }
