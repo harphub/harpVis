@@ -40,25 +40,46 @@ options_barUI <- function(id) {
               shiny::selectInput(
                 ns("data_dir"),
                 "Select Verification Directory",
-                dir_select_populate(app_start_dir, app_start_dir)
+                dir_select_populate(app_start_dir, app_start_dir),
+                width = "100%"
               )
             }
           ),
           shiny::div(class = "col-sm-6",
-            shiny::selectInput(ns("models"), "Model combination", "Waiting for valid directory", width = "100%")
+            shiny::selectInput(
+              ns("models"),
+              "Model combination",
+              "Waiting for valid directory",
+              width = "100%"
+            )
           )
         )
       ),
       shiny::div(class = "col-lg-6",
         shiny::fluidRow(
           shiny::div(class = "col-sm-6",
-            shiny::selectInput(ns("dates"), "Dates", "Waiting for valid directory", width = "100%")
+            shiny::selectInput(
+              ns("dates"),
+              "Dates",
+              "Waiting for valid directory",
+              width = "100%"
+            )
           ),
           shiny::div(class = "col-sm-4",
-            shiny::selectInput(ns("parameter"), "Parameter", "Waiting for valid directory", width = "100%")
+            shiny::selectInput(
+              ns("parameter"),
+              "Parameter",
+              "Waiting for valid directory",
+              width = "100%"
+            )
           ),
           shiny::div(class = "col-sm-2",
-            shiny::actionButton(ns("load_data"), "Load", icon = icon("upload"), width = "100%")
+            shiny::actionButton(
+              ns("load_data"),
+              "Load",
+              icon = shiny::icon("upload"),
+              width = "100%"
+            )
           )
         )
       )
@@ -88,7 +109,11 @@ options_bar <- function(input, output, session) {
       names(volumes)[1] <- app_start_dir
     }
     shinyFiles::shinyDirChoose(
-      input, "data_dir", roots = volumes, session = session, restrictions = system.file(package = "base")
+      input,
+      "data_dir",
+      roots = volumes,
+      session = session,
+      restrictions = system.file(package = "base")
     )
   }
 
@@ -117,10 +142,14 @@ options_bar <- function(input, output, session) {
   shiny::observeEvent(list(data_dir()), {
     shiny::req(data_dir())
     if(length(data_dir()) < 1) return()
-    data_files$filenames  <- dir(data_dir(), pattern = "harpPointVerif*[[:graph:]]*.rds")
-    harp_files            <- strsplit(data_files$filenames, ".harp.")
-    data_files$models     <- gsub(".model.", " + ", unique(unlist(lapply(harp_files, `[`, 4))))
-    data_files$models     <- gsub(".rds", "", data_files$models)
+    data_files$filenames  <- dir(
+      data_dir(), pattern = "harpPointVerif*[[:graph:]]*.rds"
+    )
+    harp_files        <- strsplit(data_files$filenames, ".harp.")
+    data_files$models <- gsub(
+      ".model.", " + ", unique(unlist(lapply(harp_files, `[`, 4)))
+    )
+    data_files$models <- gsub(".rds", "", data_files$models)
 
     selected_models <- NULL
     if (!is.null(input$models) && input$models %in% data_files$models) {
@@ -138,7 +167,9 @@ options_bar <- function(input, output, session) {
     shiny::req(input$models)
     models       <- gsub(" \\+ ", ".model.", input$models)
     regexp       <- paste0(".harp.", models, ".rds")
-    harp_files   <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
+    harp_files   <- strsplit(
+      grep(regexp, data_files$filenames, value = TRUE), ".harp."
+    )
     files_dates  <- unique(unlist(lapply(harp_files, `[`, 3)))
 
 
@@ -176,8 +207,10 @@ options_bar <- function(input, output, session) {
     if (grepl("Waiting", dates)) {
       dates <- ""
     }
-    regexp                <- paste0(paste(dates, models, sep = ".harp."), ".rds")
-    harp_files            <- strsplit(grep(regexp, data_files$filenames, value = TRUE), ".harp.")
+    regexp      <- paste0(paste(dates, models, sep = ".harp."), ".rds")
+    harp_files  <- strsplit(
+      grep(regexp, data_files$filenames, value = TRUE), ".harp."
+    )
     data_files$parameters <- unique(unlist(lapply(harp_files, `[`, 2)))
 
     selected_parameter <- NULL
@@ -194,38 +227,57 @@ options_bar <- function(input, output, session) {
 
   verif_file <- shiny::reactiveVal()
 
-  shiny::observeEvent(list(input$parameter, input$dates, input$models, data_dir()), {
+  shiny::observeEvent(
+    list(
+      input$parameter, input$dates, input$models, data_dir()
+    ), {
     shiny::req(input$models)
     models <- gsub(" \\+ ", ".model.", input$models)
     regexp <- paste0(
       paste(input$parameter, input$dates, models, sep = "\\.harp\\."),
       ".rds$"
     )
-    verif_file(file.path(data_dir(), grep(regexp, data_files$filenames, value = TRUE)))
+    verif_file(
+      file.path(data_dir(), grep(regexp, data_files$filenames, value = TRUE))
+    )
   })
 
   verif_data <- shiny::reactiveVal()
 
   shiny::observeEvent(input$load_data, {
-    valid_list_elements <- unlist(lapply(c("ens", "det"), paste, c("summary_scores", "threshold_scores"), sep = "_"))
+    valid_list_elements <- unlist(
+      lapply(
+        c("ens", "det"),
+        paste, c("summary_scores", "threshold_scores"), sep = "_"
+      )
+    )
     modal_footer <- shiny::tags$button(
-      type = "button", class = "btn btn-danger", `data-dismiss` = "modal", shiny:::validateIcon(NULL), "Dismiss"
+      type = "button", class = "btn btn-danger", `data-dismiss` = "modal",
+      shiny:::validateIcon(NULL), "Dismiss"
     )
     if (is.null(verif_file()) || length(verif_file()) < 1 || !file.exists(verif_file())) {
       shiny::showModal(
-        shiny::modalDialog(title = "ERROR", "Cannot find file", size = "s", footer = modal_footer)
+        shiny::modalDialog(
+          title = "ERROR", "Cannot find file", size = "s",
+          footer = modal_footer
+        )
       )
     } else {
       verif_data(try(readRDS(verif_file()), silent = TRUE))
       if (inherits(verif_data(), "try-error")) {
         shiny::showModal(
-          shiny::modalDialog(title = "ERROR", "Cannot read file", size = "s", footer = modal_footer)
+          shiny::modalDialog(
+            title = "ERROR", "Cannot read file", size = "s",
+            footer = modal_footer
+          )
         )
         verif_data(NULL)
       } else if (length(intersect(valid_list_elements, names(verif_data()))) < 1) {
         shiny::showModal(
           shiny::modalDialog(
-            title = "ERROR", "File does not contain harp point verification scores", size = "s", footer = modal_footer
+            title = "ERROR",
+            "File does not contain harp point verification scores", size = "s",
+            footer = modal_footer
           )
         )
         verif_data(NULL)
