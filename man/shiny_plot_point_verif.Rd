@@ -6,6 +6,7 @@
 \usage{
 shiny_plot_point_verif(
   start_dir = NULL,
+  full_dir_navigation = TRUE,
   theme = c("dark", "light", "white"),
   online = TRUE,
   ...

@@ -1,22 +1,13 @@
-# Module for options bar in shiny app for plotting point verification
-# The user provides the data directory and the files are scanned -
-# the user can then select what model comparisons to do, for what dates, a
-# and for the parameter.
-
-#' Title
+#' @inheritParams colour_choicesUI
+#' @rdname options_bar
 #'
-#' @param id
-#'
-#' @return
 #' @export
-#'
-#' @examples
 options_barUI <- function(id) {
 
   ns <- shiny::NS(id)
 
   app_start_dir <- shiny::getShinyOption("app_start_dir")
-  full_nav      <- shiny::getShinyOption("full_file_navigation")
+  full_nav      <- shiny::getShinyOption("full_dir_navigation")
 
   if (is.null(app_start_dir)) {
     full_nav <- TRUE
@@ -87,20 +78,77 @@ options_barUI <- function(id) {
   )
 }
 
-#' Title
+#' Module for reading harp verification files in a Shiny app
 #'
-#' @param input
-#' @param output
-#' @param session
+#' @description
+#' This module is used to generate UI for options to load harp verification
+#' files for display in a shiny app. It requires the following shinyOptions:
 #'
-#' @return
+#' * "app_start_dir" - the directory start the app in
+#' * "full_dir_navigation" - TRUE/FALSE - whether to make full file navigation
+#'   available via selection modal.
+#'
+#' @inheritParams colour_choices
+#' @return A reactive list containing the loaded harp verification object
 #' @export
 #'
 #' @examples
+#' library(shiny)
+#'
+#' # With directory navigation modal
+#' shinyOptions(
+#'   app_start_dir = system.file("verification", package = "harpVis"),
+#'   full_dir_navigation = TRUE
+#' )
+#'
+#' ui <- fluidPage(
+#'   fluidRow(
+#'     column(12,
+#'       options_barUI("opts"),
+#'     )
+#'   ),
+#'   fluidRow(
+#'     column(12,
+#'       verbatimTextOutput("str")
+#'     )
+#'   )
+#' )
+#'
+#' server <- function(input, output, session) {
+#'   my_data <- callModule(options_bar, "opts")
+#'   output$str <- renderPrint({
+#'     str(my_data())
+#'   })
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
+#'
+#' # Directory navigation from dropdown
+#' shinyOptions(full_dir_navigation = FALSE)
+#'
+#' # need to remake the UI with new options
+#' ui <- fluidPage(
+#'   fluidRow(
+#'     column(12,
+#'       options_barUI("opts"),
+#'     )
+#'   ),
+#'   fluidRow(
+#'     column(12,
+#'       verbatimTextOutput("str")
+#'     )
+#'   )
+#' )
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
 options_bar <- function(input, output, session) {
 
   app_start_dir <- shiny::getShinyOption("app_start_dir")
-  full_nav      <- shiny::getShinyOption("full_file_navigation")
+  full_nav      <- shiny::getShinyOption("full_dir_navigation")
 
   if (full_nav) {
     volumes <- c(Home = fs::path_home(), harp_getVolumes()())
@@ -123,11 +171,16 @@ options_bar <- function(input, output, session) {
     if (full_nav) {
       data_dir(shinyFiles::parseDirPath(volumes, input$data_dir))
     } else {
-      shiny::updateSelectInput(
-        session,
-        "data_dir",
-        choices = dir_select_populate(app_start_dir, input$data_dir)
-      )
+      poss_dirs <- dir_select_populate(app_start_dir, input$data_dir)
+      poss_choices <- names(poss_dirs)
+      if (length(poss_choices[poss_choices != "Back One Directory"]) > 1) {
+        shiny::updateSelectInput(
+          session,
+          "data_dir",
+          choices = poss_dirs,
+          selected = poss_choices[poss_choices != "Back One Directory"][1]
+        )
+      }
       data_dir(input$data_dir)
     }
   })
@@ -141,7 +194,7 @@ options_bar <- function(input, output, session) {
 
   shiny::observeEvent(list(data_dir()), {
     shiny::req(data_dir())
-    if(length(data_dir()) < 1) return()
+    if (length(data_dir()) < 1) return()
     data_files$filenames  <- dir(
       data_dir(), pattern = "harpPointVerif*[[:graph:]]*.rds"
     )
@@ -349,7 +402,7 @@ get_valid_dirs <- function(dir) {
   if (length(all_dirs) > length(valid_dirs)) {
     valid_dirs <- c(basename(dir), valid_dirs)
   }
-  valid_dirs
+  unique(valid_dirs)
 }
 
 remove_double_dots <- function(x) {
