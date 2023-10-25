@@ -15,19 +15,34 @@ options_barUI <- function(id) {
 
   ns <- shiny::NS(id)
 
+  app_start_dir <- shiny::getShinyOption("app_start_dir")
+  full_nav      <- shiny::getShinyOption("full_file_navigation")
+
+  if (is.null(app_start_dir)) {
+    full_nav <- TRUE
+  }
+
   shiny::tagList(
     shiny::fluidRow(id = "options_bar",
       shiny::div(class = "col-lg-6",
         shiny::fluidRow(
           shiny::div(class = "col-sm-6",
-            shinyFiles::shinyDirButton(
-              ns("data_dir"),
-              "Select Verification Directory",
-              "Please select a directory",
-              buttonType = "harp",
-              style = "width: 100%;",
-              icon = shiny::icon("folder-open")
-            )
+            if (full_nav) {
+              shinyFiles::shinyDirButton(
+                ns("data_dir"),
+                "Select Verification Directory",
+                "Please select a directory",
+                buttonType = "harp",
+                style = "width: 100%;",
+                icon = shiny::icon("folder-open")
+              )
+            } else {
+              shiny::selectInput(
+                ns("data_dir"),
+                "Select Verification Directory",
+                dir_select_populate(app_start_dir, app_start_dir)
+              )
+            }
           ),
           shiny::div(class = "col-sm-6",
             shiny::selectInput(ns("models"), "Model combination", "Waiting for valid directory", width = "100%")
@@ -64,19 +79,32 @@ options_barUI <- function(id) {
 options_bar <- function(input, output, session) {
 
   app_start_dir <- shiny::getShinyOption("app_start_dir")
-  volumes <- c(Home = fs::path_home(), harp_getVolumes()())
-  if (!is.null(app_start_dir)) {
-    volumes <- unclass(fs::path(app_start_dir))
-    names(volumes)[1] <- app_start_dir
-  }
-  shinyFiles::shinyDirChoose(
-    input, "data_dir", roots = volumes, session = session, restrictions = system.file(package = "base")
-  )
+  full_nav      <- shiny::getShinyOption("full_file_navigation")
 
-  data_dir <- reactiveVal()
+  if (full_nav) {
+    volumes <- c(Home = fs::path_home(), harp_getVolumes()())
+    if (!is.null(app_start_dir)) {
+      volumes <- unclass(fs::path(app_start_dir))
+      names(volumes)[1] <- app_start_dir
+    }
+    shinyFiles::shinyDirChoose(
+      input, "data_dir", roots = volumes, session = session, restrictions = system.file(package = "base")
+    )
+  }
+
+  data_dir <- shiny::reactiveVal()
 
   shiny::observeEvent(input$data_dir, {
-    data_dir(shinyFiles::parseDirPath(volumes, input$data_dir))
+    if (full_nav) {
+      data_dir(shinyFiles::parseDirPath(volumes, input$data_dir))
+    } else {
+      shiny::updateSelectInput(
+        session,
+        "data_dir",
+        choices = dir_select_populate(app_start_dir, input$data_dir)
+      )
+      data_dir(input$data_dir)
+    }
   })
 
   data_files <- shiny::reactiveValues(
@@ -228,4 +256,55 @@ menu_dates_to_char <- function(menu_dates) {
   dates_end   <- purrr::map(split_dates, ~date_to_char(.x[2]))
 
   purrr::map2_chr(dates_start, dates_end, paste, sep = " - ")
+}
+
+dir_select_populate <- function(top_dir, dir) {
+  dir         <- sub(paste0(.Platform$file.sep, "$"), "", dir)
+  valid_dirs  <- get_valid_dirs(dir)
+  dir_len     <- length(strsplit(dir, .Platform$file.sep)[[1]])
+  top_dir_len <- length(strsplit(top_dir, .Platform$file.sep)[[1]])
+  current_dir <- basename(dir)
+  if (dir_len > top_dir_len) {
+    valid_dirs <- c(
+      valid_dirs[valid_dirs == current_dir],
+      "..",
+      valid_dirs[valid_dirs != current_dir]
+    )
+  }
+  valid_dirs[valid_dirs != current_dir] <- file.path(
+    dir, valid_dirs[valid_dirs != current_dir]
+  )
+  valid_dirs[valid_dirs == current_dir] <- dir
+  names(valid_dirs) <- basename(valid_dirs)
+  valid_dirs[names(valid_dirs) == ".."] <- remove_double_dots(
+    valid_dirs[names(valid_dirs) == ".."]
+  )
+  names(valid_dirs)[names(valid_dirs) == ".."] <- "Back One Directory"
+  valid_dirs
+}
+
+get_valid_dirs <- function(dir) {
+  all_dirs <- strsplit(
+    list.files(dir, "harpPointVerif*[[:graph:]]*.rds", recursive = TRUE),
+    .Platform$file.sep
+  )
+  all_dirs <- vapply(
+    all_dirs,
+    function(x) ifelse(length(x) == 1, NA_character_, x[1]),
+    character(1)
+  )
+  valid_dirs <- all_dirs[!is.na(all_dirs)]
+  if (length(all_dirs) > length(valid_dirs)) {
+    valid_dirs <- c(basename(dir), valid_dirs)
+  }
+  valid_dirs
+}
+
+remove_double_dots <- function(x) {
+  if (is.null(x) || length(x) < 1) return(x)
+  if (grepl("\\.\\.$", x)) {
+    x <- strsplit(x, .Platform$file.sep)[[1]]
+    x <- Reduce(file.path, x[1:(length(x) - 2)])
+  }
+  x
 }
