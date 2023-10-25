@@ -134,7 +134,7 @@ options_bar <- function(input, output, session) {
     )
   })
 
-  shiny::observeEvent(input$models, {
+  shiny::observeEvent(list(input$models, data_dir()), {
     shiny::req(input$models)
     models       <- gsub(" \\+ ", ".model.", input$models)
     regexp       <- paste0(".harp.", models, ".rds")
@@ -169,7 +169,7 @@ options_bar <- function(input, output, session) {
     )
   })
 
-  shiny::observeEvent(list(input$models, input$dates), {
+  shiny::observeEvent(list(input$models, input$dates, data_dir()), {
     shiny::req(input$models, input$dates)
     models                <- gsub(" \\+ ", ".model.", input$models)
     dates                 <- input$dates
