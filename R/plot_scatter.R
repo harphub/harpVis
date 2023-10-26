@@ -1,5 +1,7 @@
 #' Scatter plot of forecast vs observations
 #'
+#' `r lifecycle::badge("deprecated")`
+#'
 #' @param .fcst A \code{harp_fcst} type object.
 #' @param fcst_model The model in the \code{harp_fcst} object to make a scatter
 #'   plot for - must not be quoted.
@@ -17,19 +19,39 @@
 #'
 #' @return A hexbin plot.
 #' @export
-#'
-#' @examples
 plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", facet_members = TRUE, binwidth = NULL, colours = NULL, ...) {
 
-  fcst_model_quo   <- rlang::enquo(fcst_model)
-  fcst_model_expr  <- rlang::quo_get_expr(fcst_model_quo)
-  if (is.character(fcst_model_expr)) {
-    fcst_model_quo <- rlang::sym(fcst_model)
+  lifecycle::deprecate_warn(
+    "0.1.0",
+    "plot_scatter()",
+    "plot_point_verif()",
+    paste(
+      "Data for scatter plots are now aggregated at verfication time",
+      "and can be plotted with plot_point_verif(..., score = hexbin, ...)"
+    )
+  )
+
+  if (inherits(.fcst, "harp_list") && length(.fcst) == 1) {
+    .fcst <- .fcst[[1]]
   }
-  fcst_model_name  <- rlang::quo_name(fcst_model_quo)
+
+  if (inherits(.fcst, "harp_df")) {
+    .fcst <- list(a = .fcst)
+    fcst_model_name <- "a"
+  } else {
+    if (missing(fcst_model)) {
+      stop("`fcst_model` is missing with no default.")
+    }
+    fcst_model_quo   <- rlang::enquo(fcst_model)
+    fcst_model_expr  <- rlang::quo_get_expr(fcst_model_quo)
+    if (is.character(fcst_model_expr)) {
+      fcst_model_quo <- rlang::sym(fcst_model)
+    }
+    fcst_model_name  <- rlang::quo_name(fcst_model_quo)
+  }
 
   if (!fcst_model_name %in% names(.fcst)) {
-    stop (fcst_model_name, " not found in .fcst.", call. = FALSE)
+    stop(fcst_model_name, " not found in .fcst.", call. = FALSE)
   }
 
   parameter_quo   <- rlang::enquo(parameter)
@@ -46,8 +68,8 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", facet_me
   }
 
   if (any(grepl("_mbr", names(plot_data)))) {
-    attr(plot_data, "dataframe_format") <- "wide"
     plot_data <- harpCore::pivot_members(plot_data)
+    det_names <- "fcst"
     if (is.numeric(members)) {
       members   <- paste0("mbr", formatC(members, width = 3, flag = "0"))
       plot_data <- dplyr::filter(plot_data, .data$member %in% members)
@@ -55,15 +77,15 @@ plot_scatter <- function(.fcst, fcst_model, parameter, members = "all", facet_me
       stop("'member' must be a numeric vector or 'all'.", call. = FALSE)
     }
   } else {
-    if (any(grepl("_det", names(plot_data)))) {
-      det_names <- names(plot_data)[grep("_det", names(plot_data))]
+    if (any(grepl("_det|^fcst$", names(plot_data)))) {
+      det_names <- names(plot_data)[grep("_det|^fcst$", names(plot_data))]
       if (length(det_names) > 1) {
         stop("Yo! We ain't having you have more than 1 deterministic model, fool!", call. = FALSE)
       }
-      plot_data <- dplyr::rename(plot_data, forecast = .data[[det_names]])
     }
   }
 
+  plot_data <- dplyr::rename(plot_data, forecast = .data[[det_names]])
   plot_data  <- dplyr::rename(plot_data, observed = !! parameter_quo)
   data_range <- range(c(plot_data$forecast, plot_data$observed))
 
