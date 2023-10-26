@@ -348,7 +348,7 @@ plot_field.geofield <- function(
   .fcst[.fcst < min(breaks)] <- min(breaks)
   .fcst[.fcst > max(breaks)] <- max(breaks)
 
-  plot_colours <- colorRampPalette(palette)(length(breaks) - 1)
+  plot_colours <- grDevices::colorRampPalette(palette)(length(breaks) - 1)
 
   if (title == "auto") {
     title <- paste(

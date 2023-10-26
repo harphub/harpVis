@@ -31,7 +31,8 @@ Imports:
     forcats,
     meteogrid,
     viridisLite,
-    lifecycle
+    lifecycle,
+    grDevices
 Remotes:
     harphub/harpCore@develop,
     harphub/ggsonde,
