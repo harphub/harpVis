@@ -2,45 +2,70 @@
 % Please edit documentation in R/plot_field.R
 \name{plot_field}
 \alias{plot_field}
+\alias{plot_field.harp_grid_df}
+\alias{plot_field.harp_list}
+\alias{plot_field.geofield}
 \title{Plot a harp_fcst 2d field}
 \usage{
 plot_field(
   .fcst,
-  fcst_model,
-  plot_col,
-  fcst_dttm,
-  lead_time,
-  filter_by = NULL,
   palette = viridisLite::viridis(255),
   num_breaks = 15,
   breaks = NULL,
   legend = TRUE,
   title = "auto",
   zoom_centre = NULL,
-  zoom_radius = 100
+  zoom_length = 100,
+  ...
+)
+
+\method{plot_field}{harp_grid_df}(
+  .fcst,
+  palette = viridisLite::viridis(255),
+  num_breaks = 15,
+  breaks = NULL,
+  legend = TRUE,
+  title = "auto",
+  zoom_centre = NULL,
+  zoom_length = 100,
+  fcst_dttm,
+  lead_time,
+  filter_by = NULL,
+  plot_col = NULL,
+  ...
+)
+
+\method{plot_field}{harp_list}(
+  .fcst,
+  palette = viridisLite::viridis(255),
+  num_breaks = 15,
+  breaks = NULL,
+  legend = TRUE,
+  title = "auto",
+  zoom_centre = NULL,
+  zoom_length = 100,
+  fcst_model = NULL,
+  fcst_dttm,
+  lead_time,
+  filter_by = NULL,
+  plot_col = NULL,
+  ...
+)
+
+\method{plot_field}{geofield}(
+  .fcst,
+  palette = viridisLite::viridis(255),
+  num_breaks = 15,
+  breaks = NULL,
+  legend = TRUE,
+  title = "auto",
+  zoom_centre = NULL,
+  zoom_length = 100,
+  ...
 )
 }
 \arguments{
-\item{.fcst}{A harp_fcst list or harp_spatial_fcst data frame.}
-
-\item{fcst_model}{The name of the model to plot. This selects the model from
-the harp_fcst list to plot. Can be omitted if there is only one model in
-the harp_fcst list. For plotting directly from a harp_spatial_fcst data
-frame, as returned by \code{\link{read_grid}}, this is the name to be used
-in the plot title.}
-
-\item{plot_col}{The column of data to plot from. Should be unquoted, or if a
-variable, wrapped in double curly brackets: \{\{\}\}.}
-
-\item{fcst_dttm}{The forecast date to plot in "YYYYMMDDhh" or similar format.
-Can be omitted if there is only one date in the data.}
-
-\item{lead_time}{The lead time to plot. Can be omitted if there is only one
-lead time in the data.}
-
-\item{filter_by}{Expressions that return a logical value wrapped inside the
-\code{vars} function for filtering the data prior to plotting. Only a
-single row should be left in the data frame for \code{plot_field} to work.}
+\item{.fcst}{A harp_list or harp_grid_df data frame.}
 
 \item{palette}{Colour palette to use. This should be a vector of colours.}
 
@@ -57,12 +82,28 @@ title.}
 \item{zoom_centre}{The centre point for a zoomed plot. Should be a 2-element
 vector with the longitude and latitude of the desired centre point.}
 
-\item{zoom_radius}{The number of grid squares in each direction from
-\code{zoom_centre} for a zoomed in plot.}
+\item{zoom_length}{A 2 element vector given the x and y lengths in number of
+grid squares of the zoomed plot.}
+
+\item{fcst_dttm}{The forecast date to plot in "YYYYMMDDhh" or similar format.
+Can be omitted if there is only one date in the data.}
+
+\item{lead_time}{The lead time to plot. Can be omitted if there is only one
+lead time in the data.}
+
+\item{filter_by}{Expressions that return a logical value wrapped inside the
+\code{vars} function for filtering the data prior to plotting. Only a
+single row should be left in the data frame for \code{plot_field} to work.}
+
+\item{plot_col}{The column in the data frame to take data from to plot}
+
+\item{fcst_model}{The fcst_model in a \code{harp_list} to plot from.}
 }
 \value{
 A plot
 }
 \description{
-Plot a harp_fcst 2d field
+This function is for quickly plotting a single \code{geofield}. For geofields in
+\code{harp_grid_df} data frames or \code{harp_list}s, extra arguments are available for
+extracting the correct \code{geofield}.
 }
