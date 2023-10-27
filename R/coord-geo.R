@@ -101,7 +101,7 @@ CoordGeo <- ggproto("CoordGeo", CoordSf,
 #' `r lifecycle::badge("experimental")`
 #'
 #' This is basically just an implementation of \code{\link[ggplot2]{coord_sf()}}
-#' for \code{\link{geom_georaster}}. It requires the \code{\link[sf]} package
+#' for \code{\link{geom_georaster}}. It requires the \code{sf} package
 #' and should very much be considered experimental. It is recommended to use
 #' \code{\link[ggplot2]{coord_equal()}} for the time being as errors are likely.
 #'

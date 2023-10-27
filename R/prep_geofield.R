@@ -1,24 +1,32 @@
-prep_geofield <- function(geo, upscale_factor = 1, method = "mean", data_frame = TRUE, ...) {
+prep_geofield <- function(
+  geo,
+  upscale_factor      = 1,
+  method              = "mean",
+  downsample_location = "centre",
+  data_frame          = TRUE,
+  ...
+) {
 
   stopifnot(meteogrid::is.geofield(geo))
 
-  if (method == "mean") {
-    method <- "array_mean"
-  }
-
-  if (method == "sample") {
-    method <- "array_sample"
-  }
-
   if (upscale_factor > 1) {
-    geo <- meteogrid::upscale(geo, factor = upscale_factor, method = method, ...)
+    geo <- harpCore::geo_upscale(
+      geo,
+      factor              = upscale_factor,
+      method              = method,
+      downsample_location = downsample_location,
+      ...
+    )
   }
 
   if (data_frame) {
 
     geo_extent <- meteogrid::DomainExtent(geo)
 
-    df   <- expand.grid(x = seq(geo_extent$x0, geo_extent$x1, geo_extent$dx), y = seq(geo_extent$y0, geo_extent$y1, geo_extent$dy))
+    df   <- expand.grid(
+      x = seq(geo_extent$x0, geo_extent$x1, geo_extent$dx),
+      y = seq(geo_extent$y0, geo_extent$y1, geo_extent$dy)
+    )
     df$z <- as.vector(geo)
 
     df
@@ -54,42 +62,6 @@ get_bbox <- function(geo) {
     ymax = bbox$y1 + bbox$dy / 2
   )
 
-}
-
-downsample <- function(x, location = "bottom_left", ...) {
-  stopifnot(length(dim(x)) == 2)
-  x_max    <- dim(x)[1]
-  y_max    <- dim(x)[2]
-  x_centre <- floor(dim(x)[1] / 2) + 1
-  y_centre <- floor(dim(x)[2] / 2) + 1
-  x_ind <- switch(
-    location,
-    "bottom_left"   = list(x = 1, y = 1),
-    "bottom_centre" = list(x = x_centre, y = 1),
-    "bottom_right"  = list(x = x_max, y = 1),
-    "left_centre"   = list(x = 1, y = y_centre),
-    "centre"        = list(x = x_centre, y = y_centre),
-    "right_centre"  = list(x = x_max, y = y_centre),
-    "top_right"     = list(x = x_max, y = y_max),
-    "top_centre"    = list(x = x_centre, y = y_max),
-    "top_left"      = list(x = 1, y = y_max),
-    list(NA, NA)
-  )
-  if (any(sapply(x_ind, is.na))) {
-    stop("unknown location: ", location)
-  }
-  x[x_ind$x, x_ind$y]
-}
-
-array_mean <- function(x, ...) {
-  dims <- dim(x)
-  stopifnot(length(dims) == 2)
-  num_points <- dims[1] * dims[2]
-  sum(x) / num_points
-}
-
-array_sample <- function(x, ...) {
-  sample(x, 1)
 }
 
 crop_geofield <- function(geo, bbox) {

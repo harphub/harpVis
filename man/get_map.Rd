@@ -10,7 +10,7 @@ get_map(dom = NULL, map = "world", polygon = TRUE, ...)
 \item{dom}{A \code{geodomain} or \code{geofield}}
 
 \item{map}{The map database from which to get the map data. The default is
-\code{\link[maps]{world}}. Datasets from the \code{\link[rnaturalearth]}
+\code{\link[maps]{world}}. Datasets from the \code{rnaturalearth}
 package may also be used, but only paths will be returned.}
 
 \item{polygon}{Logical. Whether to return the data as polygons (\code{TRUE}), or

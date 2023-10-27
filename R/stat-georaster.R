@@ -17,10 +17,10 @@ StatGeoraster <- ggproto("StatGeoraster", Stat,
 
     prep_geofield(
       data$geofield[[1]],
-      upscale_factor = upscale_factor,
-      method         = upscale_method,
-      location       = downsample_location,
-      na.rm          = na.rm
+      upscale_factor      = upscale_factor,
+      method              = upscale_method,
+      downsample_location = downsample_location,
+      na.rm               = na.rm
     )
   }
 

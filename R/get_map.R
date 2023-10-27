@@ -6,7 +6,7 @@
 #'
 #' @param dom A `geodomain` or `geofield`
 #' @param map The map database from which to get the map data. The default is
-#'   \code{\link[maps]{world}}. Datasets from the \code{\link[rnaturalearth]}
+#'   \code{\link[maps]{world}}. Datasets from the \code{rnaturalearth}
 #'   package may also be used, but only paths will be returned.
 #' @param polygon Logical. Whether to return the data as polygons (`TRUE`), or
 #'   paths (`FALSE`). The default is for polygons to be returned.

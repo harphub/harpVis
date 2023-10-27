@@ -2,24 +2,177 @@
 % Please edit documentation in R/geom-geocontour.R
 \name{geom_geocontour}
 \alias{geom_geocontour}
-\title{Title}
+\alias{geom_geocontour_filled}
+\title{2d contours of a geofield}
 \usage{
 geom_geocontour(
   mapping = NULL,
   data = NULL,
   position = "identity",
   ...,
+  bins = NULL,
+  binwidth = NULL,
+  breaks = NULL,
+  lineend = "butt",
+  linejoin = "round",
+  linemitre = 10,
   upscale_factor = 1,
   upscale_method = "mean",
-  downsample_location = "bottom_left",
+  downsample_location = "centre",
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+
+geom_geocontour_filled(
+  mapping = NULL,
+  data = NULL,
+  position = "identity",
+  ...,
+  bins = NULL,
+  binwidth = NULL,
+  breaks = NULL,
+  upscale_factor = 1,
+  upscale_method = "mean",
+  downsample_location = "centre",
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
 )
 }
 \arguments{
-\item{inherit.aes}{}
+\item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{aes()}}. If specified and
+\code{inherit.aes = TRUE} (the default), it is combined with the default mapping
+at the top level of the plot. You must supply \code{mapping} if there is no plot
+mapping.}
+
+\item{data}{The data to be displayed in this layer. There are three
+options:
+
+If \code{NULL}, the default, the data is inherited from the plot
+data as specified in the call to \code{\link[ggplot2:ggplot]{ggplot()}}.
+
+A \code{data.frame}, or other object, will override the plot
+data. All objects will be fortified to produce a data frame. See
+\code{\link[ggplot2:fortify]{fortify()}} for which variables will be created.
+
+A \code{function} will be called with a single argument,
+the plot data. The return value must be a \code{data.frame}, and
+will be used as the layer data. A \code{function} can be created
+from a \code{formula} (e.g. \code{~ head(.x, 10)}).}
+
+\item{position}{Position adjustment, either as a string naming the adjustment
+(e.g. \code{"jitter"} to use \code{position_jitter}), or the result of a call to a
+position adjustment function. Use the latter if you need to change the
+settings of the adjustment.}
+
+\item{...}{Other arguments passed on to \code{\link[ggplot2:layer]{layer()}}. These are
+often aesthetics, used to set an aesthetic to a fixed value, like
+\code{colour = "red"} or \code{size = 3}. They may also be parameters
+to the paired geom/stat.}
+
+\item{bins}{Number of contour bins. Overridden by \code{breaks}.}
+
+\item{binwidth}{The width of the contour bins. Overridden by \code{bins}.}
+
+\item{breaks}{One of:
+\itemize{
+\item Numeric vector to set the contour breaks
+\item A function that takes the range of the data and binwidth as input
+and returns breaks as output. A function can be created from a formula
+(e.g. ~ fullseq(.x, .y)).
+}
+
+Overrides \code{binwidth} and \code{bins}. By default, this is a vector of length
+ten with \code{\link[=pretty]{pretty()}} breaks.}
+
+\item{lineend}{Line end style (round, butt, square).}
+
+\item{linejoin}{Line join style (round, mitre, bevel).}
+
+\item{linemitre}{Line mitre limit (number greater than 1).}
+
+\item{upscale_factor}{An integer by which to upscale the data before
+computing the contours. For example if this is 2, the upscaled grid will
+have 2 pixels in each direction from the grid before upscaling.}
+
+\item{upscale_method}{The method used for upscaling. See
+\code{\link[harpCore]{geo_upscale}} for more details.}
+
+\item{downsample_location}{When "downsample" is the chosen method, each
+pixel in the upscaled field is sampled from a pixel from the original field
+that is inside the upscaled pixel. The location of that pixel can be one of
+"bottom_left", "bottom_centre", "bottom_right", "left_centre", "centre",
+"right_centre", "top_right", "top_centre", "top_left" or "random".}
+
+\item{na.rm}{If \code{FALSE}, the default, missing values are removed with
+a warning. If \code{TRUE}, missing values are silently removed.}
+
+\item{show.legend}{logical. Should this layer be included in the legends?
+\code{NA}, the default, includes if any aesthetics are mapped.
+\code{FALSE} never includes, and \code{TRUE} always includes.
+It can also be a named logical vector to finely select the aesthetics to
+display.}
+
+\item{inherit.aes}{If \code{FALSE}, overrides the default aesthetics,
+rather than combining with them. This is most useful for helper functions
+that define both data and aesthetics and shouldn't inherit behaviour from
+the default plot specification, e.g. \code{\link[ggplot2:borders]{borders()}}.}
 }
 \description{
-Title
+These functions visualise \code{geofield} data as contours in 2D. They are built
+on top of \code{\link[ggplot2]{geom_contour}} and
+\code{\link[ggplot2]{geom_contour_filled}}.
+
+They require data frames with a column containing
+\code{\link[harpCore]{geofield}}s. This would normally be a
+\code{\link[harpCore]{geolist}} column, but a standard list column containing
+geofields will also work.
+
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Smoothing can be achieved by upscaling
+the data before plotting. This can only be done using an integer scale factor
+and the methods can be any function that summarises a vector into a single
+value, for example "mean", "median", "min", "max", or "downsample".
+Downsampling is simply sampling a pixel within the upscaled pixel - by
+default this is the centre.
 }
+\section{Aesthetics}{
+ \code{geom_geocontour()} understands the following aesthetics
+(required aesthetics are in bold):
+\itemize{
+\item \strong{geofield}
+\item colour
+\item alpha
+\item group
+\item linetype
+\item linewidth
+\item weight
+}
+
+\code{geom_geocontour_filled()} understands the following aesthetics (required
+aesthetics are in bold):
+\itemize{
+\item \strong{geofield}
+\item colour
+\item fill
+\item alpha
+\item group
+\item linetype
+\item linewidth
+\item weight
+}
+}
+
+\section{Computed variables}{
+
+
+These are calculated by the 'stat' part of layers and can be accessed with \link[ggplot2:aes_eval]{delayed evaluation}. The computed variables differ somewhat for contour lines  (compbuted by \code{stat_contour()}) and contour bands (filled contours,  computed by \code{stat_contour_filled()}). The variables \code{nlevel} and \code{piece}  are available for both, whereas \code{level_low}, \code{level_high}, and \code{level_mid}  are only available for bands. The variable \code{level} is a numeric or a factor  depending on whether lines or bands are calculated.
+\itemize{
+\item \code{after_stat(level)}\cr Height of contour. For contour lines, this is a numeric vector  that represents bin boundaries. For contour bands, this is an ordered  factor that represents bin ranges.
+\item \code{after_stat(level_low)}, \code{after_stat(level_high)}, \code{after_stat(level_mid)}\cr (contour bands only) Lower and upper  bin boundaries for each band, as well as the mid point between boundaries.
+\item \code{after_stat(nlevel)}\cr Height of contour, scaled to a maximum of 1.
+\item \code{after_stat(piece)}\cr Contour piece (an integer).
+}
+
+}
+
