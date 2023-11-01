@@ -44,7 +44,7 @@ server <- function(input, output, session) {
   ############################################################
 
   score_optons <- shiny::callModule(
-    harpVis::interactive_eps,
+    harpVis::interactive_point_verif,
     "interactive",
     time_axis_out$filtered_data,
     colour_table,

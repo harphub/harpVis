@@ -65,7 +65,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   # Set options
   opts <- list(
-    score       = "ens_summary_scores_mean_bias",
+    score       = "ens_summary_scores_spread",
     num_cases   = FALSE,
     to_y_zero   = FALSE,
     x_axis      = "lead_time",
@@ -77,17 +77,18 @@ server <- function(input, output, session) {
     n_cases_pos = "bottom"
   )
 
-  fcst_model_col <- intersect(
-    c("fcst_model", "mname"), colnames(ens_verif_data$ens_summary_scores)
-  )
   col_tbl <- data.frame(
-    fcst_model = unique(ens_verif_data$ens_summary_scores[[fcst_model_col]]),
-    colour     = c("red", "green", "blue")
+    fcst_model = unique(verif_data_ens$ens_summary_scores$fcst_model),
+    colour     = c("red", "blue")
   )
 
   callModule(
-    download_verif_plot, "dwnld", reactive(ens_verif_data),
+    download_verif_plot, "dwnld", reactive(verif_data_ens),
     reactive(opts), reactive(col_tbl)
   )
+}
+
+if (interactive()) {
+  shinyApp(ui, server)
 }
 }

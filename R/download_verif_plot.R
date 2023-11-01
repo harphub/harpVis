@@ -58,7 +58,7 @@ download_verif_plotUI <- function(id) {
 #' server <- function(input, output, session) {
 #'   # Set options
 #'   opts <- list(
-#'     score       = "ens_summary_scores_mean_bias",
+#'     score       = "ens_summary_scores_spread",
 #'     num_cases   = FALSE,
 #'     to_y_zero   = FALSE,
 #'     x_axis      = "lead_time",
@@ -70,18 +70,19 @@ download_verif_plotUI <- function(id) {
 #'     n_cases_pos = "bottom"
 #'   )
 #'
-#'   fcst_model_col <- intersect(
-#'     c("fcst_model", "mname"), colnames(ens_verif_data$ens_summary_scores)
-#'   )
 #'   col_tbl <- data.frame(
-#'     fcst_model = unique(ens_verif_data$ens_summary_scores[[fcst_model_col]]),
-#'     colour     = c("red", "green", "blue")
+#'     fcst_model = unique(verif_data_ens$ens_summary_scores$fcst_model),
+#'     colour     = c("red", "blue")
 #'   )
 #'
 #'   callModule(
-#'     download_verif_plot, "dwnld", reactive(ens_verif_data),
+#'     download_verif_plot, "dwnld", reactive(verif_data_ens),
 #'     reactive(opts), reactive(col_tbl)
 #'   )
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
 #' }
 download_verif_plot <- function(input, output, session, verif_data, score_options, colour_table) {
 
@@ -114,12 +115,18 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
     plot_models <- Reduce(
       union, purrr::map(verif_data(), ~ unique(.x[[fcst_model_col]]))
     )
+    dttm <- strptime(
+      strsplit(attrs[["dttm"]], " - ")[[1]],
+      format = "%H:%M %d %b %Y", tz = "UTC"
+    )
+    dttm <- harpCore::as_YMDhm(as.POSIXct(dttm))
+    dttm <- paste(dttm, collapse = "-")
     save_options$filename <- paste0(
       paste(
         score_options()$score,
         attr(verif_data(), "parameter"),
         paste(plot_models, collapse = "+"),
-        attrs[["dttm"]],
+        dttm,
         sep = "_"
       ),
       ".",

@@ -68,7 +68,7 @@ ui <- shiny::tags$html(
         ),
 
         shiny::tabPanel("Interactive",
-          harpVis::interactive_epsUI("interactive"),
+          harpVis::interactive_point_verifUI("interactive"),
           harpVis::download_verif_plotUI("download_plot")
         )
 

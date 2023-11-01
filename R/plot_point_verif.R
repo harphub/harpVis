@@ -108,10 +108,10 @@
 #' @export
 #'
 #' @examples
-#' plot_point_verif(ens_verif_data, crps)
-#' plot_point_verif(ens_verif_data, spread_skill)
-#' plot_point_verif(det_verif_data, equitable_threat_score, facet_by = vars(threshold))
-#' plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
+#' plot_point_verif(verif_data_ens, crps)
+#' plot_point_verif(verif_data_ens, spread_skill)
+#' plot_point_verif(verif_data_det, equitable_threat_score, facet_by = vars(threshold))
+#' plot_point_verif(verif_data_ens, reliability, filter_by = vars(lead_time == 12, threshold == 16))
 
 plot_point_verif <- function(
   verif_data,
@@ -772,6 +772,10 @@ plot_point_verif <- function(
     "none" = "",
     plot_caption
   )
+
+  # quietly exit if not enough info - just for shiny app!
+  if (any(c(length(score_type), length(plot_num_cases), length(plot_geom)) < 1))
+    return()
 
   # Special faceted plot if plot_num_cases == TRUE
   if (score_type == "summary" & plot_num_cases & plot_geom == "line") {

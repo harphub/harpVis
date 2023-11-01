@@ -26,9 +26,10 @@ A reactive data frame to be used as input to the \code{colour_table}
 argument in \code{\link{plot_point_verif}}.
 }
 \description{
-The UI includes a button for opening a modal to pick colours for a plot. The
-output is a data frame that can be used to control colours in plotting
-point verification scores using the \code{\link{plot_point_verif}} function.
+The UI includes a button with a palette icon for opening a modal to pick
+colours for a plot. The output is a data frame that can be used to control
+colours in plotting point verification scores using the
+\code{\link{plot_point_verif}} function.
 }
 \details{
 Note that the module uses the "old" semantics for shiny modules so should be
@@ -37,7 +38,6 @@ called with \code{\link[shiny]{callModule}} rather than
 }
 \examples{
 library(shiny)
-library(ggplot2)
 
 ui <- fluidPage(
   colour_choicesUI("cols"),
@@ -45,10 +45,10 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  col_table <- callModule(colour_choices, "cols", reactive(ens_verif_data))
+  col_table <- callModule(colour_choices, "cols", reactive(verif_data_ens))
   output$verifPlot <- renderPlot({
     plot_point_verif(
-      ens_verif_data, mean_bias, colour_table = col_table(),
+      verif_data_ens, spread, colour_table = col_table(),
       plot_num_cases = FALSE
     )
   })

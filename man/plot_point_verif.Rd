@@ -192,8 +192,8 @@ arguments that can take more than one value, (\code{facet_by} and
 \link[dplyr]{vars} function.
 }
 \examples{
-plot_point_verif(ens_verif_data, crps)
-plot_point_verif(ens_verif_data, spread_skill)
-plot_point_verif(det_verif_data, equitable_threat_score, facet_by = vars(threshold))
-plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
+plot_point_verif(verif_data_ens, crps)
+plot_point_verif(verif_data_ens, spread_skill)
+plot_point_verif(verif_data_det, equitable_threat_score, facet_by = vars(threshold))
+plot_point_verif(verif_data_ens, reliability, filter_by = vars(lead_time == 12, threshold == 16))
 }

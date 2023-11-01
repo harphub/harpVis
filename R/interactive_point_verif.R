@@ -1,14 +1,7 @@
-# Shiny module for interactive score plotting
-
-#' Title
-#'
-#' @param id
-#'
-#' @return
+#' @rdname interactive_point_verif
+#' @inheritParams dashboard_point_verifUI
 #' @export
-#'
-#' @examples
-interactive_epsUI <- function(id) {
+interactive_point_verifUI <- function(id) {
 
   ns <- shiny::NS(id)
 
@@ -26,24 +19,59 @@ interactive_epsUI <- function(id) {
 }
 
 
-#' Title
+#' Shiny module for interactively showing point verification scores
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param verif_data
-#'
-#' @return
+#' @inheritParams dashboard_point_verif
+#' @return An interactive list of options chosen for a plot that can be passed
+#'   to \code{\link{download_verif_plot}}
 #' @export
 #'
 #' @examples
-interactive_eps <- function(
+#' library(shiny)
+#'
+#' shinyOptions(theme = "white")
+#'
+#' ui <- fluidPage(
+#'   fluidRow(
+#'     column(12, interactive_point_verifUI("int"))
+#'   ),
+#'   fluidRow(
+#'     column(12, verbatimTextOutput("opts"))
+#'   )
+#' )
+#'
+#' server <- function(input, output, session) {
+#'
+#'   col_tbl <- data.frame(
+#'     fcst_model = unique(verif_data_ens$ens_summary_scores$fcst_model),
+#'     colour     = c("red", "blue")
+#'   )
+#'
+#'   opts <- callModule(
+#'     interactive_point_verif, "int", reactive(verif_data_ens),
+#'     reactive(col_tbl),  reactive("lead_time")
+#'   )
+#'
+#'   output$opts <- renderPrint({
+#'     req(opts())
+#'   })
+#'
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
+
+interactive_point_verif <- function(
   input, output, session, verif_data, colour_table, time_axis
 ) {
 
   ns <- session$ns
 
   theme_opt <- shiny::getShinyOption("theme")
+  if (is.null(theme_opt)) {
+    theme_opt <- "white"
+  }
 
   plot_theme <- switch(
     theme_opt,

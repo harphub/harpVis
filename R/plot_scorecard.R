@@ -35,8 +35,6 @@
 #'
 #' @return A score card plot. Can be saved with \link[ggplot2]{ggsave}
 #' @export
-#'
-#' @examples
 plot_scorecard <- function(
   bootstrap_data,
   fcst_model,

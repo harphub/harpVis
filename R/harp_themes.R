@@ -45,7 +45,8 @@ theme_harp_black <- function (base_size = 11, base_family = "", base_line_size =
       panel.border      = ggplot2::element_rect(fill = NA, colour = "grey92"),
       panel.grid        = ggplot2::element_line(colour = "grey30"),
       panel.grid.minor  = ggplot2::element_line(size = ggplot2:::rel(0.5)),
-      strip.background  = ggplot2::element_rect(fill = "#000000", colour = "grey92"),
+      strip.background  = ggplot2::element_rect(fill = "grey22", colour = "grey92"),
+      strip.text        = ggplot2::element_text(colour = "grey92"),
       legend.key        = ggplot2::element_rect(fill = "#000000", colour = NA),
       legend.background = ggplot2::element_rect(fill = "#000000", colour = NA),
       complete          = TRUE

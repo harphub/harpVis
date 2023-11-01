@@ -1,11 +1,6 @@
-#' Title
-#'
-#' @param id
-#'
-#' @return
+#' @inheritParams colour_choicesUI
+#' @rdname group_selectors
 #' @export
-#'
-#' @examples
 group_selectorsUI <- function(id) {
 
   ns <- shiny::NS(id)
@@ -37,17 +32,41 @@ group_selectorsUI <- function(id) {
 
 }
 
-#' Title
+#' Shiny module for selecting values for verification groups
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param verif_data
+#' This module inspects the input data and identifies columns by which the
+#' verification is grouped. A \code{\link[shiny]{selectInput}} dropdown is
+#' created for each group and updated depending on the selections in other
+#' groups. The verification data are filtered to the selected values for each
+#' group.
 #'
-#' @return
+#' @inheritParams colour_choices
+#' @return The verification data as a reactive value filtered to the values
+#'   selected for each group.
 #' @export
 #'
 #' @examples
+#' library(shiny)
+#'
+#' ui <- fluidPage(
+#'   fluidRow(
+#'     group_selectorsUI("grps")
+#'   ),
+#'   fluidRow(
+#'     plotOutput("plt")
+#'   )
+#' )
+#'
+#' server <- function(input, output, session) {
+#'   grp_data <- callModule(group_selectors, "grps", reactive(verif_data_grp))
+#'   output$plt <- renderPlot({
+#'     plot_point_verif(req(grp_data()), spread)
+#'   })
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
 group_selectors <- function(input, output, session, verif_data) {
 
   ns <- session$ns

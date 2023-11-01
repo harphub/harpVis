@@ -2,25 +2,135 @@
 % Please edit documentation in R/plot_vertical_profile.R
 \name{plot_vertical_profile}
 \alias{plot_vertical_profile}
-\title{Title}
+\alias{plot_vertical_profile.harp_ens_point_df}
+\alias{plot_vertical_profile.harp_list}
+\alias{plot_vertical_profile.harp_det_point_df}
+\alias{plot_vertical_profile.data.frame}
+\title{Plot a vertical profile}
 \usage{
 plot_vertical_profile(
-  .fcst,
+  .data,
   SID,
-  fcst_dttm,
-  lead_time,
-  y_axis = p,
+  y_axis = "p",
+  reverse = TRUE,
+  log_scale = FALSE,
   skew_t = FALSE,
-  colour_by = fcst_model,
+  colour_by = "fcst_model",
   colours = NULL,
   facet_by = NULL,
-  num_facet_cols = 2,
+  num_facet_cols = NULL,
+  ...
+)
+
+\method{plot_vertical_profile}{harp_ens_point_df}(
+  .data,
+  SID,
+  y_axis = "p",
+  reverse = TRUE,
+  log_scale = FALSE,
+  skew_t = FALSE,
+  colour_by = "fcst_model",
+  colours = NULL,
+  facet_by = NULL,
+  num_facet_cols = NULL,
+  fcst_dttm,
+  lead_time,
+  ...
+)
+
+\method{plot_vertical_profile}{harp_list}(
+  .data,
+  SID,
+  y_axis = "p",
+  reverse = TRUE,
+  log_scale = FALSE,
+  skew_t = FALSE,
+  colour_by = "fcst_model",
+  colours = NULL,
+  facet_by = NULL,
+  num_facet_cols = NULL,
+  fcst_dttm,
+  lead_time,
+  ...
+)
+
+\method{plot_vertical_profile}{harp_det_point_df}(
+  .data,
+  SID,
+  y_axis = "p",
+  reverse = TRUE,
+  log_scale = FALSE,
+  skew_t = FALSE,
+  colour_by = "fcst_model",
+  colours = NULL,
+  facet_by = NULL,
+  num_facet_cols = NULL,
+  fcst_dttm,
+  lead_time,
+  ...
+)
+
+\method{plot_vertical_profile}{data.frame}(
+  .data,
+  SID,
+  y_axis = "p",
+  reverse = TRUE,
+  log_scale = FALSE,
+  skew_t = FALSE,
+  colour_by = NULL,
+  colours = NULL,
+  facet_by = NULL,
+  num_facet_cols = NULL,
+  data_col,
+  valid_dttm,
   ...
 )
 }
 \arguments{
-\item{colours}{}
+\item{.data}{A data frame, a \code{harp_point_df} data frame or a \code{harp_list}.}
+
+\item{SID}{The station ID (if available) in \code{.data} to plot}
+
+\item{y_axis}{The column in \code{.data} containing the data to be used as the
+y-axis - i.e. the vertical position.}
+
+\item{reverse}{Logical - whether the y-axis should be reversed.}
+
+\item{log_scale}{Logical - whether the y-axis should use a log10 scale.}
+
+\item{skew_t}{Logical. Whether to plot the profile on a skew-T /log-P
+diagram.}
+
+\item{colour_by}{The column in \code{.data} that will determine the line colour}
+
+\item{colours}{A character vector of colour codes. If this is a named vector,
+then the colour values will be matched to levels based on the names of the
+vectors. Can also be a data frame with column names equal to the value for
+\code{colour_by} and \code{colour}.}
+
+\item{facet_by}{The column in \code{.data} to facet by.}
+
+\item{...}{Other arguments passed on to layer(). These are often aesthetics,
+used to set an aesthetic to a fixed value, like colour = "red" or size = 3.}
+
+\item{fcst_dttm}{The forecast start time in \code{.data} to plot.}
+
+\item{lead_time}{The lead_time in \code{data} to plot.}
+
+\item{data_col}{The column in \code{.data} that contains the data to plot as a
+vertical profile.}
+
+\item{valid_dttm}{If a \code{valid_dttm} column exists in \code{.data}, the valid time
+of the data to plot.}
+}
+\value{
+A \code{ggplot} plot that can be saved with \code{\link[ggplot2]{ggsave}}.
 }
 \description{
-Title
+Plots a vertical profile of data read in by a \verb{harp_read_<>} function. There
+are arguments for filtering the data to, for example station (SID), forecast
+start time (fcst_dttm), lead time (lead_time), or valid time (valid_dttm) to
+ensure that only the wanted data are plotted. There is also the option to
+plot temperature (and / or) dewpoint temperature profiles on a skew-T / log -
+P diagram.
 }

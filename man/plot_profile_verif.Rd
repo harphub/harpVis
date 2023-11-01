@@ -48,3 +48,22 @@ This is a wrapper for \link{plot_point_verif} that ensures the coordinate
 system is properly set up for plots of verification scores for vertical
 profiles.
 }
+\examples{
+# Not filtering or faceting results in overplotting
+plot_profile_verif(verif_data_prf, bias)
+
+# Facet by lead_time
+plot_profile_verif(verif_data_prf, bias, facet_by = vars(lead_time))
+
+# Remove rows with few cases using filter_by
+plot_profile_verif(
+  verif_data_prf,
+  bias,
+  facet_by = vars(lead_time),
+  filter_by = vars(num_cases > 1)
+)
+
+# Filter to only a single panel
+plot_profile_verif(verif_data_prf, bias, filter_by = vars(lead_time == 24))
+
+}

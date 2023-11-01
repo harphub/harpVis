@@ -26,19 +26,25 @@ dashboard_point_verifUI <- function(id) {
         )
       )
     ),
-    shiny::div(class = "row", id = ns("dashboard_thresh")),
     shiny::fluidRow(
-      shiny::column(3,
-        shiny::tags$div(class = "dashboard-panel",
-          shiny::plotOutput(ns("dashboard_thresh_1"), height = "100%", width = "100%")
+      shiny::column(7,
+        shiny::column(3,
+          shiny::div(class = "row", id = ns("dashboard_thresh"))
+        ),
+        shiny::column(9,
+          shiny::column(6,
+            shiny::tags$div(class = "dashboard-panel",
+                shiny::plotOutput(ns("dashboard_thresh_1"), height = "100%", width = "100%")
+            )
+          ),
+          shiny::column(6,
+            shiny::tags$div(class = "dashboard-panel",
+              shiny::plotOutput(ns("dashboard_thresh_2"), height = "100%", width = "100%")
+            )
+          )
         )
       ),
-      shiny::column(3,
-        shiny::tags$div(class = "dashboard-panel",
-          shiny::plotOutput(ns("dashboard_thresh_2"), height = "100%", width = "100%")
-        )
-      ),
-      shiny::column(6,
+      shiny::column(5,
         shiny::tags$div(class = "dashboard-panel",
           shiny::plotOutput(ns("dashboard_thresh_3"), height = "100%", width = "100%")
         )
@@ -74,21 +80,13 @@ dashboard_point_verifUI <- function(id) {
 #' )
 #'
 #' server <- function(input, output, session) {
-#'   # Data could have "fcst_model" or "mname" and "leadtime" or "lead_time" as
-#'   # column names depending on the harp version
-#'   fcst_model_col <- intersect(
-#'     c("fcst_model", "mname"), colnames(ens_verif_data$ens_summary_scores)
-#'   )
-#'   lt_col <- intersect(
-#'     c("lead_time", "leadtime"), colnames(ens_verif_data$ens_summary_scores)
-#'   )
 #'   col_tbl <- data.frame(
-#'     fcst_model = unique(ens_verif_data$ens_summary_scores[[fcst_model_col]]),
-#'     colour     = c("red", "green", "blue")
+#'     fcst_model = unique(verif_data_ens$ens_summary_scores$fcst_model),
+#'     colour     = c("red", "blue")
 #'   )
 #'   callModule(
-#'     dashboard_point_verif, "dshbrd", reactive(ens_verif_data),
-#'     reactive(col_tbl), reactive(lt_col)
+#'     dashboard_point_verif, "dshbrd", reactive(verif_data_ens),
+#'     reactive(col_tbl), reactive("lead_time")
 #'   )
 #' }
 #'
@@ -280,11 +278,11 @@ dashboard_point_verif <- function(
       shiny::insertUI(
         selector = paste0("#", ns("dashboard_thresh")),
         where    = "beforeEnd",
-        ui       = shiny::fluidRow(
+        ui       = #shiny::fluidRow(
           shiny::div(
             id    = ns("thresh_selectors"),
-            shiny::column(3,
-              shiny::column(6,
+            #shiny::column(12,
+              #shiny::fluidRow(
                 shiny::selectInput(
                   ns("threshold"),
                   "Threshold",
@@ -293,11 +291,12 @@ dashboard_point_verif <- function(
                   )),
                   sort(unique(
                     thresh_data_to_plot()[[thresh_table()]][[thresh_col]]
-                  ))[1]
+                  ))[1],
+                  width = "100%"
                 )
-              )
-            )
-          )
+              #)
+            #)
+          #)
         )
       )
       if (any(names(thresh_scores()) %in% c("reliability", "roc", "economic_value"))) {
@@ -315,14 +314,15 @@ dashboard_point_verif <- function(
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
           where    = "beforeEnd",
-          ui       =  shiny::column(6,
-            shiny::selectInput(
-              ns("leadtime"),
-              time_label,
-              times,
-              times[1]
-            )
-          )
+          ui       =  #shiny::fluidRow(
+              shiny::selectInput(
+                ns("leadtime"),
+                time_label,
+                times,
+                times[1],
+                width = "100%"
+              )
+          #)
         )
       }
 
