@@ -22,7 +22,8 @@
 #' @param reverse Logical - whether the y-axis should be reversed.
 #' @param log_scale Logical - whether the y-axis should use a log10 scale.
 #' @param ... Other arguments passed on to layer(). These are often aesthetics,
-#'   used to set an aesthetic to a fixed value, like colour = "red" or size = 3.
+#'   used to set an aesthetic to a fixed value, like linwidth = 4, or linetype =
+#'   3.
 #'
 #' @return A `ggplot` plot that can be saved with \code{\link[ggplot2]{ggsave}}.
 #' @export
@@ -329,7 +330,7 @@ plot_func <- function(
       if (!is.null(colours) && !is.data.frame(colours)) {
         gg <- gg + geom_path(colour = colours, ...)
       } else {
-        gg <- gg + geom_path()
+        gg <- gg + geom_path(...)
       }
     }
 

@@ -1,26 +1,9 @@
-#' Title
+#' Plot eps data for a station
 #'
-#' @param .fcst
-#' @param SID
-#' @param fcst_dttm
-#' @param quantiles
-#' @param tz
-#' @param control_member
-#' @param type
-#' @param x_axis
-#' @param stack_quantiles
-#' @param best_guess_line
-#' @param ribbon_colours
-#' @param line_colour
-#' @param quantile_colours
-#' @param stack_type
-#' @param bar_width
-#' @param ...
+#' `r lifecycle::badge("deprecated")`
 #'
-#' @return
 #' @export
 #'
-#' @examples
 plot_station_eps <- function(
   .fcst,
   SID,
@@ -45,6 +28,11 @@ plot_station_eps <- function(
   ...
 ) {
 
+  lifecycle::deprecate_stop(
+    "0.1.0",
+    "plot_station_eps()",
+    "plot_station_ts()"
+  )
   # Check inputs
   SID_quo     <- rlang::enquo(SID)
   fcst_dttm_quo  <- rlang::enquo(fcst_dttm)

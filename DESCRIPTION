@@ -32,7 +32,8 @@ Imports:
     meteogrid,
     viridisLite,
     lifecycle,
-    grDevices
+    grDevices,
+    ggnewscale
 Remotes:
     harphub/harpCore@develop,
     harphub/ggsonde,

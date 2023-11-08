@@ -111,7 +111,8 @@ vectors. Can also be a data frame with column names equal to the value for
 \item{facet_by}{The column in \code{.data} to facet by.}
 
 \item{...}{Other arguments passed on to layer(). These are often aesthetics,
-used to set an aesthetic to a fixed value, like colour = "red" or size = 3.}
+used to set an aesthetic to a fixed value, like linwidth = 4, or linetype =
+3.}
 
 \item{fcst_dttm}{The forecast start time in \code{.data} to plot.}
 

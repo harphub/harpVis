@@ -1,25 +1,24 @@
 #' Connect control points/observations with an X-spline
 #'
-#' Draw an X-spline ribbon - a curve drawn relative to control
-#' points/observations. Patterned after \code{geom_ribbon} in that it orders the
-#' points by \code{x} first before computing the splines.
+#' Draw an X-spline line - a curve drawn relative to control
+#' points/observations. Patterned after \code{\link[ggplot2]{geom_line}} in that
+#' it orders the points by \code{x} first before computing the splines.
 #'
-#' @section Aesthetics: \code{geom_ribbonspline} understands the following
+#' @section Aesthetics: \code{geom_linespline} understands the following
 #'   aesthetics (required aesthetics are in bold): \itemize{ \item
-#'   \strong{\code{x}} \item \strong{\code{ymin}} \item \strong{\code{ymax}}
-#'   \item \code{alpha} \item \code{color} \item \strong{\code{fill}} \item
+#'   \strong{\code{x}} \item \strong{\code{y}} \item \code{alpha}
+#'   \item \code{color} \item \strong{\code{fill}} \item
 #'   \strong{\code{group}} \item \code{linetype} \item \code{size} }
 #'
-#' @seealso \code{\link[ggplot2]{geom_ribbon}}: Ribbons and area plots;
+#' @seealso \code{\link[ggplot2]{geom_line}}: Connect observations;
 #'   \code{\link[ggplot2]{geom_path}}: Connect observations;
 #'   \code{\link[ggplot2]{geom_polygon}}: Filled paths (polygons);
 #'   \code{\link[ggplot2]{geom_segment}}: Line segments;
 #'
-#' @details This applies x-splines to ribbon plots. An X-spline is a line drawn
-#'   relative to control points. For each control point, the line may pass
-#'   through (interpolate) the control point or it may only approach
-#'   (approximate) the control point; the behaviour is determined by a shape
-#'   parameter for each control point.
+#' @details An X-spline is a line drawn relative to control points. For each
+#'   control point, the line may pass through (interpolate) the control point or
+#'   it may only approach (approximate) the control point; the behaviour is
+#'   determined by a shape parameter for each control point.
 #'
 #'   If the shape parameter is greater than zero, the spline approximates the
 #'   control points (and is very similar to a cubic B-spline when the shape is
@@ -39,9 +38,9 @@
 #'   control point. The default behaviour can be turned off via the repEnds
 #'   argument.
 #'
-#' @inheritParams ggplot2::geom_ribbon
+#' @inheritParams ggplot2::geom_line
 #' @param geom,stat Use to override the default connection between
-#'   \code{geom_ribbonspline} and \code{stat_ribbonspline}.
+#'   \code{geom_linespline} and \code{stat_linespline}.
 #' @param spline_shape A numeric vector of values between -1 and 1, which
 #'   control the shape of the spline relative to the control points.
 #' @param open A logical value indicating whether the spline is an open or a
@@ -54,12 +53,12 @@
 #'   377-386. \url{http://dept-info.labri.fr/~schlick/DOC/sig1.html}
 #' @export
 #' @family xspline implementations
-geom_ribbonspline <- function(mapping = NULL, data = NULL, stat = "ribbonspline",
-                      position = "identity", na.rm = TRUE, show.legend = NA,
-                      inherit.aes = TRUE,
-                      spline_shape=-0.15, open=TRUE, rep_ends=TRUE, ...) {
+geom_linespline <- function(mapping = NULL, data = NULL, stat = "linespline",
+  position = "identity", na.rm = TRUE, show.legend = NA,
+  inherit.aes = TRUE,
+  spline_shape=-0.15, open=TRUE, rep_ends=TRUE, ...) {
   layer(
-    geom = GeomRibbonspline,
+    geom = GeomLinespline,
     mapping = mapping,
     data = data,
     stat = stat,
@@ -82,24 +81,23 @@ geom_ribbonspline <- function(mapping = NULL, data = NULL, stat = "ribbonspline"
 #' @usage NULL
 #' @keywords internal
 #' @export
-GeomRibbonspline <- ggproto("GeomRibbonspline", GeomRibbon,
-  required_aes = c("x", "ymin", "ymax"),
-  default_aes = aes(colour = NA, fill = "grey70", size = 0.5, linetype = 1, alpha = NA)
+GeomLinespline <- ggproto("GeomLinespline", GeomLine,
+  required_aes = c("x", "y"),
+  default_aes = aes(colour = "black", fill = NA, linewidth = 0.5, linetype = 1, alpha = NA)
 )
 
 #' @export
-#' @rdname geom_ribbonspline
+#' @rdname geom_linespline
 #' @section Computed variables:
 #' \itemize{
 #'   \item{x}
-#'   \item{ymin}
-#'   \item{ymax}
+#'   \item{y}
 #' }
-stat_ribbonspline <- function(mapping = NULL, data = NULL, geom = "ribbon",
-                     position = "identity", na.rm = TRUE, show.legend = NA, inherit.aes = TRUE,
-                     spline_shape=-0.15, open=TRUE, rep_ends=TRUE, ...) {
+stat_linespline <- function(mapping = NULL, data = NULL, geom = "line",
+  position = "identity", na.rm = TRUE, show.legend = NA, inherit.aes = TRUE,
+  spline_shape=-0.25, open=TRUE, rep_ends=TRUE, ...) {
   layer(
-    stat = StatRibbonspline,
+    stat = StatLinespline,
     data = data,
     mapping = mapping,
     geom = geom,
@@ -107,10 +105,10 @@ stat_ribbonspline <- function(mapping = NULL, data = NULL, geom = "ribbon",
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(spline_shape=spline_shape,
-                  open=open,
-                  na.rm = na.rm,
-                  rep_ends=rep_ends,
-                  ...
+      open=open,
+      na.rm = na.rm,
+      rep_ends=rep_ends,
+      ...
     )
   )
 }
@@ -119,26 +117,23 @@ stat_ribbonspline <- function(mapping = NULL, data = NULL, geom = "ribbon",
 #' @format NULL
 #' @usage NULL
 #' @export
-StatRibbonspline <- ggproto("StatRibbonspline", Stat,
+StatLinespline <- ggproto("StatLinespline", Stat,
 
-  required_aes = c("x", "ymin", "ymax"),
+  required_aes = c("x", "y"),
 
   compute_group = function(self, data, scales, params,
-                           spline_shape=-0.25, open=TRUE, rep_ends=TRUE) {
+    spline_shape=-0.15, open=TRUE, rep_ends=TRUE) {
 
-    tf <- tempfile(fileext = ".png")
+    tf <- tempfile(fileext=".png")
     png(tf)
     plot.new()
-    tmp_min <- graphics::xspline(
-      data$x, data$ymin, spline_shape, open, rep_ends, draw = FALSE, NA, NA
-    )
-    tmp_max <- graphics::xspline(
-      data$x, data$ymax, spline_shape, open, rep_ends, draw = FALSE, NA, NA
+    tmp <- graphics::xspline(
+      data$x, data$y, spline_shape, open, rep_ends, draw=FALSE, NA, NA
     )
     invisible(dev.off())
     unlink(tf)
 
-    data.frame(x = tmp_min$x, ymin = tmp_min$y, ymax = tmp_max$y)
+    data.frame(x=tmp$x, y=tmp$y)
   }
 
 )
