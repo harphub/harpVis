@@ -1,6 +1,99 @@
 #' Plot a time series for point data
 #'
-#' @param .data A `harp_point_df` data frame.
+#' This function plots a time series of data from a `harp_point_df` data frame,
+#' or a `harp_list` containing `harp_point_df` data frames. The plotting is done
+#' using \href{https://ggplot2.tidyverse.org/}{ggplot2} and thus uses some of
+#' the same terminology in its arguments. Data are plotted using "geoms", and
+#' the plots are divided into panels using facets. If the data contain a column
+#' of observed values these may also be included in the plot, and for ensemble
+#' data a best guess forecast may be derived from the data.
+#'
+#' @section Geoms:
+#'
+#'   The data are plotted using geoms from ggplot2. You can control which geom
+#'   is used for each aspect of the plot using the respective arguments:
+#'
+#'  * `fcst_geom` for forecast;
+#'  * `obs_geom` for observations;
+#'  * `best_guess_geom` for the "best guess" forecast from an ensemble.
+#'
+#'   The geom should be specified as a character string based on the geom
+#'   function from ggplot2 with the "geom_" prefix removed. For example, for a
+#'   line plot for forecast data use `fcst_geom = "line"`. Other arguments to
+#'   the geom function can be provided as named list to the appropriate
+#'   `*_geom_args` argument to control, for example, the colour or size of the
+#'   geom.
+#'
+#'   Note that aesthetic mappings to the geom cannot be controlled, except for
+#'   \strong{x} via the `x_axis` argument and \strong{colour} and \strong{fill}
+#'   via the `colour_by` argument.
+#'
+#' @section Ensembles:
+#'
+#'   For ensemble forecasts, some data manipulation is done prior to plotting
+#'   depending on the geom as listed below. For geoms not included below, no
+#'   manipulation is done and the plots may be difficult to interpret or not
+#'   work at all.
+#'
+#'   * \strong{boxplot} - The data are grouped by the `x_axis` argument such
+#'   that each box is representative of the ensemble distribution for each point
+#'   on the x-axis. See \code{\link[ggplot2]{geom_boxplot}} for how the hinges,
+#'   whiskers and outliers are defined.
+#'   * \strong{violin} - The data are grouped by the `x_axis` argument such
+#'   that each "violin" is representative of the ensemble distribution for each
+#'   point on the x-axis.
+#'   * \strong{line} - The data are grouped by each ensemble member and a time
+#'   series is plotted for each member. This is the common ensemble "spaghetti"
+#'   plot.
+#'   * \strong{ribbon} - The data are divided into bands depending on the
+#'   quantiles provided in the `quantiles` argument. The bands are centred such
+#'   that the the outer band is between the lowest and highest quantiles with
+#'   inner bands added until the innermost pair of quantiles is reached.
+#'   Consequently an even number of quantiles must be provided.
+#'   * \strong{col} - The data are divided into bands of increasing quantile
+#'   pairs starting provided in the `quantiles` argument, with the minimum value
+#'   (quantile = 0). This gives columns of stacked probabilities staring at 0
+#'   that is particularly useful for accumulated variables such as
+#'   precipitation, or variables that truncate at 0 such as wind speed or cloud
+#'   or cloud cover.
+#'
+#'   A "best_guess" forecast can be added to the plot using the `best_guess`
+#'   argument. This can either be the name of a function that reduces the
+#'   ensemble to a single value (e.g. "mean", "median"), or the ensemble member
+#'   to treat as the best guess (e.g. 0, or "mbr000"). The geom and its options
+#'   can be provided via the `best_guess_geom` and `best_guess_geom_args`
+#'   arguments, but they must be geoms that understand the \strong{x} and
+#'   \strong{y} aesthetics.
+#'
+#' @section Filtering and faceting:
+#'
+#'   By default, all of the data that the function is given are plotted. In many
+#'   cases this can result in overplotting. For data at more than one station
+#'   (SID), or for more than one forecast start time (fcst_dttm), there are
+#'   arguments to filter the data prior to plotting based on those values.
+#'   Otherwise filtering should be done (e.g. using \code{\link[dplyr]{filter}})
+#'   prior to passing the data to this function.
+#'
+#'   Alternatively multi-panel plots can be made using the `facet_by` argument.
+#'   This groups the data based on the values in the columns provided to
+#'   `facet_by` and plots each group of data in its own panel. The default
+#'   behaviour is to plot 1 column of panels so that the x axis lines up for all
+#'   panels, but this can be changed using the `num_facet_cols` argument.
+#'   Additionally, the scale of the y axis for each panel is determined by the
+#'   data for that panel, but can be common for all panels by setting
+#'   `facet_scales = "fixed"`.
+#'
+#' @section Observations:
+#'
+#'   If the data include an observations column (e.g. from running
+#'   \code{\link[harpCore]{join_to_fcst}}), these observations can be included
+#'   in the plot be providing the name of the column that contains the
+#'   observations via the `obs_col` argument. The geom and its options can be
+#'   provided via the `obs_geom` and `obs_geom_args` arguments, but they must be
+#'   geoms that understand the \strong{x} and \strong{y} aesthetics.
+#'
+#' @param .data A `harp_point_df` data frame, or a `harp_list` containing
+#'   `harp_point_df` data frames.
 #' @param SID The ID of the station(s) to plot. If more than one SID is asked
 #'   for then `SID` should be included in `facet_by`.
 #' @param fcst_dttm The start time(s) of the the forecast to plot. If more than
@@ -12,6 +105,9 @@
 #'   of the forecast data.
 #' @param fcst_colours A vector of colours to use for the forecast data. It
 #'   should be the same length as the number of colours to appear in the plot.
+#'   Where the colours are a controlled by the data, this can be a named vector
+#'   or a data frame with column names equal to the column in the data
+#'   controlling the colour and "colour".
 #' @param obs_col If observations are to be included in the plot, the column
 #'   containing the observations data.
 #' @param obs_geom The geom to use to plot the observations data.
@@ -69,7 +165,7 @@ plot_station_ts.harp_det_point_df <- function(
 ) {
 
   det_plot(
-    filter_ts(.data, SID, fcst_dttm),
+    filter_ts(.data, SID, fcst_dttm, facet_by),
     {{x_axis}},
     {{fcst_colour_by}},
     fcst_colours,
@@ -126,12 +222,12 @@ plot_station_ts.harp_ens_point_df <- function(
     harpCore::pivot_members(.data),
     SID,
     fcst_dttm,
-    x_axis,
+    {{x_axis}},
     fcst_geom,
     fcst_geom_args,
-    fcst_colour_by,
+    {{fcst_colour_by}},
     fcst_colours,
-    obs_col,
+    {{obs_col}},
     obs_geom,
     obs_geom_args,
     facet_by,
@@ -170,7 +266,7 @@ plot_station_ts.harp_ens_point_df_long <- function(
   ...
 ) {
 
-  .data <- filter_ts(.data, SID, fcst_dttm)
+  .data <- filter_ts(.data, SID, fcst_dttm, facet_by)
   gg <- switch(
     fcst_geom,
     "boxplot" = ,
@@ -180,26 +276,42 @@ plot_station_ts.harp_ens_point_df_long <- function(
     ),
     "line" = ens_plot_spag(
       .data, {{x_axis}}, fcst_geom, fcst_geom_args,
-      {{fcst_colour_by}}, fcst_colours, smooth, facet_by,
-      best_guess, best_guess_geom, best_guess_geom_args
+      {{fcst_colour_by}}, fcst_colours, smooth
     ),
     "ribbon" = ens_plot_plume(
       .data, {{x_axis}}, fcst_geom, fcst_geom_args,
-      fcst_colours, smooth, quantiles, facet_by,
-      best_guess, best_guess_geom, best_guess_geom_args
+      fcst_colours, smooth, quantiles, facet_by
     ),
     "col" = ens_plot_stacked_prob(
       .data, {{x_axis}}, fcst_geom, fcst_geom_args,
-      fcst_colours, smooth, quantiles, facet_by,
-      best_guess, best_guess_geom, best_guess_geom_args
+      fcst_colours, smooth, quantiles, facet_by
     ),
-    NA
+    ens_plot_generic(
+      .data, {{x_axis}}, fcst_geom, fcst_geom_args,
+      {{fcst_colour_by}}, fcst_colours
+    )
   )
 
   warn_level <- options()$warn
   options(warn = -1)
+
+  if (is.null(facet_by)) {
+    facet_vars <- NULL
+  } else {
+    facet_vars <- purrr::map_chr(rlang::eval_tidy(facet_by), rlang::quo_name)
+  }
+
+  x_axis     <- rlang::ensym(x_axis)
+  group_vars <- c(rlang::quo_name(x_axis), facet_vars)
+
+
+  gg <- add_best_guess(
+    gg, .data, group_vars, !!x_axis, smooth,
+    best_guess, best_guess_geom, best_guess_geom_args
+  )
+
   gg <- add_obs(
-    gg, .data, {{x_axis}}, {{obs_col}}, obs_geom, obs_geom_args, smooth
+    gg, .data, !!x_axis, {{obs_col}}, obs_geom, obs_geom_args, smooth
   )
   options(warn = warn_level)
 
@@ -216,10 +328,50 @@ plot_station_ts.harp_ens_point_df_long <- function(
   gg + theme_harp_light()
 }
 
+#' @export
+plot_station_ts.harp_list <- function(
+  .data,
+  SID,
+  fcst_dttm,
+  x_axis         = "lead_time",
+  fcst_geom      = "line",
+  fcst_geom_args = list(),
+  fcst_colour_by = NULL,
+  fcst_colours   = NULL,
+  obs_col        = NULL,
+  obs_geom       = "point",
+  obs_geom_args  = list(),
+  facet_by       = NULL,
+  num_facet_cols = 1,
+  facet_scales   = "free_y",
+  smooth         = FALSE,
+  ...
+) {
+  plot_station_ts(
+    harpCore::bind(.data),
+    SID,
+    fcst_dttm,
+    {{x_axis}},
+    fcst_geom,
+    fcst_geom_args,
+    {{fcst_colour_by}},
+    fcst_colours,
+    {{obs_col}},
+    obs_geom,
+    obs_geom_args,
+    facet_by,
+    num_facet_cols,
+    facet_scales,
+    smooth,
+    ...
+  )
+}
+
 filter_ts <- function(
   in_data,
   SID,
-  fcst_dttm
+  fcst_dttm,
+  facet_by
 ) {
 
   if (missing(SID)) {
@@ -231,6 +383,34 @@ filter_ts <- function(
     fcst_dttm <- harpCore::as_YMDhms(unique(in_data[["fcst_dttm"]]))
   }
   .data_dttm <-  harpCore::as_dttm(fcst_dttm)
+
+  num_sid        <- length(.SID)
+  num_fcst_dttm  <- length(.data_dttm)
+  num_fcst_model <- length(unique(in_data[["fcst_model"]]))
+
+  if (is.null(facet_by)) {
+    facet_vars <- NULL
+  } else {
+    facet_vars <- purrr::map_chr(rlang::eval_tidy(facet_by), rlang::quo_name)
+  }
+
+  missing_facets <- setdiff(
+    c("fcst_model", "fcst_dttm", "SID")[
+      c(num_fcst_model > 1, num_fcst_dttm > 1, num_sid > 1)
+    ],
+    facet_vars
+  )
+
+  if (length(missing_facets) > 0) {
+    vars  <- glue::glue_collapse(missing_facets, sep = ", ", last = " & ")
+    fc_by <- paste0(
+      "facet_by = vars(", paste(missing_facets, collapse = ", "), ")"
+    )
+    cli::cli_warn(c(
+      "More than one {vars} detected after filtering.",
+      "i" = "Use {.var {fc_by}} to plot in seperate panels."
+    ))
+  }
 
   dplyr::filter(
     in_data,
@@ -274,9 +454,6 @@ det_plot <- function(
 
   geom <- check_geom(fcst_geom, "fcst_geom", rlang::caller_env())
 
-
-  opts_warn <- options()$warn
-  options(warn = -1)
   gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x = !!x_axis))
   if (arg_is_null({{fcst_colour_by}})) {
     gg <- gg + do.call(
@@ -355,8 +532,7 @@ ens_plot_dist <- function(
 }
 
 ens_plot_spag <- function(
-  plot_data, x_axis, geom, geom_args, colour_by, colours, smooth, facet_by,
-  best_guess, best_guess_geom, best_guess_geom_args
+  plot_data, x_axis, geom, geom_args, colour_by, colours, smooth
 ) {
 
   x_axis <- rlang::ensym(x_axis)
@@ -401,26 +577,11 @@ ens_plot_spag <- function(
     )
   }
 
-  if (is.null(facet_by)) {
-    facet_vars <- NULL
-  } else {
-    facet_vars <- purrr::map_chr(rlang::eval_tidy(facet_by), rlang::quo_name)
-  }
-
-  x_axis     <- rlang::ensym(x_axis)
-  group_vars <- c(rlang::quo_name(x_axis), facet_vars)
-
-
-  add_best_guess(
-    gg, plot_data, group_vars, !!x_axis, smooth,
-    best_guess, best_guess_geom, best_guess_geom_args
-  )
-
+  gg
 }
 
 ens_plot_plume <- function(
-  data_in, x_axis, geom, geom_args, colours, smooth, quantiles, facet_by,
-  best_guess, best_guess_geom, best_guess_geom_args
+  data_in, x_axis, geom, geom_args, colours, smooth, quantiles, facet_by
 ) {
 
   if (is.null(facet_by)) {
@@ -465,20 +626,14 @@ ens_plot_plume <- function(
     ))
   }
 
-  gg <- scale_colours(
+  scale_colours(
     gg, plot_data, colours, "range", "colour_by", rlang::caller_env()
-  )
-
-  add_best_guess(
-    gg, data_in, group_vars, !!x_axis, smooth,
-    best_guess, best_guess_geom, best_guess_geom_args
   )
 
 }
 
 ens_plot_stacked_prob <- function(
-  data_in, x_axis, geom, geom_args, colours, smooth, quantiles, facet_by,
-  best_guess, best_guess_geom, best_guess_geom_args
+  data_in, x_axis, geom, geom_args, colours, smooth, quantiles, facet_by
 ) {
 
   if (is.null(facet_by)) {
@@ -545,18 +700,61 @@ ens_plot_stacked_prob <- function(
     ))
   }
 
-  gg <- scale_colours(
+  scale_colours(
     gg, plot_data, colours, "range", "colour_by", rlang::caller_env()
   )
 
-  gg <- add_best_guess(
-    gg, data_in, group_vars, !!x_axis, smooth,
-    best_guess, best_guess_geom, best_guess_geom_args
+}
+
+ens_plot_generic <- function(
+    plot_data, x_axis, geom, geom_args, colour_by, colours
+) {
+
+  x_axis <- rlang::ensym(x_axis)
+
+  colouring = FALSE
+  if (!arg_is_null({{colour_by}})) {
+    colouring <- TRUE
+    colour_by <- rlang::ensym(colour_by)
+    plot_data <- dplyr::mutate(
+      plot_data,
+      dplyr::across(!!colour_by, as.character)
+    )
+  }
+
+  geom_in <- geom
+  geom    <- check_geom(geom, "fcst_geom", rlang::caller_env())
+
+  poss_geoms <- glue::glue_collapse(
+    c("\"boxplot\"", "\"violin\"", "\"line\"", "\"ribbon\"", "\"col\""),
+    sep = ", ", last = " or "
+  )
+  cli::cli_warn(c(
+    "No specific data manipulation is done for {.var fcst_geom = \"{geom_in}\"}",
+    "Results may be unpredicatable.",
+    "i" = "Use {poss_geoms} for {.arg fcst_geom} for predicatble results."
+  ))
+
+  if (colouring) {
+    plot_data <- dplyr::mutate(plot_data, dplyr::across(!!colour_by, factor))
+  }
+
+  gg <- ggplot2::ggplot(
+    plot_data,
+    ggplot2::aes(!!x_axis, .data[["fcst"]])
   )
 
-  gg
+  if (colouring) {
+    gg <- gg + do.call(
+      geom, c(list(mapping = ggplot2::aes(colour = !!colour_by)), geom_args)
+    )
+  } else {
+    gg <- gg + do.call(geom, geom_args)
+  }
 
+  gg
 }
+
 
 
 add_best_guess <- function(
@@ -690,7 +888,7 @@ check_facets <- function(facet_expr, caller) {
 check_geom <- function(geom, arg, caller) {
   geom_in <- geom
   geom    <- strsplit(sub("geom_", "", geom), "::")[[1]]
-  if (geom %in% c("linespline", "ribbonspline")) {
+  if (length(geom) == 1 && geom %in% c("linespline", "ribbonspline")) {
     return(get(paste0("geom_", geom), mode = "function"))
   }
   if (length(geom) == 1) {

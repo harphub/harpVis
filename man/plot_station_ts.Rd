@@ -48,7 +48,8 @@ plot_station_ts(
 )
 }
 \arguments{
-\item{.data}{A \code{harp_point_df} data frame.}
+\item{.data}{A \code{harp_point_df} data frame, or a \code{harp_list} containing
+\code{harp_point_df} data frames.}
 
 \item{SID}{The ID of the station(s) to plot. If more than one SID is asked
 for then \code{SID} should be included in \code{facet_by}.}
@@ -66,7 +67,10 @@ one \code{fcst_dttm} is asked for, \code{fcst_dttm} should be included in \code{
 of the forecast data.}
 
 \item{fcst_colours}{A vector of colours to use for the forecast data. It
-should be the same length as the number of colours to appear in the plot.}
+should be the same length as the number of colours to appear in the plot.
+Where the colours are a controlled by the data, this can be a named vector
+or a data frame with column names equal to the column in the data
+controlling the colour and "colour".}
 
 \item{obs_col}{If observations are to be included in the plot, the column
 containing the observations data.}
@@ -106,5 +110,105 @@ members pivoted using \code{\link[harpCore]{pivot_members}}, e.g.
 A ggplot object that can be saved with \code{\link[ggplot2]{ggasve}}.
 }
 \description{
-Plot a time series for point data
+This function plots a time series of data from a \code{harp_point_df} data frame,
+or a \code{harp_list} containing \code{harp_point_df} data frames. The plotting is done
+using \href{https://ggplot2.tidyverse.org/}{ggplot2} and thus uses some of
+the same terminology in its arguments. Data are plotted using "geoms", and
+the plots are divided into panels using facets. If the data contain a column
+of observed values these may also be included in the plot, and for ensemble
+data a best guess forecast may be derived from the data.
 }
+\section{Geoms}{
+
+
+The data are plotted using geoms from ggplot2. You can control which geom
+is used for each aspect of the plot using the respective arguments:
+\itemize{
+\item \code{fcst_geom} for forecast;
+\item \code{obs_geom} for observations;
+\item \code{best_guess_geom} for the "best guess" forecast from an ensemble.
+}
+
+The geom should be specified as a character string based on the geom
+function from ggplot2 with the "geom_" prefix removed. For example, for a
+line plot for forecast data use \code{fcst_geom = "line"}. Other arguments to
+the geom function can be provided as named list to the appropriate
+\verb{*_geom_args} argument to control, for example, the colour or size of the
+geom.
+
+Note that aesthetic mappings to the geom cannot be controlled, except for
+\strong{x} via the \code{x_axis} argument and \strong{colour} and \strong{fill}
+via the \code{colour_by} argument.
+}
+
+\section{Ensembles}{
+
+
+For ensemble forecasts, some data manipulation is done prior to plotting
+depending on the geom as listed below. For geoms not included below, no
+manipulation is done and the plots may be difficult to interpret or not
+work at all.
+\itemize{
+\item \strong{boxplot} - The data are grouped by the \code{x_axis} argument such
+that each box is representative of the ensemble distribution for each point
+on the x-axis. See \code{\link[ggplot2]{geom_boxplot}} for how the hinges,
+whiskers and outliers are defined.
+\item \strong{violin} - The data are grouped by the \code{x_axis} argument such
+that each "violin" is representative of the ensemble distribution for each
+point on the x-axis.
+\item \strong{line} - The data are grouped by each ensemble member and a time
+series is plotted for each member. This is the common ensemble "spaghetti"
+plot.
+\item \strong{ribbon} - The data are divided into bands depending on the
+quantiles provided in the \code{quantiles} argument. The bands are centred such
+that the the outer band is between the lowest and highest quantiles with
+inner bands added until the innermost pair of quantiles is reached.
+Consequently an even number of quantiles must be provided.
+\item \strong{col} - The data are divided into bands of increasing quantile
+pairs starting provided in the \code{quantiles} argument, with the minimum value
+(quantile = 0). This gives columns of stacked probabilities staring at 0
+that is particularly useful for accumulated variables such as
+precipitation, or variables that truncate at 0 such as wind speed or cloud
+or cloud cover.
+}
+
+A "best_guess" forecast can be added to the plot using the \code{best_guess}
+argument. This can either be the name of a function that reduces the
+ensemble to a single value (e.g. "mean", "median"), or the ensemble member
+to treat as the best guess (e.g. 0, or "mbr000"). The geom and its options
+can be provided via the \code{best_guess_geom} and \code{best_guess_geom_args}
+arguments, but they must be geoms that understand the \strong{x} and
+\strong{y} aesthetics.
+}
+
+\section{Filtering and faceting}{
+
+
+By default, all of the data that the function is given are plotted. In many
+cases this can result in overplotting. For data at more than one station
+(SID), or for more than one forecast start time (fcst_dttm), there are
+arguments to filter the data prior to plotting based on those values.
+Otherwise filtering should be done (e.g. using \code{\link[dplyr]{filter}})
+prior to passing the data to this function.
+
+Alternatively multi-panel plots can be made using the \code{facet_by} argument.
+This groups the data based on the values in the columns provided to
+\code{facet_by} and plots each group of data in its own panel. The default
+behaviour is to plot 1 column of panels so that the x axis lines up for all
+panels, but this can be changed using the \code{num_facet_cols} argument.
+Additionally, the scale of the y axis for each panel is determined by the
+data for that panel, but can be common for all panels by setting
+\code{facet_scales = "fixed"}.
+}
+
+\section{Observations}{
+
+
+If the data include an observations column (e.g. from running
+\code{\link[harpCore]{join_to_fcst}}), these observations can be included
+in the plot be providing the name of the column that contains the
+observations via the \code{obs_col} argument. The geom and its options can be
+provided via the \code{obs_geom} and \code{obs_geom_args} arguments, but they must be
+geoms that understand the \strong{x} and \strong{y} aesthetics.
+}
+

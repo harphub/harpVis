@@ -137,6 +137,13 @@ StatRibbonspline <- ggproto("StatRibbonspline", Stat,
     )
     invisible(dev.off())
     unlink(tf)
+    # Sometimes xspline returns a different number of points for the min and max
+    # - in general it seems safe to linearly interpolate so that they have the
+    # same number of points, as the difference in the number of points is very
+    # small.
+    if (length(tmp_min$x) != length(tmp_max$x)) {
+      tmp_max <- stats::approx(tmp_max$x, tmp_max$y, tmp_min$x)
+    }
 
     data.frame(x = tmp_min$x, ymin = tmp_min$y, ymax = tmp_max$y)
   }

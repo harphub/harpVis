@@ -179,10 +179,6 @@ eps_ribbon_plot <- function(
   ...
 ) {
 
-  if (!requireNamespace("ggalt", quietly = TRUE)) {
-    stop("Please install the ggalt package from CRAN for ribbon plots", call. = FALSE)
-  }
-
   # Quote arguments
   best_guess_quo  <- rlang::enquo(best_guess_line)
   best_guess_expr <- rlang::quo_get_expr(best_guess_quo)
@@ -244,7 +240,7 @@ eps_ribbon_plot <- function(
       fill = ribbon_colours[ribbon_number])
   }
 
-  gg + ggalt::geom_xspline(ggplot2::aes(y = !! best_guess_quo), colour = line_colour)
+  gg + geom_linespline(ggplot2::aes(y = !! best_guess_quo), colour = line_colour)
 
 
 }
@@ -327,10 +323,7 @@ eps_ridge_plot <- function(plot_data, ...) {
 eps_spaghetti_plot <- function(plot_data, line_colour, line_size, smooth_line, ...) {
   gg = ggplot2::ggplot(dplyr::arrange(plot_data, .data$x), ggplot2::aes(.data$x, .data$forecast, group = .data$member))
   if (smooth_line) {
-    if (!requireNamespace("ggalt", quietly = TRUE)) {
-      stop("You need to install the ggalt package to use smooth_line = TRUE", call. = FALSE)
-    }
-    gg + ggalt::geom_xspline(colour = line_colour, size = line_size)
+    gg + geom_linespline(colour = line_colour, size = line_size)
   } else {
     gg + ggplot2::geom_line(colour = line_colour, size = line_size)
   }

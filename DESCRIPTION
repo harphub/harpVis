@@ -45,6 +45,5 @@ URL: https://github.com/harphub/harpVis
 BugReports: https://github.com/harphub/harpVis/issues
 Suggests: 
     svglite,
-    ggalt,
     ggridges
 Roxygen: list(markdown = TRUE)
