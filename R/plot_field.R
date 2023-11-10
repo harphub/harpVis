@@ -4,7 +4,7 @@
 #' `harp_grid_df` data frames or `harp_list`s, extra arguments are available for
 #' extracting the correct `geofield`.
 #'
-#' @param .fcst A harp_list or harp_grid_df data frame.
+#' @param .fcst A `geofield`, `harp_list` or `harp_grid_df` data frame.
 #' @param plot_col The column of data to plot from. Should be unquoted, or if a
 #'   variable, wrapped in double curly brackets: \{\{\}\}.
 #' @param palette Colour palette to use. This should be a vector of colours.
