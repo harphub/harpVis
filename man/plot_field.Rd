@@ -65,7 +65,7 @@ plot_field(
 )
 }
 \arguments{
-\item{.fcst}{A harp_list or harp_grid_df data frame.}
+\item{.fcst}{A \code{geofield}, \code{harp_list} or \code{harp_grid_df} data frame.}
 
 \item{palette}{Colour palette to use. This should be a vector of colours.}
 

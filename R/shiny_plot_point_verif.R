@@ -1,5 +1,16 @@
 #' Start shiny app to plot point verification
 #'
+#' @param start_dir The directory start the app in. The directory tree above
+#'   this directory will not be visible.
+#' @param full_dir_navigation Whether to have full navigation of the directory
+#'   tree below `app_start_dir` via a modal (TRUE - the default), or a dropdown
+#'   selector of directories that contain harp point verification files (FALSE).
+#' @param theme The colour theme of the app - can be one of "dark", "light" or
+#'   "white".
+#' @param online Logical. Whether the app should have access to the internet
+#'   (e.g. to download fonts) or not.
+#' @param ... Options to \code{\link[shiny]{runApp}}.
+#'
 #' @export
 shiny_plot_point_verif <- function(
   start_dir           = NULL,
