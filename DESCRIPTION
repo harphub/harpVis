@@ -21,7 +21,6 @@ Imports:
     hexbin,
     RadioSonde,
     magrittr,
-    harpCore (>= 0.2.0),
     RColorBrewer,
     ggsonde,
     fs,
@@ -35,7 +34,7 @@ Imports:
     grDevices,
     ggnewscale
 Remotes:
-    harphub/harpCore@0.2.0,
+    harphub/harpCore@v0.2.0,
     harphub/ggsonde,
     harphub/meteogrid
 Encoding: UTF-8
