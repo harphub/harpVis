@@ -14,15 +14,12 @@
 #'   \code{\link[ggplot2]{geom_path}}: Connect observations;
 #'   \code{\link[ggplot2]{geom_polygon}}: Filled paths (polygons);
 #'   \code{\link[ggplot2]{geom_segment}}: Line segments;
-#'   \code{\link[ggalt]{geom_xspline}}: Connect control points/observations with
-#'   an X-spline; \code{\link[graphics]{xspline}};
-#'   \code{\link[grid]{grid.xspline}}
 #'
-#' @details This is an extension of \link[ggalt]{geom_xspline} to apply
-#'   x-splines to  ribbon plots. An X-spline is a line drawn relative to control
-#'   points. For each control point, the line may pass through (interpolate) the
-#'   control point or it may only approach (approximate) the control point; the
-#'   behaviour is determined by a shape parameter for each control point.
+#' @details This applies x-splines to ribbon plots. An X-spline is a line drawn
+#'   relative to control points. For each control point, the line may pass
+#'   through (interpolate) the control point or it may only approach
+#'   (approximate) the control point; the behaviour is determined by a shape
+#'   parameter for each control point.
 #'
 #'   If the shape parameter is greater than zero, the spline approximates the
 #'   control points (and is very similar to a cubic B-spline when the shape is
@@ -57,56 +54,10 @@
 #'   377-386. \url{http://dept-info.labri.fr/~schlick/DOC/sig1.html}
 #' @export
 #' @family xspline implementations
-#' @examples
-#' set.seed(1492)
-#' dat <- data.frame(x=c(1:10, 1:10, 1:10),
-#'                   y=c(sample(15:30, 10), 2*sample(15:30, 10),
-#'                       3*sample(15:30, 10)),
-#'                   group=factor(c(rep(1, 10), rep(2, 10), rep(3, 10)))
-#' )
-#'
-#' ggplot(dat, aes(x, y, group=group, color=group)) +
-#'   geom_point() +
-#'   geom_line()
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point() +
-#'   geom_line() +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5)
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point(color="black") +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5) +
-#'   geom_xspline(size=0.5)
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point(color="black") +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5) +
-#'   geom_xspline(spline_shape=-0.4, size=0.5)
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point(color="black") +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5) +
-#'   geom_xspline(spline_shape=0.4, size=0.5)
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point(color="black") +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5) +
-#'   geom_xspline(spline_shape=1, size=0.5)
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point(color="black") +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5) +
-#'   geom_xspline(spline_shape=0, size=0.5)
-#'
-#' ggplot(dat, aes(x, y, group=group, color=factor(group))) +
-#'   geom_point(color="black") +
-#'   geom_smooth(se=FALSE, linetype="dashed", size=0.5) +
-#'   geom_xspline(spline_shape=-1, size=0.5)
 geom_ribbonspline <- function(mapping = NULL, data = NULL, stat = "ribbonspline",
                       position = "identity", na.rm = TRUE, show.legend = NA,
                       inherit.aes = TRUE,
-                      spline_shape=-0.25, open=TRUE, rep_ends=TRUE, ...) {
+                      spline_shape=-0.15, open=TRUE, rep_ends=TRUE, ...) {
   layer(
     geom = GeomRibbonspline,
     mapping = mapping,
@@ -146,7 +97,7 @@ GeomRibbonspline <- ggproto("GeomRibbonspline", GeomRibbon,
 #' }
 stat_ribbonspline <- function(mapping = NULL, data = NULL, geom = "ribbon",
                      position = "identity", na.rm = TRUE, show.legend = NA, inherit.aes = TRUE,
-                     spline_shape=-0.25, open=TRUE, rep_ends=TRUE, ...) {
+                     spline_shape=-0.15, open=TRUE, rep_ends=TRUE, ...) {
   layer(
     stat = StatRibbonspline,
     data = data,
@@ -175,15 +126,26 @@ StatRibbonspline <- ggproto("StatRibbonspline", Stat,
   compute_group = function(self, data, scales, params,
                            spline_shape=-0.25, open=TRUE, rep_ends=TRUE) {
 
-    tf <- tempfile(fileext=".png")
+    tf <- tempfile(fileext = ".png")
     png(tf)
     plot.new()
-    tmp_min <- xspline(data$x, data$ymin, spline_shape, open, rep_ends, draw=FALSE, NA, NA)
-    tmp_max <- xspline(data$x, data$ymax, spline_shape, open, rep_ends, draw=FALSE, NA, NA)
+    tmp_min <- graphics::xspline(
+      data$x, data$ymin, spline_shape, open, rep_ends, draw = FALSE, NA, NA
+    )
+    tmp_max <- graphics::xspline(
+      data$x, data$ymax, spline_shape, open, rep_ends, draw = FALSE, NA, NA
+    )
     invisible(dev.off())
     unlink(tf)
+    # Sometimes xspline returns a different number of points for the min and max
+    # - in general it seems safe to linearly interpolate so that they have the
+    # same number of points, as the difference in the number of points is very
+    # small.
+    if (length(tmp_min$x) != length(tmp_max$x)) {
+      tmp_max <- stats::approx(tmp_max$x, tmp_max$y, tmp_min$x)
+    }
 
-    data.frame(x=tmp_min$x, ymin=tmp_min$y, ymax=tmp_max$y)
+    data.frame(x = tmp_min$x, ymin = tmp_min$y, ymax = tmp_max$y)
   }
 
 )

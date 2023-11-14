@@ -2,10 +2,6 @@
 
 server <- function(input, output, session) {
 
-  # bg_colour = "#D5D5D5"
-  bg_colour = "#0A0A2C"
-
-
   ############################################################
   # LOAD DATA                                                #
   ############################################################
@@ -16,30 +12,43 @@ server <- function(input, output, session) {
   # FILTER DATA                                              #
   ############################################################
 
-  filtered_data <- shiny::callModule(harpVis::group_selectors, "group_selectors", verif_data)
+  filtered_data <- shiny::callModule(
+    harpVis::group_selectors, "group_selectors", verif_data
+  )
+
+  ############################################################
+  # GET TIME AXIS                                            #
+  ############################################################
+
+  time_axis_out <- shiny::callModule(harpVis::time_axis, "time_axis", filtered_data)
 
   ############################################################
   # GET COLOUR TABLE                                         #
   ############################################################
 
-  colour_table <- shiny::callModule(harpVis::colour_choices, "colour_choices", filtered_data)
+  colour_table <- shiny::callModule(
+    harpVis::colour_choices, "colour_choices", time_axis_out$filtered_data
+  )
 
   ############################################################
   # DASHBOARD PLOTS                                          #
   ############################################################
 
-  shiny::callModule(harpVis::dashboard_eps, "dashboard", filtered_data, colour_table)
+  shiny::callModule(
+    harpVis::dashboard_point_verif, "dashboard", time_axis_out$filtered_data,
+    colour_table, time_axis_out$time_axis
+  )
 
   ############################################################
   # INTERACTIVE PLOT                                         #
   ############################################################
 
   score_optons <- shiny::callModule(
-    harpVis::interactive_eps,
+    harpVis::interactive_point_verif,
     "interactive",
-    filtered_data,
+    time_axis_out$filtered_data,
     colour_table,
-    bg_colour = bg_colour
+    time_axis_out$time_axis
   )
 
   ############################################################
@@ -49,7 +58,7 @@ server <- function(input, output, session) {
   shiny::callModule(
     harpVis::download_verif_plot,
     "download_plot",
-    filtered_data,
+    time_axis_out$filtered_data,
     score_optons,
     colour_table
   )

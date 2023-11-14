@@ -7,7 +7,7 @@
 plot_profile_verif(
   verif_data,
   score,
-  y_axis = p,
+  y_axis = "p",
   lead_time = NA,
   plot_num_cases = TRUE,
   num_cases_position = c("right", "left"),
@@ -41,10 +41,29 @@ to the score panel. For profile scores, this can only be "left", or
 }
 \value{
 A \link[ggplot2]{ggplot} object of vertical profiles of verification
-  scores.
+scores.
 }
 \description{
 This is a wrapper for \link{plot_point_verif} that ensures the coordinate
 system is properly set up for plots of verification scores for vertical
 profiles.
+}
+\examples{
+# Not filtering or faceting results in overplotting
+plot_profile_verif(verif_data_prf, bias)
+
+# Facet by lead_time
+plot_profile_verif(verif_data_prf, bias, facet_by = vars(lead_time))
+
+# Remove rows with few cases using filter_by
+plot_profile_verif(
+  verif_data_prf,
+  bias,
+  facet_by = vars(lead_time),
+  filter_by = vars(num_cases > 1)
+)
+
+# Filter to only a single panel
+plot_profile_verif(verif_data_prf, bias, filter_by = vars(lead_time == 24))
+
 }

@@ -11,23 +11,30 @@ if (is_online & (!is.null(hostname) && !grepl("^ecgb", hostname))) {
     href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"
   )
 }
+css_file <- switch(
+  shiny::getShinyOption("theme"),
+  "dark"  = "harp_midnight.css",
+  "light" = "harp_light.css",
+  "white" = "harp_white.css"
+)
+
 
 ui <- shiny::tags$html(
   shiny::tags$head(
-   font_link,
-    shiny::tags$script('
-      var dimension = [0, 0];
-      $(document).on("shiny:connected", function(e) {
-        dimension[0] = window.innerWidth;
-        dimension[1] = window.innerHeight;
-        Shiny.onInputChange("dimension", dimension);
-      });
-      $(window).resize(function(e) {
-        dimension[0] = window.innerWidth;
-        dimension[1] = window.innerHeight;
-        Shiny.onInputChange("dimension", dimension);
-      });
-    ')
+   font_link#,
+    # shiny::tags$script('
+    #   var dimension = [0, 0];
+    #   $(document).on("shiny:connected", function(e) {
+    #     dimension[0] = window.innerWidth;
+    #     dimension[1] = window.innerHeight;
+    #     Shiny.onInputChange("dimension", dimension);
+    #   });
+    #   $(window).resize(function(e) {
+    #     dimension[0] = window.innerWidth;
+    #     dimension[1] = window.innerHeight;
+    #     Shiny.onInputChange("dimension", dimension);
+    #   });
+    # ')
   ),
   shiny::tags$body(
     shiny::tags$div(
@@ -41,23 +48,27 @@ ui <- shiny::tags$html(
     shiny::fluidPage(
       title = "harp",
 
-      shiny::includeCSS("harp_midnight.css"),
+      shiny::includeCSS(css_file),
 
       harpVis::options_barUI("options_bar"),
 
-      fluidRow(
-        harpVis::group_selectorsUI("group_selectors"),
+      shiny::fluidRow(
+        harpVis::group_selectorsUI("group_selectors")
+      ),
+
+      shiny::fluidRow(
+        harpVis::time_axisUI("time_axis"),
         harpVis::colour_choicesUI("colour_choices")
       ),
 
       shiny::tabsetPanel(id = "tab_panel",
 
         shiny::tabPanel("Dashboard",
-          harpVis::dashboard_epsUI("dashboard")
+          harpVis::dashboard_point_verifUI("dashboard")
         ),
 
         shiny::tabPanel("Interactive",
-          harpVis::interactive_epsUI("interactive"),
+          harpVis::interactive_point_verifUI("interactive"),
           harpVis::download_verif_plotUI("download_plot")
         )
 

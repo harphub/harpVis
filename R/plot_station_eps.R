@@ -1,30 +1,13 @@
-#' Title
+#' Plot eps data for a station
 #'
-#' @param .fcst
-#' @param SID
-#' @param fcdate
-#' @param quantiles
-#' @param tz
-#' @param control_member
-#' @param type
-#' @param x_axis
-#' @param stack_quantiles
-#' @param best_guess_line
-#' @param ribbon_colours
-#' @param line_colour
-#' @param quantile_colours
-#' @param stack_type
-#' @param bar_width
-#' @param ...
+#' `r lifecycle::badge("deprecated")`
 #'
-#' @return
 #' @export
 #'
-#' @examples
 plot_station_eps <- function(
   .fcst,
   SID,
-  fcdate,
+  fcst_dttm,
   type             = c("ribbon", "boxplot", "violin", "stacked_prob", "ridge", "spaghetti"),
   x_axis           = c("leadtime", "validtime"),
   parameter        = "",
@@ -45,12 +28,17 @@ plot_station_eps <- function(
   ...
 ) {
 
+  lifecycle::deprecate_stop(
+    "0.1.0",
+    "plot_station_eps()",
+    "plot_station_ts()"
+  )
   # Check inputs
   SID_quo     <- rlang::enquo(SID)
-  fcdate_quo  <- rlang::enquo(fcdate)
-  fcdate_expr <- rlang::quo_get_expr(fcdate_quo)
-  fcdate      <- suppressMessages(harpIO::str_datetime_to_unixtime(fcdate_expr))
-  fcdate_quo  <- rlang::quo(fcdate)
+  fcst_dttm_quo  <- rlang::enquo(fcst_dttm)
+  fcst_dttm_expr <- rlang::quo_get_expr(fcst_dttm_quo)
+  fcst_dttm      <- harpCore::as_unixtime(fcst_dttm_expr)
+  fcst_dttm_quo  <- rlang::quo(fcst_dttm)
 
   best_guess_quo  <- rlang::enquo(best_guess_line)
   best_guess_expr <- rlang::quo_get_expr(best_guess_quo)
@@ -84,12 +72,12 @@ plot_station_eps <- function(
     .fcst,
     dplyr::filter,
     .data$SID    == rlang::eval_tidy(SID_quo),
-    .data$fcdate == rlang::eval_tidy(fcdate_quo)
+    .data$fcst_dttm == rlang::eval_tidy(fcst_dttm_quo)
   )
   if (any(check_rows(plot_data) == 0)) {
     missing_fcst <- which(check_rows(plot_data) == 0)
     for (fcst_model in names(.fcst)[missing_fcst]) {
-      warning("SID = ", SID, ", fcdate = ", fcdate_expr, " not found for forecast model: ", fcst_model, call. = FALSE, immediate. = TRUE)
+      warning("SID = ", SID, ", fcst_dttm = ", fcst_dttm_expr, " not found for forecast model: ", fcst_model, call. = FALSE, immediate. = TRUE)
     }
   }
   if (all(check_rows(plot_data) == 0)) {
@@ -98,14 +86,14 @@ plot_station_eps <- function(
 
   # Reshape data to tidy format plot
   plot_data <- plot_data %>%
-    harpPoint:::new_harp_fcst() %>%
-    harpPoint::gather_members() %>%
+    harpCore::as_harp_list() %>%
+    harpCore::pivot_members() %>%
     unclass() %>%
-    dplyr::bind_rows(.id = "mname")
+    dplyr::bind_rows(.id = "fcst_model")
 
   # Set the correct valid time for the timezone and set the x axis
   plot_data <- plot_data %>%
-    dplyr::mutate(validtime = as.POSIXct(.data$validdate, origin = "1970-01-01 00:00:00", tz = tz)) %>%
+    dplyr::mutate(validtime = as.POSIXct(.data$valid_dttm, origin = "1970-01-01 00:00:00", tz = tz)) %>%
     dplyr::rename(x = !! x_axis_sym)
 
   # Run the plot function
@@ -158,9 +146,9 @@ plot_station_eps <- function(
 
   if (is.null(ncol)) {
     if (type == "ridge") {
-      eps_plot <- eps_plot + ggplot2::facet_wrap("mname", nrow = 1)
+      eps_plot <- eps_plot + ggplot2::facet_wrap("fcst_model", nrow = 1)
     } else {
-      eps_plot <- eps_plot + ggplot2::facet_wrap("mname", ncol = 1)
+      eps_plot <- eps_plot + ggplot2::facet_wrap("fcst_model", ncol = 1)
     }
   }
 
@@ -190,10 +178,6 @@ eps_ribbon_plot <- function(
   line_colour,
   ...
 ) {
-
-  if (!requireNamespace("ggalt", quietly = TRUE)) {
-    stop("Please install the ggalt package from CRAN for ribbon plots", call. = FALSE)
-  }
 
   # Quote arguments
   best_guess_quo  <- rlang::enquo(best_guess_line)
@@ -231,16 +215,10 @@ eps_ribbon_plot <- function(
   }
 
   # Compute quantiles
-  if (harpIO:::tidyr_new_interface()) {
-    plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("mname", "x")))
-  } else {
-    plot_data <- plot_data %>%
-      dplyr::group_by(.data$mname, .data$x) %>%
-      tidyr::nest()
-  }
+  plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("fcst_model", "x")))
   plot_data <- plot_data %>%
     dplyr::transmute(
-      .data$mname,
+      .data$fcst_model,
       .data$x,
       ens_mean    = purrr::map_dbl(.data$data, ~ mean(.x$forecast)),
       ens_median  = purrr::map_dbl(.data$data, ~ median(.x$forecast)),
@@ -249,11 +227,7 @@ eps_ribbon_plot <- function(
     ) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, ~ rlang::set_names(.x, ~ paste0("q", .)))) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, dplyr::bind_cols))
-  if (harpIO:::tidyr_new_interface()) {
     plot_data <- tidyr::unnest(plot_data, tidyr::one_of("quantiles"))
-  } else {
-    plot_data <- tidyr::unnest(plot_data)
-  }
 
   # Generate the ggplot object
   gg <- ggplot2::ggplot(dplyr::arrange(plot_data, .data$x), ggplot2::aes(x = .data$x))
@@ -266,7 +240,7 @@ eps_ribbon_plot <- function(
       fill = ribbon_colours[ribbon_number])
   }
 
-  gg + ggalt::geom_xspline(ggplot2::aes(y = !! best_guess_quo), colour = line_colour)
+  gg + geom_linespline(ggplot2::aes(y = !! best_guess_quo), colour = line_colour)
 
 
 }
@@ -294,47 +268,27 @@ eps_stacked_prob_plot <- function(
   num_quantiles <- length(quantiles)
 
   # Compute the quantiles - the quantile names are reversed to get probability > .
-  if (harpIO:::tidyr_new_interface()) {
-    plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("mname", "x")))
-  } else {
-    plot_data <- plot_data %>%
-      dplyr::group_by(.data$mname, .data$x) %>%
-      tidyr::nest()
-  }
+  plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("fcst_model", "x")))
   plot_data <- plot_data %>%
     dplyr::transmute(
-      .data$mname,
+      .data$fcst_model,
       .data$x,
        quantiles   = purrr::map(.data$data, ~ as.list(quantile(.x$forecast, quantiles)))
     ) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, ~ rlang::set_names(.x, ~ rev(.)))) %>%
     dplyr::mutate(quantiles = purrr::map(.data$quantiles, dplyr::bind_cols))
-  if (harpIO:::tidyr_new_interface()) {
     plot_data <- tidyr::unnest(plot_data, tidyr::one_of("quantiles"))
-  } else {
-    plot_data <- tidyr::unnest(plot_data)
-  }
 
   # Gather quantiles and lag to create quantile start and end points
   plot_data <- plot_data %>%
     tidyr::gather(dplyr::ends_with("%"), key = "quantile", value = "forecast")
-  if (harpIO:::tidyr_new_interface()) {
-    plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("mname", "x")))
-  } else {
-    plot_data <- plot_data %>%
-      dplyr::group_by(.data$mname, .data$x) %>%
-      tidyr::nest()
-  }
+  plot_data <- tidyr::nest(plot_data, data = -tidyr::one_of(c("fcst_model", "x")))
   plot_data <- plot_data %>%
     dplyr::mutate(
       f1 = purrr::map(data, ~ dplyr::lag(.x$forecast)),
       quantile_end = purrr::map(data, ~ dplyr::lag(.x$quantile))
     )
-  if (harpIO:::tidyr_new_interface()) {
-    plot_data <- tidyr::unnest(plot_data, tidyr::one_of(c("data", "f1", "quantile_end")))
-  } else {
-    plot_data <- tidyr::unnest(plot_data)
-  }
+  plot_data <- tidyr::unnest(plot_data, tidyr::one_of(c("data", "f1", "quantile_end")))
   plot_data <- plot_data %>%
     tidyr::gather(forecast, .data$f1, key = "key", value = "forecast") %>%
     dplyr::mutate(quantile_label = paste(gsub("%", "", .data$quantile), gsub("%", " %", .data$quantile_end), sep = " - ")) %>%
@@ -369,10 +323,7 @@ eps_ridge_plot <- function(plot_data, ...) {
 eps_spaghetti_plot <- function(plot_data, line_colour, line_size, smooth_line, ...) {
   gg = ggplot2::ggplot(dplyr::arrange(plot_data, .data$x), ggplot2::aes(.data$x, .data$forecast, group = .data$member))
   if (smooth_line) {
-    if (!requireNamespace("ggalt", quietly = TRUE)) {
-      stop("You need to install the ggalt package to use smooth_line = TRUE", call. = FALSE)
-    }
-    gg + ggalt::geom_xspline(colour = line_colour, size = line_size)
+    gg + geom_linespline(colour = line_colour, size = line_size)
   } else {
     gg + ggplot2::geom_line(colour = line_colour, size = line_size)
   }

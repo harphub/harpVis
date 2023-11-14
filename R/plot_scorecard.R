@@ -35,8 +35,6 @@
 #'
 #' @return A score card plot. Can be saved with \link[ggplot2]{ggsave}
 #' @export
-#'
-#' @examples
 plot_scorecard <- function(
   bootstrap_data,
   fcst_model,
@@ -75,7 +73,7 @@ plot_scorecard <- function(
       stop("Do not know how to plot `bootstrap_data`.")
     }
 
-    sc_data <- dplyr::bind_rows(bootstrap_data) %>%
+    sc_data <- dplyr::bind_rows(harpCore::deharp(bootstrap_data)) %>%
       tidyr::drop_na()
 
     if (!is.element("parameter", colnames(sc_data))) {
@@ -185,7 +183,7 @@ plot_scorecard <- function(
   gg <- ggplot2::ggplot(
     sc_data,
     ggplot2::aes(
-      x      = factor(.data[["leadtime"]]),
+      x      = factor(.data[["lead_time"]]),
       y      = forcats::fct_rev(forcats::fct_inorder(.data[["parameter"]])),
       fill   = .data[["class"]],
       colour = .data[["class"]],

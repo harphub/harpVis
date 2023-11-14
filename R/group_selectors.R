@@ -1,11 +1,6 @@
-#' Title
-#'
-#' @param id
-#'
-#' @return
+#' @inheritParams colour_choicesUI
+#' @rdname group_selectors
 #' @export
-#'
-#' @examples
 group_selectorsUI <- function(id) {
 
   ns <- shiny::NS(id)
@@ -37,46 +32,48 @@ group_selectorsUI <- function(id) {
 
 }
 
-#' Title
+#' Shiny module for selecting values for verification groups
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param verif_data
+#' This module inspects the input data and identifies columns by which the
+#' verification is grouped. A \code{\link[shiny]{selectInput}} dropdown is
+#' created for each group and updated depending on the selections in other
+#' groups. The verification data are filtered to the selected values for each
+#' group.
 #'
-#' @return
+#' @inheritParams colour_choices
+#' @return The verification data as a reactive value filtered to the values
+#'   selected for each group.
 #' @export
 #'
 #' @examples
+#' library(shiny)
+#'
+#' ui <- fluidPage(
+#'   fluidRow(
+#'     group_selectorsUI("grps")
+#'   ),
+#'   fluidRow(
+#'     plotOutput("plt")
+#'   )
+#' )
+#'
+#' server <- function(input, output, session) {
+#'   grp_data <- callModule(group_selectors, "grps", reactive(verif_data_grp))
+#'   output$plt <- renderPlot({
+#'     plot_point_verif(req(grp_data()), spread)
+#'   })
+#' }
+#'
+#' if (interactive()) {
+#'   shinyApp(ui, server)
+#' }
 group_selectors <- function(input, output, session, verif_data) {
 
   ns <- session$ns
 
-  # The standard (std) column names come from the built in data
-
-  std_ens_tables <- grep("ens_", names(harpVis::ens_verif_data))
-  std_det_tables <- grep("det_", names(harpVis::det_verif_data))
-  std_columns    <- unique(c(
-    unlist(lapply(harpVis::ens_verif_data[std_ens_tables], names)),
-    unlist(lapply(harpVis::det_verif_data[std_det_tables], names))
-  ))
   std_columns <- union(
-    std_columns,
-    c(
-      "sub_model",
-      "member",
-      "spread_skill_ratio",
-      "dropped_members_spread_skill_ratio",
-      "dropped_members_spread",
-      "parameter",
-      "dates",
-      "num_stations",
-      "fair_crps",
-      "fair_brier_score",
-      "lon",
-      "lat",
-      "elev"
-    )
+    get("meta_colnames", envir = harpVis_data),
+    get("score_colnames", envir = harpVis_data)
   )
 
   # When there is new data get the grouping columns and remove all inserted UI
@@ -107,20 +104,42 @@ group_selectors <- function(input, output, session, verif_data) {
   # function to spawn observers for new group columns
 
   generate_observers <- function() {
-    res <- lapply(
+    filtered_data <- verif_data()
+    lapply(
       seq_along(grp_columns()),
-      function(x) {
-        shiny::observeEvent(input[[paste0("group_", x)]], {
+      function(i) {
+        shiny::observeEvent(input[[paste0("group_", i)]], {
           verif_attr <- attributes(verif_data())
-          filtered_data <- verif_data()
-          for (i in seq_along(grp_columns())) {
-            filter_col <- rlang::sym(grp_columns()[i])
-            filtered_data <- purrr::map_at(
-              filtered_data,
-              which(sapply(filtered_data, nrow) > 0),
-              dplyr::filter,
-              !! filter_col == input[[paste0("group_", i)]]
-            )
+          # filter all the columns and update the selectInput for the
+          # other columns based on the new filtered data
+          for (j in seq_along(grp_columns())) {
+            grp_col <- grp_columns()[j]
+            grp_input <- shiny::req(input[[paste0("group_", j)]])
+            if (grp_input != ".vp") {
+              filtered_data <- lapply(
+                filtered_data, filter_group, grp_col, grp_input
+              )
+            }
+            other_cols <- seq_along(grp_columns())
+            other_cols <- other_cols[other_cols != j]
+            for (k in other_cols) {
+              select_choices <- run_sort_choices(Reduce(
+                union,
+                lapply(
+                  lapply(verif_data(), filter_group, grp_col, grp_input),
+                  function(x) x[[grp_columns()[k]]])
+              ))
+              if (grp_columns()[k] == "p" && !is.element("All", select_choices)) {
+                select_choices <- c(".vp", select_choices)
+                names(select_choices) <- sub(".vp", "Profile", select_choices)
+              }
+              shiny::updateSelectInput(
+                session,
+                paste0("group_", k),
+                choices = select_choices,
+                selected = input[[paste0("group_", k)]]
+              )
+            }
           }
           attributes(filtered_data) <- c(
             verif_attr, list(group_cols = grp_columns())
@@ -132,7 +151,6 @@ group_selectors <- function(input, output, session, verif_data) {
         })
       }
     )
-    res
   }
 
   # When there are new data, insert selectors for the group columns
@@ -145,16 +163,25 @@ group_selectors <- function(input, output, session, verif_data) {
       div_num        <- (group_num - 1) %% 4 + 1
       select_label   <- grp_columns()[group_num]
 
+
       verif_df <- verif_data()$ens_summary_scores
       if (is.null(verif_df)) {
         verif_df <- verif_data()$det_summary_scores
       }
 
       select_choices <- run_sort_choices(verif_df[[grp_columns()[group_num]]])
+      if (select_label == "p" && !is.element("All", select_choices)) {
+        select_choices <- c(".vp", select_choices)
+        names(select_choices) <- sub(".vp", "Profile", select_choices)
+      }
 
       if (group_num > 4) {
         select_choices_before <- run_sort_choices(verif_df[[grp_columns()[group_num - 4]]])
         select_label_before   <- grp_columns()[group_num - 4]
+        if (select_label_before == "p" && !is.element("All", select_choices_before)) {
+          select_choices_before <- c(".vp", select_choices_before)
+          names(select_choices_before) <- sub(".vp", "Profile", select_choices_before)
+        }
       }
 
       ui_arg <- shiny::div(
@@ -204,10 +231,11 @@ group_selectors <- function(input, output, session, verif_data) {
 
     }
 
+    #print(length(grp_columns()))
     if (length(grp_columns()) > 0) generate_observers()
   })
 
-  return(out_data)
+  return(shiny::debounce(out_data, 100))
 
 }
 
@@ -240,3 +268,15 @@ run_sort_choices <- function(choices_to_sort) {
   select_choices
 }
 
+filter_group <- function(data, group_col, group_input) {
+  if (is.null(group_input)) {
+    return(data)
+  }
+  if (!is.element(group_col, colnames(data))) {
+    if (group_input != "All") {
+      return(data[0, ])
+    }
+    return(data)
+  }
+  dplyr::filter(data, .data[[group_col]] == group_input)
+}

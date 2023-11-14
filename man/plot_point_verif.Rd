@@ -8,12 +8,14 @@ plot_point_verif(
   verif_data,
   score,
   verif_type = c("ens", "det"),
-  x_axis = leadtime,
+  x_axis = lead_time,
   y_axis = rlang::enquo(score),
   rank_is_relative = FALSE,
   rank_hist_type = c("bar", "lollipop", "line"),
-  colour_by = mname,
+  colour_by = fcst_model,
   colour_table = NULL,
+  hex_palette = viridisLite::plasma(256),
+  hex_colour = "grey20",
   extend_y_to_zero = TRUE,
   plot_num_cases = TRUE,
   extend_num_cases_to_zero = FALSE,
@@ -58,8 +60,10 @@ the verification tables or the name of a dervived score, such as
 data. The default is "ens", but set to "det" to plot verification scores
 for members. If set to "det", you should also set colour_by = member.}
 
-\item{x_axis}{The x-axis for the plot. The default is leadtime, but could
-also be threshold. For some scores this is overrided.}
+\item{x_axis}{The x-axis for the plot. The default is lead_time, but could
+also be threshold. For some scores this is overrided. Note that leadtime
+will be treated exactly the same as lead_time for compatibility with older
+versions.}
 
 \item{y_axis}{The y-axis for the plot. The default is to take the same as the
 score input, and for most scores this is overrided.}
@@ -71,13 +75,19 @@ relative rank (between 0 and 1) on the x-axis. The default is FALSE.}
 chart, lollipop chart or a line chart.}
 
 \item{colour_by}{The column to colour the plot lines or bars by. The default
-is mname, for the model name. Set to NULL for all lines / bars to have the
-same colour.}
+is \code{fcst_model}, for the model name. Set to NULL for all lines / bars to
+have the same colour.}
 
 \item{colour_table}{A data frame with column names equal to the value of
 \code{colour_by} and "colour". The colour column should contain colour
 names or hex codes. There should be one row for each value in the
 \code{colour_by} column. If set to NULL, the default colour table is used.}
+
+\item{hex_palette}{The colour palette to use for \code{hexbin}. This should be a
+vector of colours. The default is \link[viridisLite]{plasma}.}
+
+\item{hex_colour}{The outline colour of hexagons for hexbin plots. The
+default is "grey20".}
 
 \item{extend_y_to_zero}{Logical. Whether to extend the y-axis to include
 zero.}
@@ -122,7 +132,7 @@ default is 2.}
 \link[dplyr]{vars} function. This can be useful for making a single plot
 where there are many groups. For example, for reliability there should be
 one plot for each lead time and threshold, so the data can be filtered with
-e.g. \code{filter_by = vars(leadtime == 12, threshold == 280)}.}
+e.g. \code{filter_by = vars(lead_time == 12, threshold == 280)}.}
 
 \item{plot_title}{Title for the plot. Set to "auto" to automatically generate
 the title. Set to "none" for no title. Anything else inside quotes will be
@@ -182,8 +192,8 @@ arguments that can take more than one value, (\code{facet_by} and
 \link[dplyr]{vars} function.
 }
 \examples{
-plot_point_verif(ens_verif_data, crps)
-plot_point_verif(ens_verif_data, spread_skill)
-plot_point_verif(det_verif_data, equitable_threat_score, facet_by = vars(threshold))
-plot_point_verif(ens_verif_data, reliability, filter_by = vars(leadtime == 12, threshold == 290))
+plot_point_verif(verif_data_ens, crps)
+plot_point_verif(verif_data_ens, spread_skill)
+plot_point_verif(verif_data_det, equitable_threat_score, facet_by = vars(threshold))
+plot_point_verif(verif_data_ens, reliability, filter_by = vars(lead_time == 12, threshold == 16))
 }

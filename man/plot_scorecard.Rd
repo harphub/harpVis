@@ -14,8 +14,7 @@ plot_scorecard(
   grid_facets = FALSE,
   filter_by = NULL,
   significance_breaks = c(-1.1, -0.997, -0.95, -0.68, 0.68, 0.95, 0.997, 1.1),
-  colours = c("#CA0020", "#CA0020", "#CA0020", "grey70", "#0571B0", "#0571B0",
-    "#0571B0"),
+  colours = c("#CA0020", "#CA0020", "#CA0020", "grey70", "#0571B0", "#0571B0", "#0571B0"),
   fills = c("#CA0020", "#F4A582", NA, "grey70", NA, "#92C5DE", "#0571B0"),
   shapes = c(25, 25, 25, 22, 24, 24, 24),
   sizes = c(3, 2, 1, 0.5, 1, 2, 3),
@@ -41,25 +40,25 @@ everything wrapped inside the \code{vars} function.}
 
 \item{significance_breaks}{The breaks to for statistical significance of
 differences. Default is \code{c(-1.1, -0.997, -0.95, -0.68, 0.68, 0.95,
-0.997, 1.1)}.}
+  0.997, 1.1)}.}
 
 \item{colours}{Vector of outline colours used for the scorecard symbols.
 Should be one fewer then \code{significance_breaks}. Can be colour names or
 HEX colours. Default is \code{c("#CA0020", "#CA0020", "#CA0020", "grey70",
-"#0571B0", "#0571B0", "#0571B0")}.}
+  "#0571B0", "#0571B0", "#0571B0")}.}
 
 \item{fills}{Vector of fill colours used for the scorecard symbols. Should be
 one fewer then \code{significance_breaks}. Can be colour names or HEX
 colours. Default is \code{c("#CA0020", "#F4A582", NA, "grey70", NA,
-"#92C5DE", "#0571B0")}.}
+  "#92C5DE", "#0571B0")}.}
 
 \item{shapes}{Vector of shapes used for the scorecard symbols. Should be one
 fewer then \code{significance_breaks}. Default is \code{c(25, 25, 25, 22,
-24, 24, 24)}.}
+  24, 24, 24)}.}
 
 \item{sizes}{Vector of sizes used for the scorecard symbols. Should be one
 fewer then \code{significance_breaks}. Default is \code{c(3, 2, 1, 0.5, 1,
-2, 3)}.}
+  2, 3)}.}
 
 \item{legend_labels}{Character vector of labels to be used for the scorecard
 symbols. Should be one fewer then \code{significance_breaks}. Set to "auto"

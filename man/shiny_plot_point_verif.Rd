@@ -4,7 +4,29 @@
 \alias{shiny_plot_point_verif}
 \title{Start shiny app to plot point verification}
 \usage{
-shiny_plot_point_verif(start_dir = NULL, online = TRUE, ...)
+shiny_plot_point_verif(
+  start_dir = NULL,
+  full_dir_navigation = TRUE,
+  theme = c("dark", "light", "white"),
+  online = TRUE,
+  ...
+)
+}
+\arguments{
+\item{start_dir}{The directory start the app in. The directory tree above
+this directory will not be visible.}
+
+\item{full_dir_navigation}{Whether to have full navigation of the directory
+tree below \code{app_start_dir} via a modal (TRUE - the default), or a dropdown
+selector of directories that contain harp point verification files (FALSE).}
+
+\item{theme}{The colour theme of the app - can be one of "dark", "light" or
+"white".}
+
+\item{online}{Logical. Whether the app should have access to the internet
+(e.g. to download fonts) or not.}
+
+\item{...}{Options to \code{\link[shiny]{runApp}}.}
 }
 \description{
 Start shiny app to plot point verification

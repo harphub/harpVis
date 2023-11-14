@@ -2,12 +2,12 @@
 % Please edit documentation in R/plot_station_eps.R
 \name{plot_station_eps}
 \alias{plot_station_eps}
-\title{Title}
+\title{Plot eps data for a station}
 \usage{
 plot_station_eps(
   .fcst,
   SID,
-  fcdate,
+  fcst_dttm,
   type = c("ribbon", "boxplot", "violin", "stacked_prob", "ridge", "spaghetti"),
   x_axis = c("leadtime", "validtime"),
   parameter = "",
@@ -28,12 +28,6 @@ plot_station_eps(
   ...
 )
 }
-\arguments{
-\item{...}{}
-}
-\value{
-
-}
 \description{
-Title
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 }
