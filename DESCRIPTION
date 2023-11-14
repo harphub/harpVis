@@ -21,7 +21,7 @@ Imports:
     hexbin,
     RadioSonde,
     magrittr,
-    harpCore (>=0.2.0),
+    harpCore (>= 0.2.0),
     RColorBrewer,
     ggsonde,
     fs,
