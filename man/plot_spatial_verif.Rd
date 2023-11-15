@@ -4,21 +4,79 @@
 \alias{plot_spatial_verif}
 \title{Plot spatial verification scores}
 \usage{
-plot_spatial_verif(verif_data, score, filter_by = NULL, ...)
+plot_spatial_verif(
+  verif_data,
+  score,
+  filter_by = NULL,
+  show_data = FALSE,
+  plot_opts = list(),
+  colour_theme = "bw",
+  base_size = 11,
+  base_family = "",
+  base_line_size = base_size/22,
+  base_rect_size = base_size/22,
+  legend_position = "right",
+  plot_caption = "auto",
+  leadtimes_by = "hours",
+  save_image = FALSE,
+  ...
+)
 }
 \arguments{
-\item{verif_data}{Output from \link[harpSPatial]{spatial_verify}}
+\item{verif_data}{Output from \link[harpSPatial]{spatial_verify}. Expected to
+either be a dataframe or an SQLite file (needs path to file).}
 
-\item{score}{The score to plot. Currently only SAL, FSS are available.
-More to come.}
+\item{score}{The score to plot.}
 
 \item{filter_by}{Filter the data before plotting. Must be wrapped inside the
 \link[dplyr]{vars} function. This can be useful for making a single plot
 where there are many groups. For example, if the data contains various models
 the data can be filtered with
 e.g. \code{filter_by = vars(det_model == "be13", fctime == 0)}.}
+
+\item{show_data}{Prints the contents of the score tables used as input before
+visualisation as well as plotting options (\code{plot_opts}) if any exist.}
+
+\item{plot_opts}{A list of plotting options that may be passed from outside into
+plotting functions that may use something specific while others might not be used.}
+
+\item{colour_theme}{The colour theme for the plot - can be any ggplot2 theme}
+
+\item{base_size}{base font size.}
+
+\item{base_family}{base font family.}
+
+\item{base_line_size}{base size for line elements.}
+
+\item{base_rect_size}{base size for rect elements.}
+
+\item{legend_position}{The position of legends ("none", "left", "right",
+"bottom", "top", or two-element numeric vector).}
+
+\item{plot_caption}{Caption for the plot. Set to "auto" to automatically
+generate the caption. Anything else inside quotes will be used as the plot caption.}
+
+\item{leadtimes_by}{Leadtimes in scores are by default expected to be in seconds
+but there is an option to view leadtimes as hours, minutes or seconds.}
+
+\item{save_image}{Saves the plot as a .png file without a preset path.}
+}
+\value{
+A plot (interactive or saved image)
 }
 \description{
 \code{plot_spatial_verif} is used to plot verification scores computed by
-functions from the harpSpatial package.
+functions from the harpSpatial package. This function uses it's own plotting
+options while allowing specific plot options (\code{plot_opts}) to be passed
+into a separate plotting function (such as \code{plot_basic},\code{plot_fss},
+\code{plot_sal} and \code{plot_nact},).
+}
+\examples{
+plot_spatial_verif(verif_data, 'SAL')
+plot_spatial_verif(verif_data, 'FSS')
+plot_spatial_verif(verif_data, 'NACT')
+plot_spatial_verif(verif_data, 'NACT', plot_opts=list(nact_scores=list("pod","far"),colour_by="scale"))
+plot_spatial_verif(verif_data, 'mse')
+plot_spatial_verif(verif_data, 'mae')
+plot_spatial_verif(verif_data, 'bias')
 }
