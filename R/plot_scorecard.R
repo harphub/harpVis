@@ -183,7 +183,7 @@ plot_scorecard <- function(
   gg <- ggplot2::ggplot(
     sc_data,
     ggplot2::aes(
-      x      = factor(.data[["lead_time"]]),
+      x      = forcats::fct_inseq(factor(.data[["lead_time"]])),
       y      = forcats::fct_rev(forcats::fct_inorder(.data[["parameter"]])),
       fill   = .data[["class"]],
       colour = .data[["class"]],
