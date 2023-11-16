@@ -7,8 +7,10 @@
 spatial_plot_func(score_name, ...)
 }
 \arguments{
-\item{score_name}{A string containing the name of the score calculated from \code{verify_spatial}.
-This will return the appropriate plotting function to \code{plot_spatial_verif}.}
+\item{score_name}{A string containing the name
+of the score calculated from \code{verify_spatial}.
+This will return the appropriate plotting function
+to \code{plot_spatial_verif}.}
 }
 \description{
 Pick appropriate functions for spatial scores

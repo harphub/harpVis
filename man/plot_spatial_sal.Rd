@@ -28,11 +28,14 @@ but makes it more intuitive when calling from \code{plot_spatial_verif}.}
 
 \item{line_width}{The width of lines to plot. The default is 1.}
 
-\item{quantiles}{A vector of quantiles that will be used to highlight an area of S/A values within those quantiles}
+\item{quantiles}{A vector of quantiles that will be used to
+highlight an area of S/A values within those quantiles.}
 
-\item{xylim}{Plot x/y axis shared limit. Default "auto" will generate limits based on plot data.}
+\item{xylim}{Plot x/y axis shared limit. Default "auto" will generate
+limits based on plot data.}
 
-\item{show_stats}{An option to show median and mean values of S, A and L as a table next to the plot. Default FALSE.}
+\item{show_stats}{An option to show median and mean values of
+S, A and L as a table next to the plot. Default FALSE.}
 }
 \description{
 Plot SAL scores

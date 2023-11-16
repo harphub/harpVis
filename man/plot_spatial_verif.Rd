@@ -26,7 +26,8 @@ plot_spatial_verif(
 \item{verif_data}{Output from \link[harpSPatial]{spatial_verify}. Expected to
 either be a dataframe or an SQLite file (needs path to file).}
 
-\item{score}{The score to plot. This will call the appropriate spatial plotting function through \code{spatial_plot_func}.}
+\item{score}{The score to plot. This will call the appropriate spatial plotting
+function through \code{spatial_plot_func}.}
 
 \item{filter_by}{Filter the data before plotting. Must be wrapped inside the
 \link[dplyr]{vars} function. This can be useful for making a single plot
@@ -68,14 +69,14 @@ A plot (interactive or saved image)
 \code{plot_spatial_verif} is used to plot verification scores computed by
 functions from the harpSpatial package. This function uses it's own plotting
 options while allowing specific plot options (\code{plot_opts}) to be passed
-into a separate plotting function (such as \code{plot_basic},\code{plot_fss},
-\code{plot_sal} and \code{plot_nact},).
+into a separate plotting function (such as \code{plot_basic}, \code{plot_fss},
+\code{plot_sal} and \code{plot_nact}).
 }
 \examples{
 plot_spatial_verif(verif_data, 'SAL')
 plot_spatial_verif(verif_data, 'FSS')
 plot_spatial_verif(verif_data, 'NACT')
-plot_spatial_verif(verif_data, 'NACT', plot_opts=list(nact_scores=list("pod","far"),colour_by="scale"))
+plot_spatial_verif(verif_data, 'NACT', plot_opts = list(nact_scores = list("pod", "far"), colour_by = "scale"))
 plot_spatial_verif(verif_data, 'mse')
 plot_spatial_verif(verif_data, 'mae')
 plot_spatial_verif(verif_data, 'bias')

@@ -23,7 +23,8 @@ but makes it more intuitive when calling from \code{plot_spatial_verif}.}
 
 \item{flip_axes}{Logical of whether to swap the x and y axes.}
 
-\item{colour_by}{The column to colour the plot lines by. Can be an option between the score ("fss"), scale or threshold.}
+\item{colour_by}{The column to colour the plot lines by.
+Can be an option between the score ("fss"), scale or threshold.}
 
 \item{point_size}{The size of points to plot.}
 

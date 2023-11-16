@@ -4,7 +4,7 @@
 \alias{plot_spatial_nact}
 \title{Plot scores from neighborhood based contingency tables
 based on Stein and Stoop article, 2019 Jan
-Neighborhood-Based Contingency Tables Includig Errors Compensation}
+Neighborhood-Based Contingency Tables Including Errors Compensation}
 \usage{
 plot_spatial_nact(
   plot_data,
@@ -37,19 +37,22 @@ zero.}
 \item{y_label}{Label for the y-axis. Set to "auto" to use "Score". Anything else inside
 quotes will be used as the y-axis label.}
 
-\item{x_label}{Label for the x-axis. Set to "auto" to use threshold or scale depending on the data. Anything else inside
+\item{x_label}{Label for the x-axis. Set to "auto" to use threshold
+or scale depending on the data. Anything else inside
 quotes will be used as the x-axis label.}
 
 \item{flip_axes}{Logical of whether to swap the x and y axes.}
 
-\item{nact_scores}{Actual scores to plot. Available scores based on NACT are "fbias","pod","far","pss","hss","sedi".}
+\item{nact_scores}{Actual scores to plot.
+Available scores based on NACT are "fbias", "pod", "far", "pss", "hss", "sedi".}
 
-\item{colour_by}{The column to colour the plot lines by. Can be an option between scale or threshold.}
+\item{colour_by}{The column to colour the plot lines by.
+Can be an option between scale or threshold.}
 
 \item{num_facet_cols}{Number of columns in the faceted plot.}
 }
 \description{
 Plot scores from neighborhood based contingency tables
 based on Stein and Stoop article, 2019 Jan
-Neighborhood-Based Contingency Tables Includig Errors Compensation
+Neighborhood-Based Contingency Tables Including Errors Compensation
 }

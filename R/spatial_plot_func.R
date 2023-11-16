@@ -1,13 +1,15 @@
 #' Pick appropriate functions for spatial scores
 #'
-#' @param score_name A string containing the name of the score calculated from \code{verify_spatial}.
-#'   This will return the appropriate plotting function to \code{plot_spatial_verif}.
-#' @export 
+#' @param score_name A string containing the name
+#'   of the score calculated from \code{verify_spatial}.
+#'   This will return the appropriate plotting function
+#'   to \code{plot_spatial_verif}.
+#' @export
 
 spatial_plot_func <- function(
-  score_name, 
-  ...) {
-    
+    score_name,
+    ...) {
+
     result <- switch(score_name,
         "bias"   = "plot_spatial_line",
         "mse"    = "plot_spatial_line",
