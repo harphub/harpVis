@@ -9,6 +9,8 @@
 #' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to 
 #'   either be a dataframe or an SQLite file (needs path to file).
 #' @param score The score to plot.
+#' @param is_HIRA In case of using HIRA scores, use TRUE so that it will use plot functions from \code{hira_scores}.
+#'   Otherwise uses standard \code{spatial_scores}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
 #'   where there are many groups. For example, if the data contains various models
@@ -46,6 +48,7 @@
 plot_spatial_verif <- function(
   verif_data,
   score,
+  is_HIRA = FALSE,
   filter_by = NULL,
   show_data = FALSE,
   plot_opts = list(),
@@ -173,7 +176,11 @@ plot_spatial_verif <- function(
   }
 
   ########## PLOTTING FUNCTION SELECTION  
-  myPlotFunc = spatial_scores(score=score_name)$plot_func
+  if (is_HIRA) {
+    myPlotFunc = hira_scores(score=score_name)$plot_func
+  } else {
+    myPlotFunc = spatial_scores(score=score_name)$plot_func
+  }
   gg <- do.call(myPlotFunc,c(list(plot_data,score_name),plot_opts))
   
   ### Plot background, stolen from plot_point_verif
