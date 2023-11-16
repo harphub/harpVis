@@ -8,7 +8,7 @@ plot_spatial_verif(
   verif_data,
   score,
   filter_by = NULL,
-  show_data = FALSE,
+  show_info = FALSE,
   plot_opts = list(),
   colour_theme = "bw",
   base_size = 11,
@@ -26,7 +26,7 @@ plot_spatial_verif(
 \item{verif_data}{Output from \link[harpSPatial]{spatial_verify}. Expected to
 either be a dataframe or an SQLite file (needs path to file).}
 
-\item{score}{The score to plot.}
+\item{score}{The score to plot. This will call the appropriate spatial plotting function through \code{spatial_plot_func}.}
 
 \item{filter_by}{Filter the data before plotting. Must be wrapped inside the
 \link[dplyr]{vars} function. This can be useful for making a single plot
@@ -34,7 +34,7 @@ where there are many groups. For example, if the data contains various models
 the data can be filtered with
 e.g. \code{filter_by = vars(det_model == "be13", fctime == 0)}.}
 
-\item{show_data}{Prints the contents of the score tables used as input before
+\item{show_info}{Prints the contents of the score tables used as input before
 visualisation as well as plotting options (\code{plot_opts}) if any exist.}
 
 \item{plot_opts}{A list of plotting options that may be passed from outside into

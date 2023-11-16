@@ -11,7 +11,7 @@
 #'
 #' @export 
 
-plot_fss <- function(
+plot_spatial_fss <- function(
   plot_data, 
   score_name="FSS", 
   flip_axes = FALSE, 

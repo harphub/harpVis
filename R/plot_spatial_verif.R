@@ -8,15 +8,13 @@
 #'
 #' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to 
 #'   either be a dataframe or an SQLite file (needs path to file).
-#' @param score The score to plot.
-#' @param is_HIRA In case of using HIRA scores, use TRUE so that it will use plot functions from \code{hira_scores}.
-#'   Otherwise uses standard \code{spatial_scores}.
+#' @param score The score to plot. This will call the appropriate spatial plotting function through \code{spatial_plot_func}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
 #'   where there are many groups. For example, if the data contains various models
 #'   the data can be filtered with
 #'   e.g. \code{filter_by = vars(det_model == "be13", fctime == 0)}.
-#' @param show_data Prints the contents of the score tables used as input before 
+#' @param show_info Prints the contents of the score tables used as input before 
 #'   visualisation as well as plotting options (\code{plot_opts}) if any exist. 
 #' @param plot_opts A list of plotting options that may be passed from outside into
 #'   plotting functions that may use something specific while others might not be used.
@@ -48,9 +46,8 @@
 plot_spatial_verif <- function(
   verif_data,
   score,
-  is_HIRA = FALSE,
   filter_by = NULL,
-  show_data = FALSE,
+  show_info = FALSE,
   plot_opts = list(),
   colour_theme = "bw",
   base_size = 11,
@@ -160,7 +157,7 @@ plot_spatial_verif <- function(
     message("Multiple parameters found: ", paste(unique(plot_data$prm),collapse=" "))
   }
 
-  if (show_data) {
+  if (show_info) {
       message("=========================================================================")
       print(verif_data)
       message("=========================================================================")
@@ -175,13 +172,9 @@ plot_spatial_verif <- function(
       message("=========================================================================")
   }
 
-  ########## PLOTTING FUNCTION SELECTION  
-  if (is_HIRA) {
-    myPlotFunc = hira_scores(score=score_name)$plot_func
-  } else {
-    myPlotFunc = spatial_scores(score=score_name)$plot_func
-  }
-  gg <- do.call(myPlotFunc,c(list(plot_data,score_name),plot_opts))
+  ########## PLOTTING FUNCTION SELECTION
+  myPlotFunc <- spatial_plot_func(score_name)
+  gg <- do.call(myPlotFunc,c(list(plot_data,score_name),plot_opts))  #  In cases where plot_spatial_line is used, score_name will be used to look for both the table name AS WELL AS the column name, so this might change in the future
   
   ### Plot background, stolen from plot_point_verif
 
@@ -205,7 +198,7 @@ plot_spatial_verif <- function(
   )
 
   ####
-  if (myPlotFunc == "plot_basic") {
+  if (myPlotFunc == "plot_spatial_line") {
     plot_subtitle <- paste("Period:",fcbdate,"-",fcedate,":: Hours {",paste(c(sprintf("%02d", valid_hours)), collapse=", "),"}")
   } else {
     ldts <- unique(plot_data$leadtime)

@@ -12,7 +12,7 @@
 #'
 #' @export 
 
-plot_sal <- function(
+plot_spatial_sal <- function(
   plot_data, 
   score_name="SAL", 
   point_size=4, 

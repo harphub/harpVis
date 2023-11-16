@@ -20,7 +20,7 @@
 #'
 #' @export 
 
-plot_nact <- function(
+plot_spatial_nact <- function(
   plot_data, 
   score_name="NACT", 
   point_size = 1.2, 
@@ -100,11 +100,22 @@ plot_nact <- function(
   plot_data$value <- replace(plot_data$value,is.na(plot_data$value),NA) # NaN to NA
   plot_data$value <- replace(plot_data$value,is.infinite(plot_data$value),NA) # Inf to NA
   
+  if (grepl("hira_", score_name, fixed = TRUE)) {
+      score_name <- switch(score_name,
+        "hira_me"   = "HiRA Multi Event",
+        "hira_pph"    = "HiRA Practically Perfect Hindcast",
+        # "hira_pragm"    = "HiRA Pragmatic method",
+        # "hira_crss"    = "HiRA Conditional square root for RPS",
+      )
+  } else {
+      score_name <- toupper(score_name)
+  }
+  
   gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data), y = value, colour = as.character(get(colour_by)))) + 
         ggplot2::scale_x_continuous(breaks = unique(plot_data$threshold)) + 
         ggplot2::geom_line(size=line_width) +
         ggplot2::geom_point(size=point_size) + 
-        ggplot2::labs(title=paste("Scores from",toupper(score_name),", Param: ",unique(plot_data$prm)), y = y_label, x = x_label, colour=str_to_title(colour_by)) + 
+        ggplot2::labs(title=paste("Scores from",score_name,", Param: ",unique(plot_data$prm)), y = y_label, x = x_label, colour=str_to_title(colour_by)) + 
         facet_wrap(. ~ score, ncol = num_facet_cols, labeller = labeller(score = toupper))
   
   ## Other settings

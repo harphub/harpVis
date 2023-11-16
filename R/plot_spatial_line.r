@@ -15,7 +15,7 @@
 #'
 #' @export 
 
-plot_basic <- function(
+plot_spatial_line <- function(
   plot_data, 
   score_name, 
   point_size = 1.2, 
