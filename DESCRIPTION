@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.2.0
+Version: 0.2.0.9000
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
@@ -34,7 +34,7 @@ Imports:
     grDevices,
     ggnewscale
 Remotes:
-    harphub/harpCore@v0.2.0,
+    harphub/harpCore@develop,
     harphub/ggsonde,
     harphub/meteogrid
 Encoding: UTF-8
