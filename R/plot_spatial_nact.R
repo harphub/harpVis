@@ -73,50 +73,41 @@ plot_spatial_nact <- function(
                                 miss = mean(miss, na.rm = TRUE),
                                 cr   = mean(cr,   na.rm = TRUE))
 
+  A <- plot_data$hit
+  B <- plot_data$fa
+  C <- plot_data$miss
+  D <- plot_data$cr
+
   if ("fbias" %in% nact_scores) {
       nact_score <- "fbias" # Frequency bias
-      plot_data[nact_score] <- (plot_data$hit + plot_data$fa) /
-                               (plot_data$hit + plot_data$miss)
+      plot_data[nact_score] <- (A + B) / (A + C)
   }
   if ("pod" %in% nact_scores) {
       nact_score <- "pod"   # Probability of detection
-      plot_data[nact_score] <- plot_data$hit /
-                              (plot_data$hit + plot_data$miss)
+      plot_data[nact_score] <- A / (A + C)
   }
   if ("far" %in% nact_scores) {
       nact_score <- "far"   # False-alarm ratio
-      plot_data[nact_score] <- plot_data$fa  /
-                              (plot_data$hit + plot_data$fa)
+      plot_data[nact_score] <- B  / (A + B)
   }
   if ("pss" %in% nact_scores) {
       nact_score <- "pss"   # Pierce skill score
-      plot_data[nact_score] <- (plot_data$hit / (plot_data$hit + plot_data$fa) -
-                               (plot_data$fa  / (plot_data$fa  + plot_data$cr)))
+      plot_data[nact_score] <- ((A / (A + C)) -
+                                (B / (B + D)))
   }
   if ("hss" %in% nact_scores) {
       nact_score <- "hss"   # Heidke skill score
-      Ar <- ((plot_data$hit + plot_data$fa) * (plot_data$hit  + plot_data$miss)) /
-             (plot_data$hit + plot_data$fa  +  plot_data$miss + plot_data$cr)
+      Ar <- ((A + B) * (A + C)) / (A + B + C + D)
+      Dr <- ((B + D) * (C + D)) / (A + B + C + D)
 
-      Dr <- ((plot_data$fa  + plot_data$cr) * (plot_data$miss + plot_data$cr)) /
-             (plot_data$hit + plot_data$fa  +  plot_data$miss + plot_data$cr)
-
-      plot_data[nact_score] <- ((plot_data$hit  + plot_data$cr - Ar - Dr) /
-                                (plot_data$hit  + plot_data$fa +
-                                 plot_data$miss + plot_data$cr - Ar - Dr))
+      plot_data[nact_score] <- ((A + D - Ar - Dr) /
+                                (A + B + C + D - Ar - Dr))
   }
   if ("sedi" %in% nact_scores) {
       nact_score <- "sedi"  # Symmetric extremal dependency index
       plot_data[nact_score] <-
-      ((log(plot_data$fa   / (plot_data$fa  + plot_data$cr))   -
-        log(plot_data$hit  / (plot_data$hit + plot_data$miss)) +
-        log(plot_data$miss / (plot_data$hit + plot_data$miss)) -
-        log(plot_data$cr   / (plot_data$fa  + plot_data$cr)))
-        /
-       (log(plot_data$fa   / (plot_data$fa  + plot_data$cr))   +
-        log(plot_data$hit  / (plot_data$hit + plot_data$miss)) +
-        log(plot_data$miss / (plot_data$hit + plot_data$miss)) +
-        log(plot_data$cr   / (plot_data$fa  + plot_data$cr))))
+      ((log(B / (B + D)) - log(A / (A + C)) + log(C / (A + C)) - log(D / (B + D))) /
+       (log(B / (B + D)) + log(A / (A + C)) + log(C / (A + C)) + log(D / (B + D))))
   }
 
   ## At this point we will have a table of
