@@ -4,7 +4,6 @@
 #'   of the score calculated from \code{verify_spatial}.
 #'   This will return the appropriate plotting function
 #'   to \code{plot_spatial_verif}.
-#' @export
 
 spatial_plot_func <- function(
     score_name,
