@@ -124,8 +124,8 @@ plot_spatial_nact <- function(
 
   if (grepl("hira_", score_name, fixed = TRUE)) {
         score_name <- switch(score_name,
-            "hira_me"   = "HiRA Multi Event",
-            "hira_pph"  = "HiRA Practically Perfect Hindcast",
+            "hira_me"  = "HiRA Multi Event",
+            "hira_td"  = "HiRA Threat Detection",
             # "hira_pragm"   = "HiRA Pragmatic method",
             # "hira_crss"    = "HiRA Conditional square root for RPS",
         )

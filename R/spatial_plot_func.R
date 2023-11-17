@@ -20,7 +20,7 @@ spatial_plot_func <- function(
         "hira_me"    = "plot_spatial_nact",
         # "hira_pragm" = "WIP",  #  no plot function available yet
         # "hira_crss"  = "WIP",  #  no plot function available yet
-        "hira_pph"   = "plot_spatial_nact",
+        "hira_td"   = "plot_spatial_nact",
         stop("Unknown score_name ", score_name)
     )
     result
