@@ -82,6 +82,18 @@
     <loc>/reference/plot_scorecard.html</loc>
   </url>
   <url>
+    <loc>/reference/plot_spatial_fss.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_spatial_line.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_spatial_nact.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_spatial_sal.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot_spatial_verif.html</loc>
   </url>
   <url>
@@ -104,6 +116,9 @@
   </url>
   <url>
     <loc>/reference/shiny_plot_spatial_verif.html</loc>
+  </url>
+  <url>
+    <loc>/reference/spatial_plot_func.html</loc>
   </url>
   <url>
     <loc>/reference/time_axis.html</loc>
