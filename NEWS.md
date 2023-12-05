@@ -1,3 +1,8 @@
+# harpVis v0.2.1
+
+* Hotfix release that adds functionality to plot new spatial verification
+scores
+
 # harpVis v0.2.0
 
 This is a major update. The main focus has been on ensuring that plot functions

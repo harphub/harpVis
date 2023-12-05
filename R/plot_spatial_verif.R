@@ -1,27 +1,82 @@
 #' Plot spatial verification scores
 #'
 #' \code{plot_spatial_verif} is used to plot verification scores computed by
-#' functions from the harpSpatial package.
+#' functions from the harpSpatial package. This function uses it's own plotting
+#' options while allowing specific plot options (\code{plot_opts}) to be passed
+#' into a separate plotting function (such as \code{plot_basic}, \code{plot_fss},
+#' \code{plot_sal} and \code{plot_nact}).
 #'
-#' @param verif_data Output from \link[harpSPatial]{spatial_verify}
-#' @param score The score to plot. Currently only SAL, FSS are available.
-#'   More to come.
+#' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to
+#'   either be a dataframe or an SQLite file (needs path to file).
+#' @param score The score to plot. This will call the appropriate spatial plotting
+#'   function through \code{spatial_plot_func}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
 #'   where there are many groups. For example, if the data contains various models
 #'   the data can be filtered with
 #'   e.g. \code{filter_by = vars(det_model == "be13", fctime == 0)}.
-#'
+#' @param show_info Prints the contents of the score tables used as input before
+#'   visualisation as well as plotting options (\code{plot_opts}) if any exist.
+#' @param plot_opts A list of plotting options that may be passed from outside into
+#'   plotting functions that may use something specific while others might not be used.
+#' @param colour_theme The colour theme for the plot - can be any ggplot2 theme
+#' @param base_size base font size.
+#' @param base_family base font family.
+#' @param base_line_size base size for line elements.
+#' @param base_rect_size base size for rect elements.
+#' @param legend_position The position of legends ("none", "left", "right",
+#'   "bottom", "top", or two-element numeric vector).
+#' @param plot_caption Caption for the plot. Set to "auto" to automatically
+#'   generate the caption. Anything else inside quotes will be used as the plot caption.
+#' @param leadtimes_by Leadtimes in scores are by default expected to be in seconds
+#'   but there is an option to view leadtimes as hours, minutes or seconds.
+#' @param save_image Saves the plot as a .png file without a preset path.
+#' @return A plot (interactive or saved image)
+#' @import ggplot2
 #' @export
+#'
+#' @examples
+#' plot_spatial_verif(verif_data, 'SAL')
+#' plot_spatial_verif(verif_data, 'FSS')
+#' plot_spatial_verif(verif_data, 'NACT')
+#' plot_spatial_verif(verif_data, 'NACT', plot_opts = list(nact_scores = list("pod", "far"), colour_by = "scale"))
+#' plot_spatial_verif(verif_data, 'mse')
+#' plot_spatial_verif(verif_data, 'mae')
+#' plot_spatial_verif(verif_data, 'bias')
+
 plot_spatial_verif <- function(
   verif_data,
   score,
-  filter_by = NULL,
+  filter_by         = NULL,
+  show_info         = FALSE,
+  plot_opts         = list(),
+  colour_theme      = "bw",
+  base_size         = 11,
+  base_family       = "",
+  base_line_size    = base_size / 22,
+  base_rect_size    = base_size / 22,
+  legend_position   = "right",
+  plot_caption      = "auto",
+  leadtimes_by      = "hours",
+  save_image        = FALSE,
+
   ...) {
 
-  score_quo   <- rlang::enquo(score)
+  score_quo  <- rlang::enquo(score)
   score_name <- rlang::quo_name(score_quo)
 
+  ################
+
+  if (!is.object(verif_data) && is.character(verif_data)) {
+    if (grepl(".sqlite", verif_data)) {
+      library(RSQLite)
+      message(verif_data)
+      sql_object <- harpIO:::dbopen(verif_data)
+      verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ", score_name)))
+      harpIO:::dbclose(sql_object)
+    }
+  }
+  ################
 
   # the column(s) to filter data for before plotting
   filter_by_err  <- paste("filter_by must be wrapped in vars and unquoted,\n",
@@ -46,125 +101,154 @@ plot_spatial_verif <- function(
   # select the right data set if verif_data is a list of tables
 
   if (!is.data.frame(verif_data) && is.list(verif_data)) {
-    plot_data <- switch(tolower(score_name),
-                        "sal" = verif_data$basic,
-                        "fss" = verif_data$fuzzy,
-                        stop("unsupported score ", score_name)
-                        )
+    # If list of tables, select the table of selected score,
+    # each score has it's own table
+    plot_data <- as_tibble(verif_data$score_name)
   } else {
-    plot_data <- verif_data
+    plot_data <- as_tibble(verif_data)
+  }
+
+  if (any(!is.element(c("fcdate", "leadtime"), names(plot_data)))) {
+    fcbdate <- NULL
+    fcedate <- NULL
+    message("columns named fcdate and leadtime are missing!")
+  } else {
+    plot_data <- plot_data %>% mutate(fcdates = plot_data$fcdate + plot_data$leadtime) # valid datetimes
+
+    plot_data$fcdate <- lubridate::as_datetime(plot_data$fcdate,
+                                               origin = lubridate::origin,
+                                               tz = "UTC")
+
+    plot_data$fcdates <- lubridate::as_datetime(plot_data$fcdates,
+                                               origin = lubridate::origin,
+                                               tz = "UTC")
+    ## forecast dates
+    fcbdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
+    fcedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
+    ## filename dates
+    savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
+    saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
+
+    valid_hours <- unique(lubridate::hour(plot_data$fcdate))
+  }
+
+  # leadtimes in the dataframe are usually in seconds,
+  # so for better viewing one can convert to hours/minutes
+  if (is.element("leadtime", names(plot_data))) {
+    if (leadtimes_by == "hours") {
+       ldtconv <- 3600
+    } else if (leadtimes_by == "minutes") {
+       ldtconv <- 60
+    } else {
+       ldtconv <- 1
+    }
+    plot_data <- plot_data %>% dplyr::mutate(leadtime = leadtime / ldtconv)
   }
 
   # apply filtering
+  used_models <- paste(unique(plot_data$model), sep = "-")
+  used_params <- paste(unique(plot_data$prm), sep = "-")
+
+
   if (filtering) {
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
   }
 
-  # at this point: only 1 model and 1 prm should be in the data
-  # in fact, the function should also allow input data without these columns!
-  if (is.element("model", names(plot_data))) {
-    myModel <- unique(plot_data$model)
-    if (length(myModel) > 1) stop("You are mixing several models in a single SAL plot.")
-  } else {
-    myModel <- NULL
+  if (is.element("leadtime", names(plot_data)) && length(unique(plot_data$leadtime)) > 1) {
+    message("Multiple leadtimes found: ", paste(unique(plot_data$leadtime), collapse = " "))
+  }
+  if (is.element("model", names(plot_data)) && length(unique(plot_data$model)) > 1) {
+    message("Multiple models found: ", paste(unique(plot_data$model), collapse = " "))
+  }
+  if (is.element("prm", names(plot_data)) && length(unique(plot_data$prm)) > 1) {
+    message("Multiple parameters found: ", paste(unique(plot_data$prm), collapse = " "))
   }
 
-  if (is.element("prm", names(plot_data))) {
-    myParam <- unique(plot_data$prm)
-    if (length(myParam) > 1) stop("You are mixing several parameters in a single SAL plot.")
-  } else {
-    myParam <- NULL
+  if (show_info) {
+      message("================================")
+      print(verif_data)
+      message("================================")
+      message("Score name: ", score_name)
+      print(plot_data, n = Inf)
+      message("Start date: ", fcbdate)
+      message("End date: ", fcedate)
+      message("Model(s): ", used_models)
+      message("Parameter(s): ", used_params)
+      message("Plotting options: ")
+      print(plot_opts)
+      message("================================")
   }
 
-  # for the plot title, 
-  # now create the actual plot by calling helper functions
-  switch(tolower(score_name),
-    "sal" = {
-       gg <- plot_sal(plot_data)
-    },
-    "fss" = {
-       gg <- plot_fuzzy(plot_data, "fss")
-    },
-    stop("unknown score ", score_name)
-    )
+  ########## PLOTTING FUNCTION SELECTION
+  # In cases where plot_spatial_line is used,
+  # score_name will be used to look for both the
+  # table name AS WELL AS the column name,
+  # so this might change in the future
+  my_plot_func <- spatial_plot_func(score_name)
+  gg <- do.call(my_plot_func, c(list(plot_data, score_name), plot_opts))
 
-  # add a title
-  # we assume fcdate is a column of YYYYMMDD strings (or integers), not POSIX dates
-  if (is.element("fcdate", names(plot_data))) {
-    bdate <- min(plot_data$fcdate, na.rm=TRUE)
-    edate <- max(plot_data$fcdate, na.rm=TRUE)
+  ### Plot background, stolen from plot_point_verif
+
+  if (is.function(colour_theme)) {
+    theme_func <- colour_theme
   } else {
-    bdate <- NULL
-    edate <- NULL
+    if (!grepl("^theme_[[:alpha:]]", colour_theme)) colour_theme <- paste0("theme_", colour_theme)
+    if (grepl("harp", colour_theme)) {
+      function_env <- "harpVis"
+    } else {
+      function_env <- "ggplot2"
+    }
+    theme_func <- get(colour_theme, envir = asNamespace(function_env))
   }
-  #
-  plot.title <- sprintf("%s %s\n%s - %s\n%s",
-                        score_name, myModel, bdate, edate, myParam)
-  gg <- gg + ggplot2::labs(title=plot.title)
+
+  gg <- gg + theme_func(
+    base_size      = base_size,
+    base_family    = base_family,
+    base_line_size = base_line_size,
+    base_rect_size = base_rect_size
+  )
+
+  ####
+  if (my_plot_func == "plot_spatial_line") {
+    plot_subtitle <- paste("Period:", fcbdate, "-", fcedate,
+                           ":: Hours {", paste(c(sprintf("%02d", valid_hours)),
+                           collapse = ", "), "}")
+  } else {
+    ldts <- unique(plot_data$leadtime)
+    # truncate leadtimes if there are too many
+    if (length(ldts) > 5) {
+      plot_subtitle <- paste("Period:", fcbdate, "-", fcedate,
+                             ":: Hours {", paste(c(sprintf("%02d", valid_hours)), collapse = ", "), "}",
+                             ":: Leadtimes {", paste(ldts[1:3], collapse = ", "), ", ...,", ldts[length(ldts)], "}")
+    } else {
+      plot_subtitle <- paste("Period:", fcbdate, "-", fcedate,
+                             ":: Hours {", paste(c(sprintf("%02d", valid_hours)), collapse = ", "), "}",
+                             ":: Leadtimes {", paste(ldts, collapse = ", "), "}")
+    }
+  }
+
+  if (plot_caption == "auto") {
+    plot_caption <- paste("Verification for", used_params)
+  }
+
+  gg <- gg + ggplot2::labs(subtitle = plot_subtitle, caption = plot_caption)
 
   # finished
-  gg
-}
-
-### support functions for specific scores
-
-plot_sal <- function(plot_data) {
-  if (is.null(plot_data)) stop("No data found.")
-  # check that you have columns S, A, L
-  if (any(!is.element(c("S", "A", "L"), names(plot_data)))) stop("plot_data must have columns named S, A and L !")
-  medianS <- sprintf("S median = %.04f ", median(plot_data$S, na.rm=TRUE))
-  medianA <- sprintf("A median = %.04f ", median(plot_data$A, na.rm=TRUE))
-  medianL <- sprintf("L median = %.04f ", median(plot_data$L, na.rm=TRUE))
-
-  meanS <- sprintf("S mean = %.04f ", mean(plot_data$S, na.rm=TRUE))
-  meanA <- sprintf("A mean = %.04f ", mean(plot_data$A, na.rm=TRUE))
-  meanL <- sprintf("L mean = %.04f ", mean(plot_data$L, na.rm=TRUE))
-
-  tfsize <- 3
-  tfam <- "mono" 
-  gg <- ggplot2::ggplot(plot_data, aes(x = S, y = A, colour = plot_data$L))
-  gg <- gg + geom_point(size=5) + 
-             ggplot2::xlim(-2, 2) + ggplot2::ylim(-2, 2) + 
-             ggplot2::labs(y = "A", x = "S", colour="L") +
-             ggplot2::scale_colour_gradient2(low = "darkblue", mid = "yellow", high = "red") +
-             ggplot2::geom_text(aes(-1.2,2,label = medianS, family=tfam), size=tfsize*1.5, colour="black") + 
-             ggplot2::geom_text(aes(-1.2,1.8,label = medianA, family=tfam), size=tfsize*1.5, colour="black") + 
-             ggplot2::geom_text(aes(-1.2,1.6,label = medianL, family=tfam), size=tfsize*1.5, colour="black") + 
-             ggplot2::geom_text(aes(1.2,-1.6,label = meanS, family=tfam), size=tfsize*1.5, colour="black") +  
-             ggplot2::geom_text(aes(1.2,-1.8,label = meanA, family=tfam), size=tfsize*1.5, colour="black") +  
-             ggplot2::geom_text(aes(1.2,-2,label = meanL, family=tfam), size=tfsize*1.5, colour="black")
-
-  gg
-}
-
-plot_fuzzy <- function(plot_data, score_name="fss") {
-  if (is.null(plot_data)) stop("No data found.")
-  if (any(!is.element(c("threshold", "scale", score_name), names(plot_data)))) {
-    stop("plot_data must have columns named threshold, scale and", score_name, " !")
+  if (save_image) {
+    fname <- paste(score_name, "_",
+                  savebdate, "_",
+                  saveedate, "_",
+                  used_models, "_",
+                  used_params, ".png",
+                  sep = "")
+    message("Saving as: ", fname)
+    ggplot2::ggsave(filename = fname,
+                    dpi     = 96,
+                    width   = 800,
+                    height  = 600,
+                    units   = "px")
+  } else {
+    gg
   }
-
-  ### calculate mean of every threshold/scale pair 
-  data_matrix <- plot_data %>% dplyr::group_by(threshold, scale) %>% dplyr::summarize_at(score_name, mean, na.rm=TRUE)
-
-  gg <- ggplot2::ggplot(data_matrix, aes(x=as.factor(threshold),y=as.factor(scale), 
-                             fill = get(score_name), 
-                             label = sprintf("%1.2f", get(score_name)))) + 
-    # scale_y_discrete(expand=c(0,0)) +
-    ggplot2::geom_tile() + ggplot2::geom_text(colour = "black", size = 4) +
-    ggplot2::scale_fill_gradient2(low = "red", mid="yellow", high = "darkgreen", 
-                         limits=c(0, 1), midpoint=0.5, name = score_name) +
-    # theme(axis.title.x = element_blank()) +   # Remove x-axis label
-    ggplot2::theme(axis.title.x = element_text(size=14), axis.text.x = element_text(size=14),
-          axis.title.y = element_text(size=14), axis.text.y = element_text(size=14)) +
-    ggplot2::ylab("spatial scale")  + ggplot2::xlab("threshold") +
-    ggplot2::theme_bw(base_size=14)
-
-  # guides(fill = guide_legend(title.theme = element_text(size=15, angle=0),
-  #                            label.theme = element_text(size=15, angle=0))) # ,
-  #   keywidth = 2, keyheight = 3))
-  # scale_x_discrete(expand=c(0,0))
-  gg
-
+  message("Plots complete!")
 }
-
-
