@@ -6,8 +6,8 @@ options_barUI <- function(id) {
 
   ns <- shiny::NS(id)
 
-  app_start_dir <- shiny::getShinyOption("app_start_dir")
-  full_nav      <- shiny::getShinyOption("full_dir_navigation")
+  app_start_dir <- shiny::getShinyOption("app_start_dir", default = NULL)
+  full_nav      <- shiny::getShinyOption("full_dir_navigation", default = TRUE)
 
   if (is.null(app_start_dir)) {
     full_nav <- TRUE
@@ -147,8 +147,8 @@ options_barUI <- function(id) {
 #' }
 options_bar <- function(input, output, session) {
 
-  app_start_dir <- shiny::getShinyOption("app_start_dir")
-  full_nav      <- shiny::getShinyOption("full_dir_navigation")
+  app_start_dir <- shiny::getShinyOption("app_start_dir", default = NULL)
+  full_nav      <- shiny::getShinyOption("full_dir_navigation", default = TRUE)
 
   if (full_nav) {
     volumes <- c(Home = fs::path_home(), harp_getVolumes()())
