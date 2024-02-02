@@ -1,3 +1,8 @@
+# harpVis v0.2.2
+
+* Hotfix release that adds defaults for shinyOptions() in the point verification
+Shiny app
+
 # harpVis v0.2.1
 
 * Hotfix release that adds functionality to plot new spatial verification

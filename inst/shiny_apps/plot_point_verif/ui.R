@@ -1,18 +1,18 @@
 # UI for shiny_plot_point_verif
 
 font_link <- shiny::tags$link("")
-is_online <- shiny::getShinyOption("online")
-if (is.null(is_online)) {
-  is_online <- TRUE
-}
+is_online <- shiny::getShinyOption("online", default = TRUE)
+
 hostname  <- Sys.getenv("HOSTNAME")
 if (is_online & (!is.null(hostname) && !grepl("^ecgb", hostname))) {
   font_link <- shiny::tags$link(
     href="https://fonts.googleapis.com/css?family=Comfortaa:400,700",  rel="stylesheet"
   )
 }
+
+app_theme <- shiny::getShinyOption("theme", default = "white")
 css_file <- switch(
-  shiny::getShinyOption("theme"),
+  app_theme,
   "dark"  = "harp_midnight.css",
   "light" = "harp_light.css",
   "white" = "harp_white.css"
