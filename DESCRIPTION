@@ -34,7 +34,7 @@ Imports:
     grDevices,
     ggnewscale
 Remotes:
-    harphub/harpCore@v0.2.2,
+    harphub/harpCore,
     harphub/ggsonde,
     harphub/meteogrid
 Encoding: UTF-8
