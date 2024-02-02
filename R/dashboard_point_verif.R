@@ -136,10 +136,7 @@ dashboard_point_verif <- function(
     "auto"
   }
 
-  theme_opt <- shiny::getShinyOption("theme")
-  if (is.null(theme_opt)) {
-    theme_opt <- "white"
-  }
+  theme_opt <- shiny::getShinyOption("theme", default = "white")
   plot_theme <- switch(
     theme_opt,
     "dark"  = "harp_midnight",

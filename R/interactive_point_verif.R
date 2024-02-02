@@ -68,10 +68,7 @@ interactive_point_verif <- function(
 
   ns <- session$ns
 
-  theme_opt <- shiny::getShinyOption("theme")
-  if (is.null(theme_opt)) {
-    theme_opt <- "white"
-  }
+  theme_opt <- shiny::getShinyOption("theme", default = "white")
 
   plot_theme <- switch(
     theme_opt,
