@@ -6,7 +6,7 @@
 \usage{
 plot_spatial_verif(
   verif_data,
-  score,
+  score_name,
   filter_by = NULL,
   show_info = FALSE,
   plot_opts = list(),
@@ -25,9 +25,6 @@ plot_spatial_verif(
 \arguments{
 \item{verif_data}{Output from \link[harpSPatial]{spatial_verify}. Expected to
 either be a dataframe or an SQLite file (needs path to file).}
-
-\item{score}{The score to plot. This will call the appropriate spatial plotting
-function through \code{spatial_plot_func}.}
 
 \item{filter_by}{Filter the data before plotting. Must be wrapped inside the
 \link[dplyr]{vars} function. This can be useful for making a single plot
@@ -61,6 +58,9 @@ generate the caption. Anything else inside quotes will be used as the plot capti
 but there is an option to view leadtimes as hours, minutes or seconds.}
 
 \item{save_image}{Saves the plot as a .png file without a preset path.}
+
+\item{score}{The score to plot. This will call the appropriate spatial plotting
+function through \code{spatial_plot_func}.}
 }
 \value{
 A plot (interactive or saved image)
