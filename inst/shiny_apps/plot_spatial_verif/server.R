@@ -1,13 +1,19 @@
 # server for shiny_plot_spatial_verif
+library("harpIO")
+library("tidyverse")
+library("dplyr")
+library("RSQLite")
+library("DT")
+library("DBI")
 
 read_sql <- function(filepath,score=NULL){
     #this function might need a more appropriate name
     print("THIS IS READING FUNCTION CALL")
-    sql_object <- harpVis:::dbopen(gsub("\\\\","/",filepath))
+    sql_object <- harpIO:::dbopen(gsub("\\\\","/",filepath))
     scores <- dbListTables(sql_object)
     if(is.null(score)) {score=scores[1]}
-    verif_data <- as.data.frame(harpVis:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
-    harpVis:::dbclose(sql_object)
+    verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
+    harpIO:::dbclose(sql_object)
     items <- list("verif_data" = verif_data, "scores" = scores)
     return(items) #returns a list of dataframe and list of scores
 }
