@@ -1,0 +1,181 @@
+body {
+  font-size: 12px;
+  font-family: 'Comfortaa', 'Arial', 'Sans-serif', cursive;
+  background-color: #F0F1F2;
+  color: #22477E;
+}
+
+.dashboard-panel {
+  background-color: #F0F1F2;
+}
+
+dashboard-panel:hover {
+  transform: scale(1.5, 1.5);
+}
+
+.form-control {
+  font-size: 12px;
+  background-color: #F0F1F2;
+  color: #22477E;
+}
+
+.harp_page_header {
+  display: table;
+  background-color: #E0E1E2;
+  height: 80px;
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.harp_page_title {
+  color: #22477E;
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 2em;
+  padding-left: 30px;
+  font-weight: bold;
+  width: 80%;
+}
+
+.harp_logo {
+  height: 70px;
+  margin: 5px 30px 5px 5px;
+  float: right;
+}
+
+.selectize-dropdown {
+  background-color: #F0F1F2;
+  color: #22477E;
+}
+
+.selectize-dropdown-content .active {
+  background-color: #062F4F;
+  color: #FAFBFC;
+}
+
+.selectize-dropdown-content .selected {
+  background-color: #F0F1F2;
+  color: #22477E;
+}
+
+
+.selectize-input {
+  color: #22477E;
+  background-color: #F0F1F2 !important;
+}
+
+.selectize-input .full {
+  background-color: #F0F1F2;
+}
+
+.selectize-control.multi .selectize-input > div {
+  color: #22477E;
+  background-color: #EEE;
+}
+
+.shiny-input-container {
+  width: 100%;
+}
+
+.selectize-dropdown .optgroup-header {
+  color: #F0F1F2;
+  background-color: #22477E;
+}
+
+.tab_buttons {
+  display: table-cell;
+  vertical-align: middle
+}
+
+.modal-content {
+  background-color: #F0F1F2;
+}
+
+.btn-harp {
+  background-color: #F0F1F2;
+  border: 1px solid #CCCCCC;
+}
+
+.btn-harp:hover {
+  background-color: #062F4F;
+  color: #CCCCCC;
+  font-weight: 700;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid #062F4F;
+}
+
+.nav-tabs>li>a {
+  color: #22477E;
+}
+
+.nav-tabs>li>a:hover {
+  background-color: #32578E;
+  color: #EDEEEF;
+  transform: scale(1.1);
+}
+
+.nav-tabs>li.active>a {
+  background-color: #22477E;
+  color: #FAFBFC;
+}
+
+.nav-tabs>li.active>a:focus {
+  background-color: #081D3E;
+  color: #FAFBFC;
+}
+
+.nav-tabs>li.active>a:hover {
+  background-color: #32578E;
+  color: #F1F2F3;
+  transform: scale(1.1);
+}
+
+#dashboard:hover {
+  background-color: #081D3E;
+}
+
+#interactive {
+  background-color: #F0F1F2;
+  color: #22477E;
+}
+
+#interactive:hover {
+  background-color: #F00;
+}
+
+
+#options_bar-data_dir {
+  margin-top: 21px;
+}
+
+#options_bar-load_data {
+  margin-top: 21px;
+  color: #D5D5D5;
+  background-color: green;
+}
+
+#options_bar {
+  background-color: #D0D1D2;
+  padding-top: 15px;
+  margin-bottom: 15px;
+}
+
+#colour_choices-plot_options {
+  margin-top: 21px;
+  color: #D5D5D5;
+  background-color: #062F4F;
+}
+
+#colour_choices-plot_button_div {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#download_plot-save_plot_div {
+  text-align: center;
+}
+
+
