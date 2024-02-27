@@ -337,6 +337,12 @@ plot_field.geofield <- function(
   ...
 ) {
 
+  # fudge to make plotting work with "longlat" projections
+
+  if (attr(.fcst, "domain")[["projection"]][["proj"]] == "longlat") {
+    attr(.fcst, "domain")[["projection"]][["proj"]] <- "latlong"
+  }
+
   if (length(zoom_length) == 1) {
     zoom_length <- rep(zoom_length, 2)
   }
@@ -378,4 +384,15 @@ plot_field.geofield <- function(
     title  = title
   )
 
+}
+
+#' @param x A geofield
+#' @inheritDotParams meteogrid::plot.geodomain
+#' @export
+#'
+plot.geodomain <- function(x, ...) {
+  if (x[["projection"]][["proj"]] == "longlat") {
+    x[["projection"]][["proj"]] <- "latlong"
+  }
+  meteogrid::plot.geodomain(x, ...)
 }
