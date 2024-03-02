@@ -5,10 +5,11 @@ library("dplyr")
 library("RSQLite")
 library("DT")
 library("DBI")
+options(shiny.maxRequestSize=20*1024^2)
+Sys.setenv(TZ='UTC')
 
 read_sql <- function(filepath,score=NULL){
-    #this function might need a more appropriate name
-    print("THIS IS READING FUNCTION CALL")
+    #TODO: this function might need a more appropriate name
     sql_object <- harpIO:::dbopen(gsub("\\\\","/",filepath))
     scores <- dbListTables(sql_object)
     if(is.null(score)) {score=scores[1]}
@@ -19,8 +20,7 @@ read_sql <- function(filepath,score=NULL){
 }
 
 update_options <- function(input,scores,session) {
-    #this function might need a more appropriate name
-    print("THIS IS OPTIONS FUNCTION CALL")
+    #TODO: this function might need a more appropriate name
     dates <- unique(lubridate::as_datetime(input$fcdate,
                                            origin = lubridate::origin,
                                            tz = "UTC"))
@@ -55,7 +55,6 @@ server <- function(input, output, session) {
 
   # getData is a list! getData()$verif_data is a tibble and getData()$scores is a vector
   output$fileUploaded <- reactive({
-    print("THIS IS SERVER REACTIVE CALL")
     return(!is.null(getData()))
   })
 
@@ -78,14 +77,29 @@ server <- function(input, output, session) {
   output$plot <- renderPlot({
 
     req(input$showdata)
+    score <- isolate(input$score)
+    models <- isolate(input$model)
+    leadtimes <- isolate(input$leadtime)
+    fcdate_range <- isolate(input$dates)
+#    thresholds <- isolate(input$threshold) #TODO, coming with plotting options
+#    scales <- isolate(input$scale)         #TODO, coming with plotting options
+    params <- isolate(input$param)
     
-    score <- input$score
-    verif_data <- read_sql(input$filein$datapath, score)$verif_data
-    #filter_by <- vars(fcdates == input$dates, model == input$model, leadtime == input$leadtime) #this seems to break plotting at the moment
-    #plot_opts = ...
+    fcbdate <- fcdate_range[1]
+    fcedate <- fcdate_range[2]
 
-    harpVis:::plot_spatial_verif(verif_data, score, show_info=TRUE)
-    #harpVis:::plot_spatial_verif(verif_data, score, filter_by = filter_by)
+    verif_data <- read_sql(input$filein$datapath, score)$verif_data
+    filter_by <- vars(
+      model    %in% models, 
+      leadtime %in% leadtimes,
+      as_date(fcdate) >= as_date(fcbdate) & as_date(fcdate) <= as_date(fcedate),
+#      threshold   %in% thresholds,         #TODO, dependent on score 
+#      scale   %in% scales,                 #TODO, dependent on score 
+      prm      %in% params,
+    )
+    #plot_opts = ...                        # TODO, include plotting options to interface
+
+    harpVis:::plot_spatial_verif(verif_data, score, filter_by = filter_by)
 
   },width = 1000, height = 600)
 
