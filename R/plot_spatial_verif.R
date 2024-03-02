@@ -62,8 +62,9 @@ plot_spatial_verif <- function(
 
   ...) {
 
-  # score_quo  <- rlang::enquo(score)
-  # score_name <- rlang::quo_name(score_quo) #TODO: this seems to break from shiny for some reason
+  #score_quo  <- rlang::enquo(score)
+  #score_name <- rlang::quo_name(score_quo) #TODO: this seems to break from shiny for some reason
+  my_plot_func <- spatial_plot_func(score_name)
 
   ################
 
@@ -111,7 +112,7 @@ plot_spatial_verif <- function(
   if (any(!is.element(c("fcdate", "leadtime"), names(plot_data)))) {
     fcbdate <- NULL
     fcedate <- NULL
-    message("columns named fcdate and leadtime are missing!")
+    stop("columns named fcdate and leadtime are missing!")
   } else {
     plot_data <- plot_data %>% mutate(fcdates = plot_data$fcdate + plot_data$leadtime) # valid datetimes
 
@@ -152,6 +153,12 @@ plot_spatial_verif <- function(
 
   if (filtering) {
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    ## forecast dates, find limits again in case it was specified in filtering
+    fcbdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
+    fcedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
+    ## filename dates
+    savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
+    saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
   }
 
   if (is.element("leadtime", names(plot_data)) && length(unique(plot_data$leadtime)) > 1) {
@@ -176,6 +183,8 @@ plot_spatial_verif <- function(
       message("Parameter(s): ", used_params)
       message("Plotting options: ")
       print(plot_opts)
+      message("Filtering options: ")
+      print(filter_by)
       message("================================")
   }
 
@@ -184,7 +193,6 @@ plot_spatial_verif <- function(
   # score_name will be used to look for both the
   # table name AS WELL AS the column name,
   # so this might change in the future
-  my_plot_func <- spatial_plot_func(score_name)
   gg <- do.call(my_plot_func, c(list(plot_data, score_name), plot_opts))
 
   ### Plot background, stolen from plot_point_verif
