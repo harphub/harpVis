@@ -337,6 +337,12 @@ plot_field.geofield <- function(
   ...
 ) {
 
+  # fudge to make plotting work with "longlat" projections
+
+  if (attr(.fcst, "domain")[["projection"]][["proj"]] == "longlat") {
+    attr(.fcst, "domain")[["projection"]][["proj"]] <- "latlong"
+  }
+
   if (length(zoom_length) == 1) {
     zoom_length <- rep(zoom_length, 2)
   }
@@ -378,4 +384,33 @@ plot_field.geofield <- function(
     title  = title
   )
 
+}
+
+#' Plot a geodomain
+#'
+#' Plots a map of the domain of a geodomain or geofield object. Uses the plot
+#' method for geodomains from the meteogrid package.
+#'
+#' @param x A geodomain or geofield
+#' @inheritDotParams meteogrid::plot.geodomain
+#' @export
+#'
+plot_domain <- function(x, ...) {
+  UseMethod("plot_domain")
+}
+
+#' @rdname plot_domain
+#' @export
+plot_domain.geodomain <- function(x, ...) {
+  if (x[["projection"]][["proj"]] == "longlat") {
+    x[["projection"]][["proj"]] <- "latlong"
+  }
+  meteogrid::plot.geodomain(x, ...)
+}
+
+#' @rdname plot_domain
+#' @export
+plot_domain.geofield <- function(x, ...) {
+  x <- harpCore::get_domain(x)
+  plot_domain(x, ...)
 }
