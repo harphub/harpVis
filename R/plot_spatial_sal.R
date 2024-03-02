@@ -81,6 +81,10 @@ plot_spatial_sal <- function(
 
   gg <- ggplot2::ggplot(plot_data, aes(x = S, y = A, colour = L))
   gg <- gg +
+        ggplot2::geom_point(size = point_size) +
+        ggplot2::scale_colour_gradient2(low = "darkblue",
+                                        mid = "yellow",
+                                        high = "red") +
         ggplot2::geom_rect(aes(xmin = min(S_percs),
                                xmax = max(S_percs),
                                ymin = min(A_percs),
@@ -88,7 +92,7 @@ plot_spatial_sal <- function(
                                fill = paste("quantiles:", quantiles[1],
                                             "-", quantiles[length(quantiles)])),
                            colour = NA,
-                           alpha = 0.04) +
+                           alpha = 0.01) +
         ggplot2::geom_hline(yintercept = 0,
                             colour = "grey80") +
         ggplot2::geom_vline(xintercept = 0,
@@ -105,15 +109,11 @@ plot_spatial_sal <- function(
         ggplot2::scale_fill_manual("",
                                    values = "grey80",
                                    guide = guide_legend(override.aes = list(alpha = 0.3))) +
-        ggplot2::geom_point(size = point_size) +
         ggplot2::xlim(-xylim, xylim) +
         ggplot2::ylim(-xylim, xylim) +
         ggplot2::labs(y = "A",
                       x = "S",
                       colour = "L") +
-        ggplot2::scale_colour_gradient2(low = "darkblue",
-                                        mid = "yellow",
-                                        high = "red") +
         ggplot2::labs(title = paste("Score: ", score_name,
                                   ", Model: ", unique(plot_data$model),
                                   ", Param: ", unique(plot_data$prm))) +
