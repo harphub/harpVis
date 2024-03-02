@@ -17,8 +17,8 @@ spatial_plot_func <- function(
         "FSS"    = "plot_spatial_fss",
         "NACT"   = "plot_spatial_nact",
         "hira_me"    = "plot_spatial_nact",
-        # "hira_pragm" = "WIP",  #  no plot function available yet
-        # "hira_crss"  = "WIP",  #  no plot function available yet
+        #"hira_pragm" = "plot_spatial_fss", #TODO: coming soon
+        #"hira_crss"  = "plot_spatial_fss", #TODO: coming soon
         "hira_td"   = "plot_spatial_nact",
         stop("Unknown score_name ", score_name)
     )
