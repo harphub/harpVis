@@ -8,7 +8,7 @@
 #'
 #' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to
 #'   either be a dataframe or an SQLite file (needs path to file).
-#' @param score The score to plot. This will call the appropriate spatial plotting
+#' @param score_name The score to plot. This will call the appropriate spatial plotting
 #'   function through \code{spatial_plot_func}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
