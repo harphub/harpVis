@@ -62,8 +62,8 @@ plot_spatial_verif <- function(
 
   ...) {
 
-  #score_quo  <- rlang::enquo(score)
-  #score_name <- rlang::quo_name(score_quo) #TODO: this seems to break from shiny for some reason
+  score_quo  <- rlang::enquo(score_name)
+  score_name <- rlang::quo_name(score_quo)
   my_plot_func <- spatial_plot_func(score_name)
 
   ################

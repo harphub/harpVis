@@ -99,7 +99,7 @@ server <- function(input, output, session) {
     )
     #plot_opts = ...                        # TODO, include plotting options to interface
 
-    harpVis:::plot_spatial_verif(verif_data, score, filter_by = filter_by)
+    harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by)
 
   },width = 1000, height = 600)
 
