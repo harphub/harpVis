@@ -53,8 +53,8 @@ plot_spatial_fss <- function(
                dplyr::summarize_at("fss", mean, na.rm = TRUE)
 
   if (plot_type == "area") {
-        gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data),
-                                             y = get(y_data),
+        gg <- ggplot2::ggplot(plot_data, aes(x = as.factor(get(x_data)),
+                                             y = as.factor(get(y_data)),
                                              fill = fss,
                                              label = sprintf("%1.2f", fss))) +
               ggplot2::geom_tile() +
