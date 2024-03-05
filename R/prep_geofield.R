@@ -21,6 +21,13 @@ prep_geofield <- function(
 
   if (data_frame) {
 
+    # Fudge to make DomainExtent understand geofields with "longlat" as the
+    # projection to actually be longlat
+
+    if (attr(geo, "domain")[["projection"]][["proj"]] == "longlat") {
+      attr(geo, "domain")[["projection"]][["proj"]] <- "latlong"
+    }
+
     geo_extent <- meteogrid::DomainExtent(geo)
 
     df   <- expand.grid(
