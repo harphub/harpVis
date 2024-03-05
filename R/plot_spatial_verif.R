@@ -8,7 +8,7 @@
 #'
 #' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to
 #'   either be a dataframe or an SQLite file (needs path to file).
-#' @param score The score to plot. This will call the appropriate spatial plotting
+#' @param score_name The score to plot. This will call the appropriate spatial plotting
 #'   function through \code{spatial_plot_func}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
@@ -104,9 +104,9 @@ plot_spatial_verif <- function(
   if (!is.data.frame(verif_data) && is.list(verif_data)) {
     # If list of tables, select the table of selected score,
     # each score has it's own table
-    plot_data <- as_tibble(verif_data[[score_name]])
+    plot_data <- tibble::as_tibble(verif_data[[score_name]])
   } else {
-    plot_data <- as_tibble(verif_data)
+    plot_data <- tibble::as_tibble(verif_data)
   }
 
   if (any(!is.element(c("fcdate", "leadtime"), names(plot_data)))) {
@@ -114,7 +114,7 @@ plot_spatial_verif <- function(
     fcedate <- NULL
     stop("columns named fcdate and leadtime are missing!")
   } else {
-    plot_data <- plot_data %>% mutate(fcdates = plot_data$fcdate + plot_data$leadtime) # valid datetimes
+    plot_data <- plot_data %>% dplyr::mutate(fcdates = plot_data$fcdate + plot_data$leadtime) # valid datetimes
 
     plot_data$fcdate <- lubridate::as_datetime(plot_data$fcdate,
                                                origin = lubridate::origin,
