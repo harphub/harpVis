@@ -1,0 +1,67 @@
+body {
+  font-size: 12px;
+  font-family: 'Comfortaa', 'Arial', 'Sans-serif', cursive;
+}
+
+.harp_page_header {
+  display: table;
+  background-color: #CCC;
+  height: 80px;
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.harp_page_title {
+  color: #333;
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 2em;
+  padding-left: 30px;
+  font-weight: bold;
+  width: 80%;
+}
+
+.harp_logo {
+  height: 70px;
+  margin: 5px 30px 5px 5px;
+  float: right;
+}
+
+.shiny-input-container {
+  width: 100%;
+}
+
+.tab_buttons {
+  display: table-cell;
+  vertical-align: middle
+}
+
+#options_bar-data_dir {
+  margin-top: 21px;
+}
+
+#options_bar-load_data {
+  margin-top: 21px;
+  color: #D5D5D5;
+  background-color: green;
+}
+
+#options_bar {
+  padding-top: 15px;
+  margin-bottom: 15px;
+}
+
+#colour_choices-plot_options {
+  margin-top: 21px;
+}
+
+#colour_choices-plot_button_div {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#download_plot-save_plot_div {
+text-align: center;
+}
+

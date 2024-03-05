@@ -8,7 +8,7 @@
 #'
 #' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to
 #'   either be a dataframe or an SQLite file (needs path to file).
-#' @param score The score to plot. This will call the appropriate spatial plotting
+#' @param score_name The score to plot. This will call the appropriate spatial plotting
 #'   function through \code{spatial_plot_func}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
@@ -46,7 +46,7 @@
 
 plot_spatial_verif <- function(
   verif_data,
-  score,
+  score_name,
   filter_by         = NULL,
   show_info         = FALSE,
   plot_opts         = list(),
@@ -62,8 +62,9 @@ plot_spatial_verif <- function(
 
   ...) {
 
-  score_quo  <- rlang::enquo(score)
+  score_quo  <- rlang::enquo(score_name)
   score_name <- rlang::quo_name(score_quo)
+  my_plot_func <- spatial_plot_func(score_name)
 
   ################
 
@@ -103,17 +104,17 @@ plot_spatial_verif <- function(
   if (!is.data.frame(verif_data) && is.list(verif_data)) {
     # If list of tables, select the table of selected score,
     # each score has it's own table
-    plot_data <- as_tibble(verif_data$score_name)
+    plot_data <- tibble::as_tibble(verif_data[[score_name]])
   } else {
-    plot_data <- as_tibble(verif_data)
+    plot_data <- tibble::as_tibble(verif_data)
   }
 
   if (any(!is.element(c("fcdate", "leadtime"), names(plot_data)))) {
     fcbdate <- NULL
     fcedate <- NULL
-    message("columns named fcdate and leadtime are missing!")
+    stop("columns named fcdate and leadtime are missing!")
   } else {
-    plot_data <- plot_data %>% mutate(fcdates = plot_data$fcdate + plot_data$leadtime) # valid datetimes
+    plot_data <- plot_data %>% dplyr::mutate(fcdates = plot_data$fcdate + plot_data$leadtime) # valid datetimes
 
     plot_data$fcdate <- lubridate::as_datetime(plot_data$fcdate,
                                                origin = lubridate::origin,
@@ -152,6 +153,12 @@ plot_spatial_verif <- function(
 
   if (filtering) {
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    ## forecast dates, find limits again in case it was specified in filtering
+    fcbdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
+    fcedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
+    ## filename dates
+    savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
+    saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
   }
 
   if (is.element("leadtime", names(plot_data)) && length(unique(plot_data$leadtime)) > 1) {
@@ -176,6 +183,8 @@ plot_spatial_verif <- function(
       message("Parameter(s): ", used_params)
       message("Plotting options: ")
       print(plot_opts)
+      message("Filtering options: ")
+      print(filter_by)
       message("================================")
   }
 
@@ -184,7 +193,6 @@ plot_spatial_verif <- function(
   # score_name will be used to look for both the
   # table name AS WELL AS the column name,
   # so this might change in the future
-  my_plot_func <- spatial_plot_func(score_name)
   gg <- do.call(my_plot_func, c(list(plot_data, score_name), plot_opts))
 
   ### Plot background, stolen from plot_point_verif
@@ -250,5 +258,4 @@ plot_spatial_verif <- function(
   } else {
     gg
   }
-  message("Plots complete!")
 }

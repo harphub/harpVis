@@ -1,0 +1,180 @@
+body {
+  font-size: 12px;
+  font-family: 'Comfortaa', 'Arial', 'Sans-serif', cursive;
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+.dashboard-panel {
+  background-color: #0A0A2C;
+}
+
+dashboard-panel:hover {
+  transform: scale(1.5, 1.5);
+}
+
+.form-control {
+  font-size: 12px;
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+.harp_page_header {
+  display: table;
+  background-color: #062F4F;
+  height: 80px;
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.harp_page_title {
+  color: #D5D5D5;
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 2em;
+  padding-left: 30px;
+  font-weight: bold;
+  width: 80%;
+}
+
+.harp_logo {
+  height: 70px;
+  margin: 5px 30px 5px 5px;
+  float: right;
+}
+
+.selectize-dropdown {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+.selectize-dropdown-content .active {
+  background-color: #062F4F;
+  color: #D5D5D5;
+}
+
+.selectize-dropdown-content .selected {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+
+.selectize-input {
+  color: #D5D5D5;
+  background-color: #0A0A2C !important;
+}
+
+.selectize-input .full {
+  background-color: #0A0A2C;
+}
+
+.selectize-control.multi .selectize-input > div {
+  color: #D5D5D5;
+  background-color: #062F4F;
+}
+
+.shiny-input-container {
+  width: 100%;
+}
+
+.selectize-dropdown .optgroup-header {
+  color: #0A0A2C;
+  background-color: #D5D5D5;
+}
+
+.tab_buttons {
+  display: table-cell;
+  vertical-align: middle
+}
+
+.modal-content {
+  background-color: #0A0A2C;
+}
+
+.btn-harp {
+  background-color: #0A0A2C;
+  border: 1px solid #CCCCCC;
+}
+
+.btn-harp:hover {
+  background-color: #062F4F;
+  color: #CCCCCC;
+  font-weight: 700;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid #062F4F;
+}
+
+.nav-tabs>li>a {
+  color: #D5D5D5;
+}
+
+.nav-tabs>li>a:hover {
+  background-color: #062F4F;
+  transform: scale(1.1);
+}
+
+.nav-tabs>li.active>a {
+  background-color: #081D3E;
+  color: #D5D5D5;
+}
+
+.nav-tabs>li.active>a:focus {
+  background-color: #081D3E;
+  color: #D5D5D5;
+}
+
+.nav-tabs>li.active>a:hover {
+  background-color: #062F4F;
+  color: #D5D5D5;
+  transform: scale(1.1);
+}
+
+#dashboard:hover {
+  background-color: #081D3E;
+}
+
+#interactive {
+  background-color: #0A0A2C;
+  color: #D5D5D5;
+}
+
+#interactive:hover {
+  background-color: #F00;
+}
+
+
+#options_bar-data_dir {
+  margin-top: 21px;
+}
+
+#options_bar-load_data {
+  margin-top: 21px;
+  color: #D5D5D5;
+  background-color: green;
+}
+
+#options_bar {
+  background-color: #081D3E;
+  padding-top: 15px;
+  margin-bottom: 15px;
+}
+
+#colour_choices-plot_options {
+  margin-top: 21px;
+  color: #D5D5D5;
+  background-color: #062F4F;
+}
+
+#colour_choices-plot_button_div {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#download_plot-save_plot_div {
+  text-align: center;
+}
+
+

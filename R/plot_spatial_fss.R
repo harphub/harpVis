@@ -53,8 +53,8 @@ plot_spatial_fss <- function(
                dplyr::summarize_at("fss", mean, na.rm = TRUE)
 
   if (plot_type == "area") {
-        gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data),
-                                             y = get(y_data),
+        gg <- ggplot2::ggplot(plot_data, aes(x = as.factor(get(x_data)),
+                                             y = as.factor(get(y_data)),
                                              fill = fss,
                                              label = sprintf("%1.2f", fss))) +
               ggplot2::geom_tile() +
@@ -74,14 +74,14 @@ plot_spatial_fss <- function(
               ggplot2::geom_line(size = line_width) +
               ggplot2::scale_x_continuous(breaks = unique(plot_data[[x_data]])) +
               ggplot2::geom_point(size = point_size) +
-              ggplot2::labs(colour = str_to_title(colour_by))
+              ggplot2::labs(colour = stringr::str_to_title(colour_by))
   }
 
   gg <- gg + ggplot2::labs(title = paste("Score: ", score_name,
                                        ", Model: ", unique(plot_data$model),
                                        ", Param: ", unique(plot_data$prm)),
-                           x = str_to_title(x_data),
-                           y = str_to_title(y_data))
+                           x = stringr::str_to_title(x_data),
+                           y = stringr::str_to_title(y_data))
 
   ## Other settings
 
