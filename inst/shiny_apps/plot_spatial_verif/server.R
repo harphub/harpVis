@@ -36,7 +36,7 @@ update_options <- function(input,scores,session) {
     updateSelectInput(session,'model',      choices=c(models),
                                                 selected=c(models)[1])
     updateSelectInput(session,'leadtime',   choices=c(leadtimes),
-                                                selected = c(leadtimes)[1])
+                                                selected = c(leadtimes))
     updateSelectInput(session,'param',      choices=c(params),
                                                 selected=c(params)[1])
 
