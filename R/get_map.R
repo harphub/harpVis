@@ -4,12 +4,15 @@
 #' intended to be used in conjunction with \code{\link{geom_geocontour}} and /
 #' or \code{\link{geom_georaster}} when plotting using `ggplot()`.
 #'
-#' @param dom A `geodomain` or `geofield`
+#' @param dom A `geodomain`, `geofield`, `geolist`, or data frame with `geolist`
+#'   columns.
 #' @param map The map database from which to get the map data. The default is
 #'   \code{\link[maps]{world}}. Datasets from the \code{rnaturalearth}
 #'   package may also be used, but only paths will be returned.
 #' @param polygon Logical. Whether to return the data as polygons (`TRUE`), or
 #'   paths (`FALSE`). The default is for polygons to be returned.
+#' @param col For a `harp_grid_df` data frame, the column from which to get the
+#'   domain for the map. Uses the same semantics as \code{\link[dplyr]{select}}.
 #' @param ... Not used.
 #'
 #' @return A data frame with columns "x", "y", and for `polygon = TRUE` an
@@ -48,41 +51,70 @@
 #'   coord_equal(expand = FALSE) +
 #'   theme_harp_map()
 #'
-#'
 get_map <- function(dom = NULL, map = "world", polygon = TRUE, ...) {
+  UseMethod("get_map")
+}
 
-  if (meteogrid::is.geodomain(dom) || meteogrid::is.geofield(dom)) {
+#' @export
+get_map.geodomain <- function(dom = NULL, map = "world", polygon = TRUE, ...) {
 
-    dom <- meteogrid::as.geodomain(dom)
+  # Fudge for meteogrid to understand "longlat" projection
 
-    map_data <- try(
-      meteogrid::getmap(dom, fill = polygon, map.database = map),
-      silent = TRUE
-    )
-
-    if (inherits(map_data, "try-error")) {
-      if (polygon) {
-        warning("Could not clip polygons properly. Paths returned.")
-        polygon     <- FALSE
-        map_data <- meteogrid::getmap(dom, fill = polygon, map.database = map)
-      } else {
-        stop("Could not extract domain")
-      }
-    }
-
-    if (polygon) {
-      map_data <- ggplot2::fortify(map_data)
-    } else {
-      map_data <- data.frame(x = map_data[["x"]], y = map_data[["y"]])
-    }
-
-    names(map_data)[names(map_data) == "long"] <- "x"
-    names(map_data)[names(map_data) == "lat"]  <- "y"
-
+  if (dom[["projection"]][["proj"]] == "longlat") {
+    dom[["projection"]][["proj"]] <- "latlong"
   }
+
+  map_data <- try(
+    meteogrid::getmap(dom, fill = polygon, map.database = map),
+    silent = TRUE
+  )
+
+  if (inherits(map_data, "try-error")) {
+    if (polygon) {
+      warning("Could not clip polygons properly. Paths returned.")
+      polygon     <- FALSE
+      map_data <- meteogrid::getmap(dom, fill = polygon, map.database = map)
+    } else {
+      stop("Could not extract domain")
+    }
+  }
+
+  if (polygon) {
+    map_data <- ggplot2::fortify(map_data)
+  } else {
+    map_data <- data.frame(x = map_data[["x"]], y = map_data[["y"]])
+  }
+
+  names(map_data)[names(map_data) == "long"] <- "x"
+  names(map_data)[names(map_data) == "lat"]  <- "y"
 
   map_data
 
+}
+
+#' @export
+get_map.geofield <- function(dom = NULL, map = "world", polygon = TRUE, ...) {
+  get_map(harpCore::get_domain(dom), map, polygon, ...)
+}
+
+#' @export
+get_map.harp_geolist <- get_map.geofield
+
+#' @export
+get_map.data.frame <- function(dom = NULL, map = "world", polygon = TRUE, col, ...) {
+  col <- rlang::ensym(col)
+  geo <- dplyr::pull(dom, !!col)
+
+  if (!harpCore::is_geolist(geo)) {
+    col_name <- rlang::as_name(col)
+    cli::cli_abort(c(
+      "Cannot get domain from {.var col = {col_name}}",
+      "x" = "You've supplied a {.cls {class(geo)}} column",
+      "i" = "{.arg col} must be a {.cls geolist} column."
+    ))
+  }
+
+  get_map(harpCore::get_domain(geo), map, polygon, ...)
 }
 
 # ' Get domain information from a harp object

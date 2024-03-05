@@ -7,7 +7,8 @@
 get_map(dom = NULL, map = "world", polygon = TRUE, ...)
 }
 \arguments{
-\item{dom}{A \code{geodomain} or \code{geofield}}
+\item{dom}{A \code{geodomain}, \code{geofield}, \code{geolist}, or data frame with \code{geolist}
+columns.}
 
 \item{map}{The map database from which to get the map data. The default is
 \code{\link[maps]{world}}. Datasets from the \code{rnaturalearth}
@@ -17,6 +18,9 @@ package may also be used, but only paths will be returned.}
 paths (\code{FALSE}). The default is for polygons to be returned.}
 
 \item{...}{Not used.}
+
+\item{col}{For a \code{harp_grid_df} data frame, the column from which to get the
+domain for the map. Uses the same semantics as \code{\link[dplyr]{select}}.}
 }
 \value{
 A data frame with columns "x", "y", and for \code{polygon = TRUE} an
@@ -58,6 +62,5 @@ ggplot() +
   geom_path(aes(x, y), map, colour = "grey30") +
   coord_equal(expand = FALSE) +
   theme_harp_map()
-
 
 }
