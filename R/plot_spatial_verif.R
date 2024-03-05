@@ -8,7 +8,7 @@
 #'
 #' @param verif_data Output from \link[harpSPatial]{spatial_verify}. Expected to
 #'   either be a dataframe or an SQLite file (needs path to file).
-#' @param score_name The score to plot. This will call the appropriate spatial plotting
+#' @param score The score to plot. This will call the appropriate spatial plotting
 #'   function through \code{spatial_plot_func}.
 #' @param filter_by Filter the data before plotting. Must be wrapped inside the
 #'   \link[dplyr]{vars} function. This can be useful for making a single plot
@@ -104,7 +104,7 @@ plot_spatial_verif <- function(
   if (!is.data.frame(verif_data) && is.list(verif_data)) {
     # If list of tables, select the table of selected score,
     # each score has it's own table
-    plot_data <- as_tibble(verif_data$score_name)
+    plot_data <- as_tibble(verif_data[[score_name]])
   } else {
     plot_data <- as_tibble(verif_data)
   }
@@ -258,5 +258,4 @@ plot_spatial_verif <- function(
   } else {
     gg
   }
-  message("Plots complete!")
 }
