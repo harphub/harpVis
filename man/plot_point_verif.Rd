@@ -53,7 +53,7 @@ individual scores.}
 
 \item{score}{The score to plot. Should be the name of one of the columns in
 the verification tables or the name of a dervived score, such as
-\code{spread_skill}, \code{spread_skill_ratio}, or
+\code{bias_rmse}, \code{spread_skill}, \code{spread_skill_ratio}, or
 \code{brier_score_decomposition}.}
 
 \item{verif_type}{The type of verification to plot for ensemble verification

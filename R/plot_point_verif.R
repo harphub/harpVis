@@ -12,7 +12,7 @@
 #'   individual scores.
 #' @param score The score to plot. Should be the name of one of the columns in
 #'   the verification tables or the name of a dervived score, such as
-#'   \code{spread_skill}, \code{spread_skill_ratio}, or
+#'   \code{bias_rmse}, \code{spread_skill}, \code{spread_skill_ratio}, or
 #'   \code{brier_score_decomposition}.
 #' @param verif_type The type of verification to plot for ensemble verification
 #'   data. The default is "ens", but set to "det" to plot verification scores
@@ -319,7 +319,7 @@ plot_point_verif <- function(
     )
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
-    derived_summary_scores <- ""
+    derived_summary_scores <- "bias_rmse"
     derived_thresh_scores  <- ""
   }
 
@@ -417,6 +417,20 @@ plot_point_verif <- function(
 
     "num_cases" = {
       plot_num_cases <- FALSE
+    },
+
+    "bias_rmse" = {
+      plot_data <- tidyr::pivot_longer(
+        plot_data,
+        cols      = tidyr::all_of(c("rmse", "bias")),
+        names_to  = "component",
+        values_to = "bias ; rmse"
+      )
+      y_axis_name      <- "bias ; rmse"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
     },
 
     "spread_skill" = {
