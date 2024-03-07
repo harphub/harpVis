@@ -1149,6 +1149,17 @@ make_score_list <- function(verif_list) {
 
   # Add derived scores if the required data are available in verif_list
 
+  if (!is.null(verif_list$det_summary_scores)) {
+    if (
+      "bias" %in% verif_names$det_summary_scores &&
+      "rmse" %in% verif_names$det_summary_scores
+    ) {
+      verif_names$det_summary_scores <- c(
+        verif_names$det_summary_scores, "bias_rmse"
+      )
+    }
+  }
+
   if (!is.null(verif_list$ens_summary_scores)) {
     if ("spread" %in% verif_names$ens_summary_scores && "rmse" %in% verif_names$ens_summary_scores) {
       verif_names$ens_summary_scores <- c(
