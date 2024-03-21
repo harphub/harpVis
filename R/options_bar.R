@@ -149,6 +149,7 @@ options_bar <- function(input, output, session) {
 
   app_start_dir <- shiny::getShinyOption("app_start_dir", default = NULL)
   full_nav      <- shiny::getShinyOption("full_dir_navigation", default = TRUE)
+  min_cases     <- shiny::getShinyOption("min_cases", default = 1)
 
   if (full_nav) {
     volumes <- c(Home = fs::path_home(), harp_getVolumes()())
@@ -343,7 +344,11 @@ options_bar <- function(input, output, session) {
         verif_attrs[["names"]] <- verif_attrs[["names"]][good_elmnts]
         verif_data(
           do.call(
-            structure, c(list(.Data = verif_data()[good_elmnts]), verif_attrs)
+            structure,
+            c(
+              list(.Data = remove_too_few_cases(verif_data()[good_elmnts], min_cases)),
+              verif_attrs
+            )
           )
         )
       }
@@ -412,4 +417,15 @@ remove_double_dots <- function(x) {
     x <- Reduce(file.path, x[1:(length(x) - 2)])
   }
   x
+}
+
+remove_too_few_cases <- function(x, min_cases) {
+  num_cases_cols <- c("num_cases", "num_cases_for_threshold_total")
+  lapply(
+    x,
+    function(d) dplyr::filter(
+      d,
+      dplyr::if_all(dplyr::any_of(num_cases_cols), ~.x >= min_cases)
+    )
+  )
 }
