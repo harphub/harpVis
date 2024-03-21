@@ -71,7 +71,7 @@ score_colnames <- c(
   "symmetric_edi_std_error"
 )
 
-meta_colnames <- c(
+meta_colnames <- sort(c(
   "mname",
   "leadtime",
   "validdate",
@@ -97,8 +97,9 @@ meta_colnames <- c(
   "lat",
   "elev",
   "model_elevation",
-  "percentile"
-)
+  "percentile",
+  "threshold"
+))
 
 assign("meta_colnames", meta_colnames, envir = harpVis_data)
 assign("score_colnames", score_colnames, envir = harpVis_data)

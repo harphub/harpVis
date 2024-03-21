@@ -579,7 +579,11 @@ interactive_point_verif <- function(
             colnames(verif_data()[["det_threshold_scores"]])
           )
           lt <- unique(verif_data()$det_threshold_scores[[lead_time_var]])
+          add_All <- all_cols_all(verif_data(), "det_threshold_scores")
           lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
+          if (!add_All) {
+            lead_times <- lead_times[lead_times != "All"]
+          }
           shiny::removeUI(paste0("#", ns("det-cat-x-thresh")))
           shiny::insertUI(
             selector = paste0("#", ns("det-cat")),
@@ -1193,6 +1197,18 @@ make_score_list <- function(verif_list) {
     }
   }
 
+  # Remove standard errors in anticipation of a better way of dealing with them
+  if (!is.null(verif_names$det_summary_scores)) {
+    verif_names$det_summary_scores <- grep(
+      "_std_error", verif_names$det_summary_scores, value = TRUE, invert = TRUE
+    )
+  }
+  if (!is.null(verif_names$det_threshold_scores)) {
+    verif_names$det_threshold_scores <- grep(
+      "_std_error", verif_names$det_threshold_scores, value = TRUE, invert = TRUE
+    )
+  }
+
   # Format for use in the selectInput for Score
 
   verif_types <- harpVis:::totitle(gsub("_", " ", names(verif_names)))
@@ -1274,3 +1290,18 @@ get_times <- function(df, time_var) {
   list(times = times, time_label = time_label)
 }
 
+# Function to see if "All" should be included in lead time selection
+all_cols_all <- function(.verif_data, el) {
+  group_cols <- grep(
+    "threshold",
+    Reduce(union, attr(.verif_data, "group_vars")),
+    inv = TRUE,
+    value = TRUE
+  )
+  nrow(
+    dplyr::filter(
+      .verif_data[[el]],
+      dplyr::if_all(dplyr::all_of(group_cols), ~grepl("All|; ", .x))
+    )
+  ) > 0
+}

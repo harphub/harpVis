@@ -360,9 +360,6 @@ plot_point_verif <- function(
   # PREP DATA FOR PLOTTING
   ###########################################################################
 
-  plot_data <- filter_for_x(plot_data, x_axis_name)
-
-
   if (filtering) {
     has_leadtime <- FALSE
     has_mname <- FALSE
@@ -382,6 +379,8 @@ plot_point_verif <- function(
       plot_data <- dplyr::rename(plot_data, fcst_model = .data[["mname"]])
     }
   }
+
+  plot_data <- filter_for_x(plot_data, x_axis_name)
 
   if (nrow(plot_data) < 1) {
     cli::cli_warn("No data to plot after filtering.")
@@ -1176,7 +1175,7 @@ filter_for_x <- function(plot_data, x_axis_name) {
 
   if (length(possible_x_axes) > 1) {
     other_x_names <- possible_x_axes[possible_x_axes != x_axis_name]
-    plot_data <- dplyr::filter(plot_data, .data[[x_axis_name]] != "All")
+    plot_data <- dplyr::filter(plot_data, !grepl("All|; ", .data[[x_axis_name]]))
     if (grepl("dttm", x_axis_name)) {
       plot_data[[x_axis_name]] <- do.call(
         c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
@@ -1186,7 +1185,7 @@ filter_for_x <- function(plot_data, x_axis_name) {
     }
     plot_data <- dplyr::filter(
       plot_data,
-      dplyr::if_all(other_x_names, ~ .x == "All")
+      dplyr::if_all(other_x_names, ~ grepl("All|; ", .x))
     )
   }
   plot_data
