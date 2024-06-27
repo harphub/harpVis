@@ -760,10 +760,10 @@ interactive_point_verif <- function(
           thresholds <- shiny::req(input[["ens-cat-choose-x-threshold"]])
           if (length(thresholds) == 1) {
             facets  <- NULL
-            filters <- ggplot2::vars(threshold == as.numeric(thresholds))
+            filters <- ggplot2::vars(as.character(threshold) == thresholds)
           } else {
             facets  <- ggplot2::vars(threshold)
-            filters <- ggplot2::vars(threshold %in% as.numeric(thresholds))
+            filters <- ggplot2::vars(as.character(threshold) %in% thresholds)
           }
         } else {
           leadtimes <- shiny::req(input[["ens-cat-choose-x-leadtime"]])
@@ -786,10 +786,10 @@ interactive_point_verif <- function(
         thresholds <- shiny::req(input[["ens-cat-threshold"]])
         if (length(thresholds) == 1 & length(leadtimes) == 1) {
           facets  <- NULL
-          filters <- ggplot2::vars(as.character(leadtime) == leadtimes, threshold == as.numeric(thresholds))
+          filters <- ggplot2::vars(as.character(leadtime) == leadtimes, as.character(threshold) == thresholds)
         } else {
           facets  <- ggplot2::vars(leadtime, threshold)
-          filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes, threshold %in% as.numeric(thresholds))
+          filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes, as.character(threshold) %in% thresholds)
         }
 
       } else if (ui_type() == "det_summary") {
@@ -967,10 +967,10 @@ interactive_point_verif <- function(
           thresholds <- shiny::req(input[["det-cat-x-threshold"]])
           if (length(thresholds) == 1) {
             facets  <- NULL
-            filters <- ggplot2::vars(threshold == as.numeric(thresholds))
+            filters <- ggplot2::vars(as.character(threshold) == thresholds)
           } else {
             facets  <- ggplot2::vars(threshold)
-            filters <- ggplot2::vars(threshold %in% as.numeric(thresholds))
+            filters <- ggplot2::vars(as.character(threshold) %in% thresholds)
           }
         } else {
           leadtimes <- shiny::req(input[["det-cat-x-leadtime"]])
@@ -1170,6 +1170,13 @@ make_score_list <- function(verif_list) {
         verif_names$ens_summary_scores,
         "spread_skill",
         "spread_skill_ratio"
+      )
+    }
+    if ("spread" %in% verif_names$ens_summary_scores && "stde" %in% verif_names$ens_summary_scores) {
+      verif_names$ens_summary_scores <- c(
+        verif_names$ens_summary_scores,
+        "spread_stde",
+        "spread_stde_ratio"
       )
     }
     if ("dropped_members_spread" %in% verif_names$ens_summary_scores && "rmse" %in% verif_names$ens_summary_scores) {

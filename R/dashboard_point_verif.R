@@ -369,7 +369,7 @@ dashboard_point_verif <- function(
       thresh_data_to_plot(),
       thresh_table(),
       dplyr::filter,
-      threshold == input$threshold
+      .data[["threshold"]] == input$threshold
     )
     attributes(plot_data_thresh) <- thresh_data_attributes
 

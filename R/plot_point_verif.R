@@ -12,8 +12,8 @@
 #'   individual scores.
 #' @param score The score to plot. Should be the name of one of the columns in
 #'   the verification tables or the name of a dervived score, such as
-#'   \code{bias_rmse}, \code{spread_skill}, \code{spread_skill_ratio}, or
-#'   \code{brier_score_decomposition}.
+#'   \code{bias_rmse}, \code{spread_skill}, \code{spread_stde},
+#'   \code{spread_skill_ratio}, or \code{brier_score_decomposition}.
 #' @param verif_type The type of verification to plot for ensemble verification
 #'   data. The default is "ens", but set to "det" to plot verification scores
 #'   for members. If set to "det", you should also set colour_by = member.
@@ -315,7 +315,8 @@ plot_point_verif <- function(
     derived_summary_scores <- c(
       "spread_skill", "spread_skill_ratio", "spread_skill_with_dropped",
       "spread_skill_dropped_only", "spread_skill_ratio_with_dropped",
-      "spread_skill_ratio_dropped_only", "normalized_rank_histogram"
+      "spread_skill_ratio_dropped_only", "normalized_rank_histogram",
+      "spread_stde", "spread_stde_ratio"
     )
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
@@ -441,6 +442,17 @@ plot_point_verif <- function(
       linetyping       <- TRUE
     },
 
+    "spread_stde" = {
+      plot_data           <- tidyr::gather(plot_data, .data$stde, .data$spread, key = "component", value = "spread ; stde")
+      plot_data$component <- factor(plot_data$component, levels = c("stde", "spread"))
+      y_axis_name         <- "spread ; stde"
+      y_axis_quo          <- rlang::sym(y_axis_name)
+      linetype_by_quo     <- rlang::quo(component)
+      linetype_by_name    <- rlang::quo_name(linetype_by_quo)
+      linetyping          <- TRUE
+    },
+
+
     "spread_skill_with_dropped" = {
       plot_data        <- dplyr::rename(plot_data, spread_dropped_members = .data$dropped_members_spread)
       plot_data        <- tidyr::gather(
@@ -468,6 +480,12 @@ plot_point_verif <- function(
     "spread_skill_ratio" = {
       if (!is.element("spread_skill_ratio", colnames(plot_data))) {
         plot_data <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$rmse)
+      }
+    },
+
+    "spread_stde_ratio" = {
+      if (!is.element("spread_stde_ratio", colnames(plot_data))) {
+        plot_data <- dplyr::mutate(plot_data, !! rlang::sym(score_name) := .data$spread / .data$stde)
       }
     },
 
@@ -744,6 +762,24 @@ plot_point_verif <- function(
     plot_data[[y_axis_name]] <- as.numeric(plot_data[[y_axis_name]])
   }
 
+  x_comparator_thresholds     <- FALSE
+
+  if (
+   is.element("threshold", colnames(plot_data)) &&
+     comparator_thresholds(plot_data[["threshold"]])
+  ) {
+    if (x_axis_name == "threshold") {
+      plot_data[["threshold"]] <- fct_thresholds(plot_data[["threshold"]])
+      x_comparator_thresholds <- TRUE
+    }
+    if (is.element("threshold", facet_vars)) {
+      plot_data[["threshold"]] <- fct_thresholds(
+        plot_data[["threshold"]], label = TRUE
+      )
+      facet_labeller <- "label_parsed"
+    }
+  }
+
   attrs <- get_attrs(verif_data)
 
   # Labeling
@@ -809,9 +845,34 @@ plot_point_verif <- function(
 
   # Plot background
   if (tolower(colour_by_name == "none")) {
-    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, ...))
+    gg <- ggplot2::ggplot(
+      plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, ...)
+    )
   } else {
-    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, colour = !! colour_by_quo, fill = !! colour_by_quo, ...))
+    if (x_comparator_thresholds) {
+      gg <- ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(
+          !! x_axis_quo,
+          !! y_axis_quo,
+          colour = !! colour_by_quo,
+          fill   = !! colour_by_quo,
+          group  = !! colour_by_quo,
+          ...
+        )
+      )
+    } else {
+      gg <- ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(
+          !! x_axis_quo,
+          !! y_axis_quo,
+          colour = !! colour_by_quo,
+          fill   = !! colour_by_quo,
+          ...
+        )
+      )
+    }
   }
 
   if (is.function(colour_theme)) {
@@ -858,6 +919,12 @@ plot_point_verif <- function(
         "valid_hour" = 3
       )
       gg <- gg + ggplot2::scale_x_continuous(breaks = seq(0, 1800, break_step))
+    }
+    if (x_comparator_thresholds) {
+      gg <- gg +
+        ggplot2::scale_x_discrete(
+          labels = thresh_labels(levels(plot_data[["threshold"]]))
+        )
     }
   }
   if (log_scale_y) {
@@ -956,7 +1023,21 @@ plot_point_verif <- function(
     }
 
     if (linetyping) {
-      gg <- gg + ggplot2::geom_line(ggplot2::aes(lty = !! linetype_by_quo), size = line_width)
+      if (x_comparator_thresholds) {
+        gg <- gg + ggplot2::geom_line(
+          ggplot2::aes(
+            lty = !!linetype_by_quo, group = paste(
+              !!linetype_by_quo, !!colour_by_quo
+            )
+          ),
+          size = line_width
+        )
+      } else {
+        gg <- gg + ggplot2::geom_line(
+          ggplot2::aes(lty = !! linetype_by_quo),
+          size = line_width
+        )
+      }
     } else {
       gg <- gg + ggplot2::geom_line(size = line_width)
     }
@@ -1206,4 +1287,73 @@ combine_hexbins <- function(l) {
   )
 
   dplyr::rename(res, obs = "x", fcst = "y")
+}
+
+# Function to generate axis labels for thresholds
+thresh_to_expr <- function(x) {
+  x <- strsplit(as.character(x), "_")[[1]]
+  if (length(x) == 2) {
+    return(switch(
+      x[1],
+      "gt" = as.expression(bquote("" > .(as.numeric(x[2])))),
+      "ge" = as.expression(bquote("" >= .(as.numeric(x[2])))),
+      "eq" = as.expression(bquote("=" * .(as.numeric(x[2])))),
+      "le" = as.expression(bquote("" <= .(as.numeric(x[2])))),
+      "lt" = as.expression(bquote("" < .(as.numeric(x[2])))),
+      x[2]
+    ))
+  }
+  bracket1 <- switch(
+    x[1],
+    "le" = ,
+    "gt" = "(",
+    "lt" = ,
+    "ge" = "["
+  )
+  bracket2 <- switch(
+    x[3],
+    "gt" = ,
+    "le" = "]",
+    "ge" = ,
+    "lt" = ")"
+  )
+  return(switch(
+    x[1],
+    "lt" = ,
+    "le" = as.expression(bquote("" %notin% .(bracket1)*.(x[2])*", "*.(x[4])*.(bracket2))),
+    as.expression(bquote(""*.(bracket1)*.(x[2])*", "*.(x[4])*.(bracket2)))
+  ))
+}
+
+thresh_labels <- function(x) {
+  sapply(unique(x), thresh_to_expr)
+}
+
+fct_thresholds <- function(x, label = FALSE) {
+  if (!all(grepl("^(lt|le|eq|ge|gt)_", x))) {
+    return(x)
+  }
+
+  x <- factor(x)
+
+  x_levels <- levels(x)
+  x_levels <- x_levels[
+    order(match(get_first_num(x_levels), sort(get_first_num(x_levels))))
+  ]
+
+  if (label) {
+    x_labels <- thresh_labels(x_levels)
+    return(factor(x, levels = x_levels, labels = x_labels))
+  }
+
+  factor(x, levels = x_levels)
+}
+
+comparator_thresholds <- function(x) {
+  x <- as.character(unique(x))
+  all(grepl("lt|le|eq|ge|gt", substr(x, 1, 2)))
+}
+
+get_first_num <- function(x) {
+  as.numeric(unlist(regmatches(x, regexec("[0-9]+", x))))
 }
