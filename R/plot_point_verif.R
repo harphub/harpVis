@@ -381,7 +381,7 @@ plot_point_verif <- function(
     }
   }
 
-  plot_data <- filter_for_x(plot_data, x_axis_name)
+  plot_data <- filter_for_x(plot_data, x_axis_name, flip_axes)
 
   if (nrow(plot_data) < 1) {
     cli::cli_warn("No data to plot after filtering.")
@@ -1240,7 +1240,7 @@ get_attrs.harp_verif <- function(x, readable_dttm = TRUE) {
 # grouping. We need to make sure that the axes are numeric, or in a date-time
 # format - removing all rows with an "All" entry
 
-filter_for_x <- function(plot_data, x_axis_name) {
+filter_for_x <- function(plot_data, x_axis_name, flip_axes) {
   possible_x_axes <- intersect(
     c("lead_time", "valid_dttm", "valid_hour"),
     colnames(plot_data)
@@ -1257,18 +1257,23 @@ filter_for_x <- function(plot_data, x_axis_name) {
   if (length(possible_x_axes) > 1) {
     other_x_names <- possible_x_axes[possible_x_axes != x_axis_name]
     plot_data <- dplyr::filter(plot_data, !grepl("All|; ", .data[[x_axis_name]]))
-    if (grepl("dttm", x_axis_name)) {
-      plot_data[[x_axis_name]] <- do.call(
-        c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
+    # If axes are flipped further filtering should be done elsewhere
+    if (!flip_axes) {
+      plot_data <- dplyr::filter(
+        plot_data,
+        dplyr::if_all(other_x_names, ~ grepl("All|; ", .x))
       )
-    } else {
-      plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
     }
-    plot_data <- dplyr::filter(
-      plot_data,
-      dplyr::if_all(other_x_names, ~ grepl("All|; ", .x))
-    )
   }
+  if (grepl("dttm", x_axis_name)) {
+    plot_data[[x_axis_name]] <- do.call(
+      c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
+    )
+  } else {
+    plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+  }
+
+
   plot_data
 }
 
