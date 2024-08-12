@@ -105,6 +105,7 @@ group_selectors <- function(input, output, session, verif_data) {
 
   generate_observers <- function() {
     filtered_data <- verif_data()
+    selected_val  <- character()
     lapply(
       seq_along(grp_columns()),
       function(i) {
@@ -112,6 +113,8 @@ group_selectors <- function(input, output, session, verif_data) {
           verif_attr <- attributes(verif_data())
           # filter all the columns and update the selectInput for the
           # other columns based on the new filtered data
+          selected_val[i] <- input[[paste0("group_", i)]]
+
           for (j in seq_along(grp_columns())) {
             grp_col <- grp_columns()[j]
             grp_input <- shiny::req(input[[paste0("group_", j)]])
@@ -133,13 +136,24 @@ group_selectors <- function(input, output, session, verif_data) {
                 select_choices <- c(".vp", select_choices)
                 names(select_choices) <- sub(".vp", "Profile", select_choices)
               }
+              if (
+                is.null(input[[paste0("group_", k)]]) ||
+                  !input[[paste0("group_", k)]] %in% select_choices
+              ) {
+                select_choice <- select_choices[1]
+              } else {
+                select_choice <- input[[paste0("group_", k)]]
+              }
               shiny::updateSelectInput(
                 session,
                 paste0("group_", k),
                 choices = select_choices,
-                selected = input[[paste0("group_", k)]]
+                selected = select_choice
               )
             }
+          }
+          if (!is.null(verif_attr[["names"]])) {
+            verif_attr[["names"]] <- names(filtered_data)
           }
           attributes(filtered_data) <- c(
             verif_attr, list(group_cols = grp_columns())
@@ -184,19 +198,36 @@ group_selectors <- function(input, output, session, verif_data) {
         }
       }
 
+      if (
+        is.null(input[[paste0("group_", group_num)]]) ||
+          !input[[paste0("group_", group_num)]] %in% select_choices
+      ) {
+        select_choice <- select_choices[1]
+      } else {
+        select_choice <- input[[paste0("group_", group_num)]]
+      }
+
       ui_arg <- shiny::div(
         id = ns(paste0("dropdown_", select_label)),
         shiny::selectInput(
           ns(paste0("group_", group_num)),
           select_label,
           select_choices,
-          select_choices[1],
+          select_choice,
           width = "100%"
         )
       )
 
       if (group_num > 4) {
         shiny::removeUI(paste0("#", ns(paste0("dropdown_", select_label_before))))
+        if (
+          is.null(input[[paste0("group_", group_num - 4)]]) ||
+            !input[[paste0("group_", group_num - 4)]] %in% select_choices_before
+        ) {
+          select_choice_before <- select_choices_before[1]
+        } else {
+          select_choice_before <- input[[paste0("group_", group_num - 4)]]
+        }
         ui_arg <- shiny::fluidRow(
           shiny::div(class = "col-sm-6",
             shiny::div(id = ns(paste0("dropdown_", select_label_before)),
@@ -204,7 +235,7 @@ group_selectors <- function(input, output, session, verif_data) {
                 ns(paste0("group_", group_num - 4)),
                 select_label_before,
                 select_choices_before,
-                select_choices_before[1],
+                select_choice_before,
                 width = "100%"
               )
             )
@@ -215,7 +246,7 @@ group_selectors <- function(input, output, session, verif_data) {
                 ns(paste0("group_", group_num)),
                 select_label,
                 select_choices,
-                select_choices[1],
+                select_choice,
                 width = "100%"
               )
             )
@@ -265,11 +296,21 @@ run_sort_choices <- function(choices_to_sort) {
   if (is.null(select_choices)) {
     select_choices <- sort(unique(choices_to_sort))
   }
+  # Numerical order if numeric
+  if (
+    !any(is.na(suppressWarnings(as.numeric(stats::na.omit(select_choices)))))
+  ) {
+    select_choices <- as.character(sort(as.numeric(select_choices)))
+  }
   select_choices
 }
 
 filter_group <- function(data, group_col, group_input) {
   if (is.null(group_input)) {
+    return(data)
+  }
+  # Do not filter on pressure if whole profile is chosen
+  if (group_input == ".vp") {
     return(data)
   }
   if (!is.element(group_col, colnames(data))) {

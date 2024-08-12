@@ -46,7 +46,9 @@ time_axis <- function(input, output, session, verif_data) {
     is_profile_data <- FALSE
     group_cols <- attr(verif_data(), "group_cols")
     if (!is.null(group_cols) && is.element("p", group_cols)) {
-      all_levels <- Reduce(union, lapply(verif_data(), function(x) x[["p"]]))
+      all_levels <- unique(
+        Reduce(union, lapply(verif_data(), function(x) x[["p"]]))
+      )
       if (length(all_levels) > 1) {
         is_profile_data <- TRUE
       }
@@ -140,9 +142,10 @@ time_axis <- function(input, output, session, verif_data) {
     time_axis_name(input[["time_axis"]])
   })
 
-  shiny::observeEvent(time_axis_name(), {
+  shiny::observeEvent(list(time_axis_name(), verif_data(), is_profile()), {
 
     shiny::req(verif_data())
+    shiny::req(time_axis_name())
     if (is_profile()) {
       selected_time <- input[["profile_time_select"]]
       data_times    <- Reduce(
@@ -166,29 +169,52 @@ time_axis <- function(input, output, session, verif_data) {
     }
   })
 
-  shiny::observeEvent(list(input[["profile_time_select"]], is_profile()), {
+  shiny::observeEvent(list(
+    input[["profile_time_select"]], is_profile(), verif_data()
+  ), {
 
     shiny::req(is_profile())
     if (!is_profile()) return()
     shiny::req(input[["profile_time_select"]])
     attrs <- attributes(verif_data())
-    filtered_data <- lapply(
-      verif_data(),
-      dplyr::filter,
-      !!rlang::sym(time_axis_name()) == input[["profile_time_select"]]
-    )
+    if (grepl("^All$|;", input[["profile_time_select"]])) {
+      filtered_data <- lapply(
+        verif_data(),
+        dplyr::filter,
+        dplyr::if_all(
+          dplyr::any_of(
+            c(
+              "lead_time", "leadtime", "valid_dttm", "validdate",
+              "fcst_dttm", "fcdate", "valid_hour"
+            )
+          ),
+          ~.x == "All" | grepl(";", .x)
+        )
+      )
+    } else {
+      filtered_data <- lapply(
+        verif_data(),
+        dplyr::filter,
+        !!rlang::sym(time_axis_name()) == input[["profile_time_select"]]
+      )
+    }
     attributes(filtered_data) <- c(attrs, list(is_profile = TRUE))
     out_data(filtered_data)
   })
 
   return(list(
     time_axis = time_axis_name,
-    filtered_data = shiny::debounce(out_data, 200)
+    filtered_data = shiny::debounce(out_data, 500)
   ))
 }
 
-parse_times <- function(times, time_var) {
-  times <- times[times != "All"]
+parse_times <- function(times_in, time_var) {
+  has_all <- FALSE
+  all_el  <- grep("^All$|;", times_in)
+  if (length(all_el) > 0) {
+    has_all <- TRUE
+  }
+  times <- times_in[times_in != "All"]
   if (grepl("dttm|validdate|fcdate", time_var)) {
     times_dttm <- do.call(c, lapply(times, as.POSIXct, tz = "UTC"))
     times <- times[order(match(times, times_dttm))]
@@ -196,5 +222,13 @@ parse_times <- function(times, time_var) {
   } else {
     times <- sort(as.numeric(times))
   }
+  if (has_all) {
+    times <- c(times_in[all_el[1]], times)
+    if (!is.null(names(times))) {
+      names(times)[1] <- times[1]
+    }
+  }
   times
 }
+
+

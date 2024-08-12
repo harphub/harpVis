@@ -17,6 +17,7 @@ plot_point_verif(
   hex_palette = viridisLite::plasma(256),
   hex_colour = "grey20",
   extend_y_to_zero = TRUE,
+  highlight_zero = TRUE,
   plot_num_cases = TRUE,
   extend_num_cases_to_zero = FALSE,
   num_cases_position = c("below", "right", "above", "left"),
@@ -53,8 +54,8 @@ individual scores.}
 
 \item{score}{The score to plot. Should be the name of one of the columns in
 the verification tables or the name of a dervived score, such as
-\code{bias_rmse}, \code{spread_skill}, \code{spread_skill_ratio}, or
-\code{brier_score_decomposition}.}
+\code{bias_rmse}, \code{spread_skill}, \code{spread_stde},
+\code{spread_skill_ratio}, or \code{brier_score_decomposition}.}
 
 \item{verif_type}{The type of verification to plot for ensemble verification
 data. The default is "ens", but set to "det" to plot verification scores
@@ -91,6 +92,9 @@ default is "grey20".}
 
 \item{extend_y_to_zero}{Logical. Whether to extend the y-axis to include
 zero.}
+
+\item{highlight_zero}{Logical. Whether to highlight the zero line on the
+y-axis}
 
 \item{plot_num_cases}{Logical of whether to inlcude the number of cases as a
 panel in the plot. Only currently works for summary scores, and if

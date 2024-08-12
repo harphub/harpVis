@@ -94,6 +94,7 @@ interactive_point_verif <- function(
   det_ens        <- shiny::reactiveVal(FALSE)
   all_members    <- shiny::reactiveVal("")
   all_models     <- shiny::reactiveVal("")
+  thresh_types   <- shiny::reactiveVal(FALSE)
 
   # Reset the app when new data arrives
 
@@ -136,6 +137,15 @@ interactive_point_verif <- function(
       det_ens(TRUE)
     } else {
       det_ens(FALSE)
+    }
+    thresh_dfs <- grep("threshold", names(verif_data()))
+    if (length(thresh_dfs) > 0) {
+      thresh_colnames <- Reduce(
+        union, lapply(verif_data()[thresh_dfs], colnames)
+      )
+      if (is.element("Type", thresh_colnames)) {
+        thresh_types(TRUE)
+      }
     }
   })
 
@@ -323,7 +333,9 @@ interactive_point_verif <- function(
 
       lt <- unique(verif_data()$ens_threshold_scores[[lead_time_var]])
       lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
-      thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
+      thresholds <- parse_thresholds(
+        unique(verif_data()$ens_threshold_scores$threshold)
+      )
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -477,6 +489,12 @@ interactive_point_verif <- function(
     }
 
     if (ui_type() == "det_cat") {
+      radio_choices <- c(time_axis(), "threshold")
+      names(radio_choices) <- gsub(
+        "Dttm",
+        "Date-Time",
+        totitle(gsub("_", " ", radio_choices))
+      )
       shiny::insertUI(
         selector = paste0("#", ns("placeholder")),
         ui       = shiny::tags$div(
@@ -489,8 +507,8 @@ interactive_point_verif <- function(
           shiny::radioButtons(
             ns("det-cat-x_axis"),
             "x axis",
-            c("Lead Time" = "leadtime", "Threshold" = "threshold"),
-            selected = "leadtime"
+            radio_choices,
+            selected = radio_choices[1]
           )
         )
       )
@@ -505,10 +523,21 @@ interactive_point_verif <- function(
 
     if (more_selectors()) {
 
+      if (thresh_types()) {
+        thresh_elements <- grep("threshold", names(verif_data()))
+        type_names <- unique(unlist(lapply(
+          verif_data()[thresh_elements],
+          function(x) unique(x[["Type"]])
+
+        )))
+      }
+
       if (ui_type() == "ens_cat_choose_x") {
 
         if (shiny::req(input[["ens-cat-choose-x-x_axis"]]) == "leadtime") {
-          thresholds <- sort(unique(verif_data()$ens_threshold_scores$threshold))
+          thresholds <- parse_thresholds(
+            unique(verif_data()$ens_threshold_scores$threshold)
+          )
           shiny::removeUI(paste0("#", ns("ens-cat-choose-x-lead")))
           shiny::insertUI(
             selector = paste0("#", ns("ens-cat-choose-x")),
@@ -554,8 +583,10 @@ interactive_point_verif <- function(
 
       if (ui_type() == "det_cat") {
 
-        if (shiny::req(input[["det-cat-x_axis"]]) == "leadtime") {
-          thresholds <- sort(unique(verif_data()$det_threshold_scores$threshold))
+        if (shiny::req(input[["det-cat-x_axis"]]) != "threshold") {
+          thresholds <- parse_thresholds(
+            unique(verif_data()$det_threshold_scores$threshold)
+          )
           shiny::removeUI(paste0("#", ns("det-cat-x-lead")))
           shiny::insertUI(
             selector = paste0("#", ns("det-cat")),
@@ -574,15 +605,20 @@ interactive_point_verif <- function(
 
         } else {
 
-          lead_time_var <- intersect(
-            c("leadtime", "lead_time"),
+          time_var <- intersect(
+            time_axis(),
             colnames(verif_data()[["det_threshold_scores"]])
           )
-          lt <- unique(verif_data()$det_threshold_scores[[lead_time_var]])
+          time_label <- gsub(
+            "Dttm",
+            "Date-Time",
+            totitle(gsub("_", " ", time_var))
+          )
+          times <- unique(verif_data()$det_threshold_scores[[time_var]])
           add_All <- all_cols_all(verif_data(), "det_threshold_scores")
-          lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
+          select_times <- parse_times(times, time_var)
           if (!add_All) {
-            lead_times <- lead_times[lead_times != "All"]
+            select_times <- select_times[select_times != "All"]
           }
           shiny::removeUI(paste0("#", ns("det-cat-x-thresh")))
           shiny::insertUI(
@@ -591,14 +627,30 @@ interactive_point_verif <- function(
             ui       = shiny::tags$div(
               id = ns("det-cat-x-lead"),
               shiny::selectInput(
-                ns("det-cat-x-leadtime"),
-                "Lead Time",
-                lead_times,
-                lead_times[1],
+                ns("det-cat-x-time"),
+                time_label,
+                select_times,
+                select_times[1],
                 multiple = TRUE
               )
             )
           )
+
+          if (thresh_types()) {
+            shiny::insertUI(
+              selector = paste0("#", ns("det-cat-x-lead")),
+              where    = "afterBegin",
+              ui       = shiny::tags$div(
+                id = ns("det-cat-x-type"),
+                shiny::selectInput(
+                  ns("det-cat-x-type-select"),
+                  "Type",
+                  type_names,
+                  type_names[1]
+                )
+              )
+            )
+          }
         }
 
       }
@@ -607,12 +659,13 @@ interactive_point_verif <- function(
 
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x-leadtime")))
       shiny::removeUI(paste0("#", ns("ens-cat-choose-x-threshold")))
-      shiny::removeUI(paste0("#", ns("det-cat-x-leadtime")))
+      shiny::removeUI(paste0("#", ns("det-cat-x-time")))
       shiny::removeUI(paste0("#", ns("det-cat-x-threshold")))
 
     }
 
   })
+
 
   # Collect the score options into a reactive object
 
@@ -639,8 +692,9 @@ interactive_point_verif <- function(
       input[["det-hexbin-fcst-model"]],
       input[["det-hexbin-member"]],
       input[["det-cat-x_axis"]],
-      input[["det-cat-x-leadtime"]],
-      input[["det-cat-x-threshold"]]
+      input[["det-cat-x-time"]],
+      input[["det-cat-x-threshold"]],
+      input[["det-cat-x-type-select"]]
     ), {
 
       shiny::req(verif_data())
@@ -963,7 +1017,7 @@ interactive_point_verif <- function(
         x_axis    <- shiny::req(input[["det-cat-x_axis"]])
         line_cols <- "mname"
 
-        if (x_axis == "leadtime") {
+        if (x_axis != "threshold") {
           thresholds <- shiny::req(input[["det-cat-x-threshold"]])
           if (length(thresholds) == 1) {
             facets  <- NULL
@@ -973,13 +1027,21 @@ interactive_point_verif <- function(
             filters <- ggplot2::vars(as.character(threshold) %in% thresholds)
           }
         } else {
-          leadtimes <- shiny::req(input[["det-cat-x-leadtime"]])
-          if (length(leadtimes) == 1) {
+          times <- shiny::req(input[["det-cat-x-time"]])
+          if (length(times) == 1) {
             facets  <- NULL
-            filters <- ggplot2::vars(as.character(leadtime) == leadtimes)
+            filters <- ggplot2::vars(
+              as.character(.data[[time_axis()]]) == times
+            )
           } else {
-            facets  <- ggplot2::vars(leadtime)
-            filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes)
+            facets  <- ggplot2::vars(.data[[time_axis()]])
+            filters <- ggplot2::vars(
+              as.character(.data[[time_axis()]]) %in% times
+            )
+          }
+          if (thresh_types()) {
+            thresh_type <- shiny::req(input[["det-cat-x-type-select"]])
+            filters <- c(filters, vars(Type == thresh_type))
           }
         }
 
@@ -1284,9 +1346,9 @@ get_times <- function(df, time_var) {
     "Dttm", "Date-Time", totitle(gsub("_", " ", time_var))
   )
 
-  times <- as.character(unique(df[[time_var]]))
+  times_in <- as.character(unique(df[[time_var]]))
 
-  times <- times[times != "All"]
+  times <- times_in[grep("All|;", times_in, invert = TRUE)]
   if (grepl("dttm", time_var)) {
     times_dttm <- do.call(c, lapply(times, as.POSIXct, tz = "UTC"))
     times <- times[order(match(times, times_dttm))]
@@ -1294,6 +1356,7 @@ get_times <- function(df, time_var) {
   } else {
     times <- sort(as.numeric(times))
   }
+  times <- c(times_in[grep("All|;", times_in)], times)
   list(times = times, time_label = time_label)
 }
 

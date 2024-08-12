@@ -54,7 +54,8 @@ often aesthetics, used to set an aesthetic to a fixed value, like
 to the paired geom/stat.}
 
 \item{rotate}{Whether to rotate the U and V wind components from grid
-relative directions to earth relative directions prior to plotting}
+relative directions to earth relative directions prior to plotting. The
+default, \code{FALSE}, is to retain vectors that are relative to the grid.}
 
 \item{skip}{The number of grid squares to skip between each vector.}
 
@@ -98,6 +99,17 @@ column containing geofields will also work.
 
 Only one row of a data frame can be plotted without faceting.
 }
+\details{
+Wind vectors can be plotted for every grid location in a \code{geofield}. However,
+this often leads to vectors that are too close to one another to be seen
+clearly in the plot. Therefore, you have the option to skip some vectors.
+Currently only the same skipping can be applied in the x and y directions.
+The length of the vectors are set so that the magnitude set in \code{max_vec}
+results in a vector that spans \code{skip + 1} grid squares. That is to say that
+if \code{max_vec = 10} and \code{skip = 0}, a vector with a magnitude of 10 will be
+one grid square long. The lengths of all other vectors are calculated
+relative to this.
+}
 \section{Aesthetics}{
 
 \code{geom_geowindvec()} understands the following aesthetics (required aesthetics are
@@ -109,7 +121,7 @@ in bold):
 \item \code{\link[ggplot2:aes_colour_fill_alpha]{colour}}
 \item \code{\link[ggplot2:aes_group_order]{group}}
 \item \code{\link[ggplot2:aes_linetype_size_shape]{linetype}}
-\item \code{\link[ggplot2:aes_colour_fill_alpha]{linewidth}}
+\item \code{\link[ggplot2:aes_linetype_size_shape]{linewidth}}
 }
 }
 

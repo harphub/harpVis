@@ -9,6 +9,7 @@ shiny_plot_point_verif(
   full_dir_navigation = TRUE,
   theme = c("dark", "light", "white"),
   online = TRUE,
+  min_cases = 1,
   ...
 )
 }
@@ -25,6 +26,11 @@ selector of directories that contain harp point verification files (FALSE).}
 
 \item{online}{Logical. Whether the app should have access to the internet
 (e.g. to download fonts) or not.}
+
+\item{min_cases}{The minimum number of cases required for data to be
+plotted. Rows with fewer than \code{min_cases} in the \code{"num_cases"} column for
+summary scores, and the \code{"num_cases_for_threshold_total"} column for
+threshold scores will be removed at read time.}
 
 \item{...}{Options to \code{\link[shiny]{runApp}}.}
 }

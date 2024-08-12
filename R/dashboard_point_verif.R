@@ -208,8 +208,8 @@ dashboard_point_verif <- function(
     if (is.character(leadtimes)) {
       leadtimes <- as.numeric(leadtimes[!leadtimes %in% "All"])
     }
-    closest_to_twelve <- which(abs(leadtimes - 12) == min(abs(leadtimes - 12)))
-    selected_leadtime <- leadtimes[closest_to_twelve]
+    # closest_to_twelve <- which(abs(leadtimes - 12) == min(abs(leadtimes - 12)))
+    # selected_leadtime <- leadtimes[closest_to_twelve]
 
     legend_summary    <- "none"
     show_thresh_data  <- TRUE
@@ -272,6 +272,9 @@ dashboard_point_verif <- function(
       if (is.element("percentile", colnames(thresh_data_to_plot()))) {
         thresh_col <- "percentile"
       }
+      thresholds <- parse_thresholds(unique(
+        thresh_data_to_plot()[[thresh_table()]][[thresh_col]]
+      ))
       shiny::insertUI(
         selector = paste0("#", ns("dashboard_thresh")),
         where    = "beforeEnd",
@@ -283,12 +286,8 @@ dashboard_point_verif <- function(
                 shiny::selectInput(
                   ns("threshold"),
                   "Threshold",
-                  sort(unique(
-                    thresh_data_to_plot()[[thresh_table()]][[thresh_col]]
-                  )),
-                  sort(unique(
-                    thresh_data_to_plot()[[thresh_table()]][[thresh_col]]
-                  ))[1],
+                  thresholds,
+                  thresholds[1],
                   width = "100%"
                 )
               #)
@@ -430,4 +429,30 @@ dashboard_point_verif <- function(
   }, height = 300, res = 96, bg = bg_colour)
 
 
+}
+
+parse_thresholds <- function(thresh) {
+  if (is.numeric(thresh)) {
+    return(sort(thresh))
+  }
+
+  thresh <- thresh[
+    order(match(get_first_num(thresh), sort(get_first_num(thresh))))
+  ]
+
+  names(thresh) <- parse_comparator(thresh)
+  thresh[c(
+    grep("&", names(thresh), invert = TRUE),
+    grep("&", names(thresh))
+  )]
+}
+
+parse_comparator <- function(thresh) {
+  thresh <- suppressWarnings(harpCore::psub(
+    thresh,
+    c("lt_", "le_", "eq_", "ge_", "gt_"),
+    c("< ", "<= ", "= ", ">= ", "> "),
+    exact = FALSE
+  ))
+  gsub("_", " & ", thresh)
 }

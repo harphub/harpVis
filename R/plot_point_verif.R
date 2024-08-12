@@ -41,6 +41,8 @@
 #'   default is "grey20".
 #' @param extend_y_to_zero Logical. Whether to extend the y-axis to include
 #'   zero.
+#' @param highlight_zero Logical. Whether to highlight the zero line on the
+#'   y-axis
 #' @param facet_by The column(s) to facet the plot by. Faceting is a term used
 #'   for generating plot panels. The argument must be wrapped inside the
 #'   \link[dplyr]{vars} function - e.g. \code{facet_by = vars(threshold)}.
@@ -126,6 +128,7 @@ plot_point_verif <- function(
   hex_palette              = viridisLite::plasma(256),
   hex_colour               = "grey20",
   extend_y_to_zero         = TRUE,
+  highlight_zero           = TRUE,
   plot_num_cases           = TRUE,
   extend_num_cases_to_zero = FALSE,
   num_cases_position       = c("below", "right", "above", "left"),
@@ -290,9 +293,7 @@ plot_point_verif <- function(
   verif_data <- purrr::map_at(
     verif_data,
     tables_with_data,
-    dplyr::mutate_if,
-    is.numeric,
-    inf_to_na
+    ~dplyr::mutate(.x, dplyr::across(dplyr::where(is.numeric), inf_to_na))
   )
   attributes(verif_data) <- verif_attributes
 
@@ -381,7 +382,7 @@ plot_point_verif <- function(
     }
   }
 
-  plot_data <- filter_for_x(plot_data, x_axis_name, flip_axes)
+  plot_data <- filter_for_x(plot_data, x_axis_name, flip_axes, facet_vars)
 
   if (nrow(plot_data) < 1) {
     cli::cli_warn("No data to plot after filtering.")
@@ -952,8 +953,8 @@ plot_point_verif <- function(
     y_values <- dplyr::pull(plot_data, !! y_axis_quo)
   }
   range_y  <- range(y_values, na.rm = TRUE)
-  min_y    <- NA_real_
-  max_y    <- NA_real_
+  min_y    <- min(range_y)
+  max_y    <- max(range_y)
   if (extend_y_to_zero & !aspect1_score) { #& plot_geom == "line"
     if (range_y[1] > 0) {
       min_y <- 0
@@ -963,6 +964,19 @@ plot_point_verif <- function(
     }
   }
   if (!log_scale_y & !aspect1_score) {
+    if (highlight_zero) {
+      grid_col <- theme_func()$panel.grid$colour
+      grid_red <- grDevices::col2rgb(grid_col)[1]
+      mult     <- 0.8 #ifelse(grid_red <= 127, 0.8, 1.2)
+      line_col <- grDevices::adjustcolor(
+        grid_col, red.f = mult, green.f = mult, blue.f = mult
+      )
+      gg <- gg + ggplot2::geom_hline(
+        yintercept = 0,
+        colour = line_col,
+        linewidth = theme_func()$line$linewidth * 2
+      )
+    }
     gg <- gg + ggplot2::scale_y_continuous(limits = c(min_y, max_y))
   }
 
@@ -1144,7 +1158,10 @@ plot_point_verif <- function(
       )
     }
 
-    min_y_limit <- ifelse(extend_num_cases_to_zero, 0, NA)
+    min_num_cases <- min(
+      plot_data[[score_name]][plot_data[["panel"]] == "Number of Cases"]
+    )
+    min_y_limit <- ifelse(extend_num_cases_to_zero, 0, min_num_cases)
 
     gg <- gg + facet_wrap_custom(
       "panel",
@@ -1155,7 +1172,7 @@ plot_point_verif <- function(
       )
     )
 
-    gt <- ggplot2::ggplot_gtable(ggplot2::ggplot_build(gg))
+    gt <- suppressWarnings(ggplot2::ggplot_gtable(ggplot2::ggplot_build(gg)))
     if (num_cases_position %in% c("above", "below")) {
       score_panel <- gt$layout$t[grep(paste0("panel-", panel_position), gt$layout$name)]
       gt$heights[score_panel] <- 5 * gt$heights[score_panel]
@@ -1167,7 +1184,7 @@ plot_point_verif <- function(
 
   } else {
 
-    gg
+    suppressWarnings(gg)
 
   }
 
@@ -1187,7 +1204,10 @@ totitle <- function(s, strict = FALSE) {
 }
 
 # Function to convert Infinite values to NA
-inf_to_na <- Vectorize(function(x) if (is.infinite(x)) { NA } else { x })
+inf_to_na <- function(x) {
+  x[is.infinite(x)] <- NA
+  x
+}
 
 # Function to convert date to a nice format
 date_to_char <- function(date_in) {
@@ -1240,11 +1260,22 @@ get_attrs.harp_verif <- function(x, readable_dttm = TRUE) {
 # grouping. We need to make sure that the axes are numeric, or in a date-time
 # format - removing all rows with an "All" entry
 
-filter_for_x <- function(plot_data, x_axis_name, flip_axes) {
+filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
   possible_x_axes <- intersect(
     c("lead_time", "valid_dttm", "valid_hour"),
     colnames(plot_data)
   )
+
+  # Filtering to be done elsewhere if x_axis_name isn't one of the possible
+  # x-axes - but convert to numeric first if possible
+  if (!is.element(x_axis_name, possible_x_axes)) {
+    if (!any(is.na(
+      suppressWarnings(as.numeric(stats::na.omit(plot_data[[x_axis_name]])))
+    ))) {
+      plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+    }
+    return(plot_data)
+  }
 
   x_axes_lengths <- vapply(
     possible_x_axes,
@@ -1256,7 +1287,19 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes) {
 
   if (length(possible_x_axes) > 1) {
     other_x_names <- possible_x_axes[possible_x_axes != x_axis_name]
-    plot_data <- dplyr::filter(plot_data, !grepl("All|; ", .data[[x_axis_name]]))
+    if (all_cols_all(list(a = plot_data), "a")) {
+      plot_data <- dplyr::filter(
+        plot_data, dplyr::if_all(other_x_names, ~grepl("All|;", .x))
+      )
+    }
+    if (
+      !(x_axis_name %in% facet_vars) &&
+        length(unique(plot_data[[x_axis_name]])) > 1
+    ) {
+      plot_data <- dplyr::filter(
+        plot_data, !grepl("All|; ", .data[[x_axis_name]])
+      )
+    }
     # If axes are flipped further filtering should be done elsewhere
     if (!flip_axes) {
       plot_data <- dplyr::filter(
@@ -1265,14 +1308,18 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes) {
       )
     }
   }
-  if (grepl("dttm", x_axis_name)) {
-    plot_data[[x_axis_name]] <- do.call(
-      c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
-    )
-  } else {
-    plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+  if (!flip_axes) {
+    if (any(grepl("All|;", plot_data[[x_axis_name]]))) {
+      return(plot_data)
+    }
+    if (grepl("dttm", x_axis_name)) {
+      plot_data[[x_axis_name]] <- do.call(
+        c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
+      )
+    } else {
+      plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+    }
   }
-
 
   plot_data
 }
@@ -1360,5 +1407,5 @@ comparator_thresholds <- function(x) {
 }
 
 get_first_num <- function(x) {
-  as.numeric(unlist(regmatches(x, regexec("[0-9]+", x))))
+  as.numeric(unlist(regmatches(x, regexec("-?Inf|-?[0-9]+", x))))
 }

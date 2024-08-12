@@ -197,7 +197,7 @@ options_bar <- function(input, output, session) {
     shiny::req(data_dir())
     if (length(data_dir()) < 1) return()
     data_files$filenames  <- dir(
-      data_dir(), pattern = "harpPointVerif*[[:graph:]]*.rds"
+      data_dir(), pattern = "harpPointVerif(.*?)\\.rds"
     )
     harp_files        <- strsplit(data_files$filenames, ".harp.")
     data_files$models <- gsub(
@@ -395,7 +395,7 @@ dir_select_populate <- function(top_dir, dir) {
 
 get_valid_dirs <- function(dir) {
   all_dirs <- strsplit(
-    list.files(dir, "harpPointVerif*[[:graph:]]*.rds", recursive = TRUE),
+    list.files(dir, "harpPointVerif(.*?)\\.rds", recursive = TRUE),
     .Platform$file.sep
   )
   all_dirs <- vapply(
