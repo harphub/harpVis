@@ -221,4 +221,49 @@ check_quo_col_length <- function(x, max_len = 1) {
   cols <- gsub("")
 }
 
-
+#' Out of bounds handling
+#'
+#' This function should mostly be used for handling out of bounds data
+#' for colour scales fo \code{\link{geom_georaster()}}. Values below the
+#' range are remomved and values above the range are set to the range maxumum.
+#' The function's main purposed is to be passed to the `oob` argument in a
+#' ggplot scale function, and would be particularly useful for plotting fields
+#' such as precipitation.
+#'
+#' @inheritParams scales::censor
+#' @export
+#' @examples
+#' # Create a 2d array
+#' z <- array(dim = c(100, 100))
+#' for (i in 1:100) {
+#'   for (j in 1:100) {
+#'     z[i, j] <- sin(i / 10) + sin(j / 10)
+#'   }
+#' }
+#'
+#' # Define a domain
+#' dom <- define_domain(11, 59, 100, 0.2, "longlat")
+#'
+#' df <- data.frame(valid_dttm = as_dttm(2024091700))
+#' df$data <- geolist(geofield(z, domain = dom))
+#' df <- as_harp_df(df)
+#'
+#' # Normal plot
+#' plot(df)
+#'
+#' # Add scales to only show values between -1 and 1
+#' # All values are censored
+#' plot(df) + scale_fill_viridis_c(limits = c(-1, 1))
+#'
+#' # Censor the low values and squish the high values
+#' plot(df) +
+#'   scale_fill_viridis_c(limits = c(-1, 1), oob = censor_low_squish_high)
+censor_low_squish_high <- function(x, range = c(0, 1), only.finite = TRUE) {
+  force(range)
+  finite <- if (only.finite)
+    is.finite(x)
+  else TRUE
+  x[finite & x < range[1]] <- NA_real_
+  x[finite & x > range[2]] <- range[2]
+  x
+}
