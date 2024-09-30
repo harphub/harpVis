@@ -2,9 +2,12 @@
 % Please edit documentation in R/ggplot_functions.R
 \name{censor_low_squish_high}
 \alias{censor_low_squish_high}
+\alias{squish_low_censor_high}
 \title{Out of bounds handling}
 \usage{
 censor_low_squish_high(x, range = c(0, 1), only.finite = TRUE)
+
+squish_low_censor_high(x, range = c(0, 1), only.finite = TRUE)
 }
 \arguments{
 \item{x}{A numeric vector of values to modify.}
@@ -16,12 +19,12 @@ limit of the desired output range respectively.}
 are altered. When \code{FALSE}, also infinite values are altered.}
 }
 \description{
-This function should mostly be used for handling out of bounds data
-for colour scales fo \code{\link{geom_georaster()}}. Values below the
-range are remomved and values above the range are set to the range maxumum.
-The function's main purposed is to be passed to the \code{oob} argument in a
-ggplot scale function, and would be particularly useful for plotting fields
-such as precipitation.
+These functions should mostly be used for handling out of bounds data
+for colour scales fo \code{\link{geom_georaster()}}. Censored values outside
+the limits are removed and squished values outside the limits are set to the
+maxumum limits. The functions' main purpose is to be passed to the \code{oob}
+argument in a ggplot scale function, and would be particularly useful for
+plotting fields such as precipitation.
 }
 \examples{
 # Create a 2d array
@@ -49,4 +52,8 @@ plot(df) + scale_fill_viridis_c(limits = c(-1, 1))
 # Censor the low values and squish the high values
 plot(df) +
   scale_fill_viridis_c(limits = c(-1, 1), oob = censor_low_squish_high)
+
+# Censor high values and squish low values
+plot(df) +
+  scale_fill_viridis_c(limits = c(-1, 1), oob = squish_low_censor_high)
 }

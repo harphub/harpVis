@@ -223,12 +223,12 @@ check_quo_col_length <- function(x, max_len = 1) {
 
 #' Out of bounds handling
 #'
-#' This function should mostly be used for handling out of bounds data
-#' for colour scales fo \code{\link{geom_georaster()}}. Values below the
-#' range are remomved and values above the range are set to the range maxumum.
-#' The function's main purposed is to be passed to the `oob` argument in a
-#' ggplot scale function, and would be particularly useful for plotting fields
-#' such as precipitation.
+#' These functions should mostly be used for handling out of bounds data
+#' for colour scales fo \code{\link{geom_georaster()}}. Censored values outside
+#' the limits are removed and squished values outside the limits are set to the
+#' maxumum limits. The functions' main purpose is to be passed to the `oob`
+#' argument in a ggplot scale function, and would be particularly useful for
+#' plotting fields such as precipitation.
 #'
 #' @inheritParams scales::censor
 #' @export
@@ -258,6 +258,10 @@ check_quo_col_length <- function(x, max_len = 1) {
 #' # Censor the low values and squish the high values
 #' plot(df) +
 #'   scale_fill_viridis_c(limits = c(-1, 1), oob = censor_low_squish_high)
+#'
+#' # Censor high values and squish low values
+#' plot(df) +
+#'   scale_fill_viridis_c(limits = c(-1, 1), oob = squish_low_censor_high)
 censor_low_squish_high <- function(x, range = c(0, 1), only.finite = TRUE) {
   force(range)
   finite <- if (only.finite)
@@ -265,5 +269,17 @@ censor_low_squish_high <- function(x, range = c(0, 1), only.finite = TRUE) {
   else TRUE
   x[finite & x < range[1]] <- NA_real_
   x[finite & x > range[2]] <- range[2]
+  x
+}
+
+#' @export
+#' @rdname censor_low_squish_high
+squish_low_censor_high <- function(x, range = c(0, 1), only.finite = TRUE) {
+  force(range)
+  finite <- if (only.finite)
+    is.finite(x)
+  else TRUE
+  x[finite & x < range[1]] <- range[1]
+  x[finite & x > range[2]] <- NA_real_
   x
 }
