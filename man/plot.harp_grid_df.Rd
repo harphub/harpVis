@@ -13,7 +13,7 @@
   land_colour = "grey70",
   country_outline = "grey30",
   water_colour = NULL,
-  upscale_factor = 1,
+  upscale_factor = NULL,
   upscale_method = "downsample",
   plot_land = c("before", "after"),
   ...
@@ -39,9 +39,12 @@ as polygons that can be filled (\code{TRUE}). Default is \code{FALSE}.}
 
 \item{water_colour}{If \code{poly = TRUE}, the colour of water areas.}
 
-\item{upscale_factor}{An integer by which to upscale the data before
-computing the contours. For example if this is 2, the upscaled grid will
-have 2 pixels in each direction from the grid before upscaling.}
+\item{upscale_factor}{Set to an integer value to specify any upscaling of
+the data before plotting. For example if \code{upscale_factor = 2}, each pixel
+in the upscaled grid will represent 2 pixels in each direction from the
+original grid. The default behaviour (\code{upscale_factor = NULL}) is to apply
+an automatic upscaling that optimises plotting speed without losing too
+much detail.}
 
 \item{upscale_method}{The method used for upscaling. See
 \code{\link[harpCore]{geo_upscale}} for more details.}
@@ -57,6 +60,12 @@ Plots rasters of the chosen column, \code{col}, faceted by \code{facet_col} with
 For faster plotting \code{upscale_factor} could be increased. This method uses
 \code{ggplot} to make the plots so colour scales, labels, themes etc. can be
 changed or added in the usual way for \code{ggplot}.
+}
+\details{
+In order to speed up plotting, data will be automatically upscaled before
+plotting using the downsample method. This behaviour can be overridden by
+setting \code{upscale_factor} to an integer value where \code{upscale_factor = 1} means
+that no upscaling is done prior to plotting.
 }
 \examples{
 \dontrun{
@@ -78,9 +87,9 @@ changed or added in the usual way for \code{ggplot}.
   # If there is only 1 geolist column you don't need to specify anything
   plot(tt)
 
-  # For faster plotting increase the upscale_factor, though note loss of
-  # quality
-  plot(tt, upscale_factor = 4)
+  # For highest quality plotting, set upscale_factor = 1. This will impact
+  # the plotting speed.
+  plot(tt, upscale_factor = 1)
 
   # You can change the colour scale by adding a new fill scale
   plot(tt, upscale_factor = 4) +

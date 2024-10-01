@@ -5,6 +5,11 @@
 #' `ggplot` to make the plots so colour scales, labels, themes etc. can be
 #' changed or added in the usual way for `ggplot`.
 #'
+#' In order to speed up plotting, data will be automatically upscaled before
+#' plotting using the downsample method. This behaviour can be overridden by
+#' setting `upscale_factor` to an integer value where `upscale_factor = 1` means
+#' that no upscaling is done prior to plotting.
+#'
 #'
 #' @param x a `harp_grid_df` data frame.
 #' @param col <[`tidy-select`][dplyr_tidy_select]> The column to plot.
@@ -17,6 +22,12 @@
 #' @param land_colour If `poly = TRUE`, the fill colour for land polygons.
 #' @param country_outline The colour of the country outlines.
 #' @param water_colour If `poly = TRUE`, the colour of water areas.
+#' @param upscale_factor Set to an integer value to specify any upscaling of
+#'   the data before plotting. For example if `upscale_factor = 2`, each pixel
+#'   in the upscaled grid will represent 2 pixels in each direction from the
+#'   original grid. The default behaviour (`upscale_factor = NULL`) is to apply
+#'   an automatic upscaling that optimises plotting speed without losing too
+#'   much detail.
 #' @param plot_land If `poly = TRUE`, when to plot the land polygons in relation
 #'   to the raster data. Can be "before" (the default) or "after". If "after",
 #'   the land polygons will overlay the rasters.
@@ -44,9 +55,9 @@
 #'   # If there is only 1 geolist column you don't need to specify anything
 #'   plot(tt)
 #'
-#'   # For faster plotting increase the upscale_factor, though note loss of
-#'   # quality
-#'   plot(tt, upscale_factor = 4)
+#'   # For highest quality plotting, set upscale_factor = 1. This will impact
+#'   # the plotting speed.
+#'   plot(tt, upscale_factor = 1)
 #'
 #'   # You can change the colour scale by adding a new fill scale
 #'   plot(tt, upscale_factor = 4) +
@@ -102,7 +113,7 @@ plot.harp_grid_df <- function(
   land_colour     = "grey70",
   country_outline = "grey30",
   water_colour    = NULL,
-  upscale_factor  = 1,
+  upscale_factor  = NULL,
   upscale_method  = "downsample",
   plot_land       = c("before", "after"),
   ...
@@ -159,6 +170,22 @@ plot.harp_grid_df <- function(
       ggplot2::aes(.data[["x"]], .data[["y"]], group = .data[["group"]]),
       land_map, fill = land_colour, colour = country_outline,
       inherit.aes = FALSE
+    )
+  }
+
+  # Automatically set the upscale factor - assume the maximum number of
+  # pixels in each direction should be ~800.
+
+  if (is.null(upscale_factor)) {
+    facets_length  <- ceiling(sqrt(nrow(x)))
+    dom            <- harpCore::get_domain(x[[col_name]])
+    max_pixels     <- max(c(dom$nx * facets_length), c(dom$ny * facets_length))
+    upscale_factor <- ceiling(max_pixels / 800)
+    cli::cli_inform(
+      paste(
+        "Plotting with",
+        cli::col_br_red("upscale_factor = {upscale_factor}")
+      )
     )
   }
 
@@ -282,4 +309,54 @@ squish_low_censor_high <- function(x, range = c(0, 1), only.finite = TRUE) {
   x[finite & x < range[1]] <- range[1]
   x[finite & x > range[2]] <- NA_real_
   x
+}
+
+
+#' The absolute range of a diverging sequence
+#'
+#' Given a sequence that contains both negative and positive numbers,
+#' `abs_range()` returns negative and positive limits that are equidistant
+#' from zero. The function can be passed to the `limits` argument of a _ggplot_
+#' scale to ensure the limits are are equally distributed about zero.
+#'
+#' @param x A numeric vector
+#'
+#' @return Negative and postive limits that are
+#' @export
+#'
+#' @examples
+#' abs_range(seq(-3, 6))
+#'
+#' # Use in ggplot
+#' library(ggplot2)
+#' df <- expand.grid(x = seq_len(100), y = seq_len(100))
+#' df$z <- sin(df$x / 10) + sin(df$y / 10) + 1
+#'
+#' # Standard scaling
+#' ggplot(df, aes(x, y, fill = z)) +
+#'   geom_raster() +
+#'   scale_fill_gradient2()
+#'
+#' # Use abs_range to ensure whole scale is included in legend
+#' ggplot(df, aes(x, y, fill = z)) +
+#'   geom_raster() +
+#'   scale_fill_gradient2(limits = abs_range)
+#'
+#' # Use abs_range to ensure colours in scale_fill_gradientn() are equally
+#' # distributed about zero
+#'
+#' # Normal behaviour
+#' ggplot(df, aes(x, y, fill = z)) +
+#'   geom_raster() +
+#'   scale_fill_gradientn(colours = c("darkgreen", "white", "deeppink4"))
+#'
+#' # Using abs_range to set limits
+#' ggplot(df, aes(x, y, fill = z)) +
+#'   geom_raster() +
+#'   scale_fill_gradientn(
+#'     colours = c("darkgreen", "white", "deeppink4"), limits = abs_range
+#'   )
+abs_range <- function(x) {
+  stopifnot(is.numeric(x))
+  c(-max(abs(x)), max(abs(x)))
 }
