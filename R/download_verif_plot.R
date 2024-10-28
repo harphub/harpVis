@@ -388,7 +388,10 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
               .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
             ))
           )
-        group_data <- filter_for_x(group_data, score_options()$x_axis)
+        group_data <- filter_for_x(
+          group_data, score_options()$x_axis,
+          flip_axes = score_options()$flip_axes
+        )
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
           ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
@@ -443,8 +446,10 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           plot_caption       = plot_options$caption,
           num_cases_position = score_options()$n_cases_pos,
           flip_axes          = score_options()$flip_axes
-        ) +
-          ggplot2::theme(aspect.ratio = aspect_ratio)
+        )
+        if (!inherits(score_plot, "harp_num_cases_plot")) {
+          score_plot <- score_plot + ggplot2::theme(aspect.ratio = aspect_ratio)
+        }
 
       } else {
 
@@ -501,8 +506,10 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           group              = member,
           num_cases_position = score_options()$n_cases_pos,
           flip_axes          = score_options()$flip_axes
-        ) +
-          ggplot2::theme(aspect.ratio = aspect_ratio)
+        )
+        if (!inherits(score_plot, "harp_num_cases_plot")) {
+          score_plot <- score_plot + ggplot2::theme(aspect.ratio = aspect_ratio)
+        }
 
 
         all_highlights <- grep(
@@ -523,7 +530,10 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
                 .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
               ))
             )
-          group_data <- filter_for_x(group_data, score_options()$x_axis)
+          group_data <- filter_for_x(
+            group_data, score_options()$x_axis,
+            flip_axes = score_options()$flip_axes
+          )
           score_plot <- score_plot +
             ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
             ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
@@ -547,7 +557,7 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
 }
 
 customDownloadButton <- function(
-    outputId,
+  outputId,
   label      = "Download",
   class      = NULL,
   bs_btn     = "default",
@@ -568,7 +578,7 @@ customDownloadButton <- function(
 }
 
 customActionButton <- function(
-    inputId,
+  inputId,
   label,
   icon      = NULL,
   width     = NULL,

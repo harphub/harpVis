@@ -1181,6 +1181,8 @@ plot_point_verif <- function(
       gt$widths[score_panel] <- 5 * gt$widths[score_panel]
     }
     grid::grid.draw(gt)
+    class(gt) <- c("harp_num_cases_plot", class(gt))
+    gt
 
   } else {
 
@@ -1408,4 +1410,10 @@ comparator_thresholds <- function(x) {
 
 get_first_num <- function(x) {
   as.numeric(unlist(regmatches(x, regexec("-?Inf|-?[0-9]+", x))))
+}
+
+
+#' @export
+print.harp_num_cases_plot <- function(x, ...) {
+  grid::grid.draw(x)
 }
