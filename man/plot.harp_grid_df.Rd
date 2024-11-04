@@ -15,7 +15,7 @@
   water_colour = NULL,
   upscale_factor = NULL,
   upscale_method = "downsample",
-  plot_land = c("before", "after"),
+  plot_land = c("before", "after", "none"),
   ...
 )
 }
@@ -51,7 +51,8 @@ much detail.}
 
 \item{plot_land}{If \code{poly = TRUE}, when to plot the land polygons in relation
 to the raster data. Can be "before" (the default) or "after". If "after",
-the land polygons will overlay the rasters.}
+the land polygons will overlay the rasters. Can also be set to \code{"none"} to
+not plot any coastline or country borders.}
 
 \item{...}{Other arguments to \code{\link{geom_georaster()}}.}
 }

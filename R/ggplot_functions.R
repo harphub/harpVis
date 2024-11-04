@@ -30,7 +30,8 @@
 #'   much detail.
 #' @param plot_land If `poly = TRUE`, when to plot the land polygons in relation
 #'   to the raster data. Can be "before" (the default) or "after". If "after",
-#'   the land polygons will overlay the rasters.
+#'   the land polygons will overlay the rasters. Can also be set to `"none"` to
+#'   not plot any coastline or country borders.
 #' @inheritParams geom_georaster
 #' @param ... Other arguments to \code{\link{geom_georaster()}}.
 #'
@@ -115,7 +116,7 @@ plot.harp_grid_df <- function(
   water_colour    = NULL,
   upscale_factor  = NULL,
   upscale_method  = "downsample",
-  plot_land       = c("before", "after"),
+  plot_land       = c("before", "after", "none"),
   ...
 ) {
 
@@ -162,14 +163,17 @@ plot.harp_grid_df <- function(
     poly = FALSE
   }
 
+  if (nrow(land_map) < 2) {
+    plot_land = "none"
+  }
 
-  gg <- ggplot2::ggplot(x, ggplot2::aes(geofield = !!col))
+
+  gg <- ggplot2::ggplot()
 
   if (poly && plot_land == "before") {
     gg <- gg + ggplot2::geom_polygon(
       ggplot2::aes(.data[["x"]], .data[["y"]], group = .data[["group"]]),
-      land_map, fill = land_colour, colour = country_outline,
-      inherit.aes = FALSE
+      land_map, fill = land_colour, colour = country_outline
     )
   }
 
@@ -191,28 +195,34 @@ plot.harp_grid_df <- function(
 
   gg <- gg +
     geom_georaster(
-      upscale_factor = upscale_factor, upscale_method = upscale_method, ...
+      mapping        = ggplot2::aes(geofield = !!col),
+      data           = x,
+      upscale_factor = upscale_factor,
+      upscale_method = upscale_method,
+      ...
     )
 
-  if (poly) {
+  if (plot_land != "none") {
+    if (poly) {
 
-    if (plot_land == "after") {
-      gg <- gg + ggplot2::geom_polygon(
+      if (plot_land == "after") {
+        gg <- gg + ggplot2::geom_polygon(
+          ggplot2::aes(.data[["x"]], .data[["y"]], group = .data[["group"]]),
+          land_map, fill = land_colour
+        )
+      }
+
+      gg <- gg + ggplot2::geom_path(
         ggplot2::aes(.data[["x"]], .data[["y"]], group = .data[["group"]]),
-        land_map, fill = land_colour, inherit.aes = FALSE
+        land_map, colour = country_outline
+      )
+
+    } else {
+      gg <- gg + ggplot2::geom_path(
+        ggplot2::aes(.data[["x"]], .data[["y"]]),
+        land_map, colour = country_outline
       )
     }
-
-    gg <- gg + ggplot2::geom_path(
-      ggplot2::aes(.data[["x"]], .data[["y"]], group = .data[["group"]]),
-      land_map, colour = country_outline, inherit.aes = FALSE
-    )
-
-  } else {
-    gg <- gg + ggplot2::geom_path(
-      ggplot2::aes(.data[["x"]], .data[["y"]]),
-      land_map, colour = country_outline, inherit.aes = FALSE
-    )
   }
 
   if (nrow(x) > 1) {
