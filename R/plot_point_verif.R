@@ -39,6 +39,11 @@
 #'   vector of colours. The default is \link[viridisLite]{plasma}.
 #' @param hex_colour The outline colour of hexagons for hexbin plots. The
 #'   default is "grey20".
+#' @param hex_trans Transformation to apply to `hex_palette`. The default is
+#'   `"identity"` meaning that no transformation is done. To better see the
+#'   variability for bins with smaller values, set to e.g. `"log2"`. See
+#'   \code{\link[ggplot2]{scale_fill_gradient}} for more information about the
+#'   `transform` argument.
 #' @param extend_y_to_zero Logical. Whether to extend the y-axis to include
 #'   zero.
 #' @param highlight_zero Logical. Whether to highlight the zero line on the
@@ -127,6 +132,7 @@ plot_point_verif <- function(
   colour_table             = NULL,
   hex_palette              = viridisLite::plasma(256),
   hex_colour               = "grey20",
+  hex_trans                = "identity",
   extend_y_to_zero         = TRUE,
   highlight_zero           = TRUE,
   plot_num_cases           = TRUE,
@@ -985,7 +991,9 @@ plot_point_verif <- function(
   ###########################################################################
 
   if (score_name == "hexbin") {
-    gg <- gg + ggplot2::scale_fill_gradientn(colours = hex_palette)
+    gg <- gg + ggplot2::scale_fill_gradientn(
+      colours = hex_palette, transform = hex_trans
+    )
   } else {
     colour_vec <- colour_table[["colour"]]
     names(colour_vec) <- colour_table[[colour_by_name]]
@@ -1271,9 +1279,11 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
   # Filtering to be done elsewhere if x_axis_name isn't one of the possible
   # x-axes - but convert to numeric first if possible
   if (!is.element(x_axis_name, possible_x_axes)) {
-    if (!any(is.na(
-      suppressWarnings(as.numeric(stats::na.omit(plot_data[[x_axis_name]])))
-    ))) {
+    if (is.element(x_axis_name, colnames(plot_data)) &&
+        !any(is.na(
+          suppressWarnings(as.numeric(stats::na.omit(plot_data[[x_axis_name]])))
+        ))
+    ) {
       plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
     }
     return(plot_data)
