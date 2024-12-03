@@ -16,6 +16,7 @@ plot_point_verif(
   colour_table = NULL,
   hex_palette = viridisLite::plasma(256),
   hex_colour = "grey20",
+  hex_trans = "identity",
   extend_y_to_zero = TRUE,
   highlight_zero = TRUE,
   plot_num_cases = TRUE,
@@ -89,6 +90,12 @@ vector of colours. The default is \link[viridisLite]{plasma}.}
 
 \item{hex_colour}{The outline colour of hexagons for hexbin plots. The
 default is "grey20".}
+
+\item{hex_trans}{Transformation to apply to \code{hex_palette}. The default is
+\code{"identity"} meaning that no transformation is done. To better see the
+variability for bins with smaller values, set to e.g. \code{"log2"}. See
+\code{\link[ggplot2]{scale_fill_gradient}} for more information about the
+\code{transform} argument.}
 
 \item{extend_y_to_zero}{Logical. Whether to extend the y-axis to include
 zero.}

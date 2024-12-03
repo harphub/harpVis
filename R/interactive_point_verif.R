@@ -1178,7 +1178,10 @@ interactive_point_verif <- function(
               .x, c("^leadtime$", "^mname$"), c("lead_time", "fcst_model")
             ))
           )
-        group_data <- filter_for_x(group_data, score_options()$x_axis)
+        group_data <- filter_for_x(
+          group_data, score_options()$x_axis,
+          flip_axes = score_options()$flip_axes
+        )
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
           ggplot2::geom_point(data = group_data, colour = group_colour, size = 2, show.legend = FALSE)
