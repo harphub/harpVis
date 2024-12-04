@@ -48,9 +48,63 @@ server <- function(input, output, session) {
   ############################################################
   # LOAD DATA                                                #
   ############################################################
-  getData <- reactive({
-    if(is.null(input$filein)) return(NULL)
-    read_sql(input$filein$datapath)
+  app_start_dir <- shiny::getShinyOption("app_start_dir")
+  if (!is.null(app_start_dir)) {
+    
+      if (dir.exists(app_start_dir)) {
+        volumes <- unclass(fs::path(app_start_dir))
+        names(volumes)[1] <- app_start_dir
+      } else {
+        stop("app_start_dir not found on the system")
+      }
+      shinyFiles::shinyFileChoose(input,
+                                  'filein',
+                                  roots = volumes,
+                                  filetypes = c('sqlite'))
+      filein <- shiny::reactiveVal()
+      shiny::observeEvent(input$filein, {
+        filein(shinyFiles::parseFilePaths(volumes, input$filein))
+      })
+      
+      getData <- shiny::reactiveVal()
+      shiny::observeEvent(filein(),{
+        shiny::req(filein())
+        if (nrow(filein()) == 1) {
+          getData(read_sql((filein()$datapath)))
+        } else {
+          return()
+        }
+      })
+      
+  } else {
+    
+    getData <- reactive({
+      if(is.null(input$filein)) return(NULL)
+      read_sql(input$filein$datapath)
+    })
+    filein <- shiny::reactiveVal()
+    shiny::observeEvent(input$filein, {
+      filein(input$filein)
+    })
+  
+  }
+  
+  output$inputfile <- shiny::renderText({
+    paste0("Selected file: ",as.character(filein()$name))
+  })
+
+  output$frt <- shiny::renderUI({
+    if (!is.null(app_start_dir)){
+      shinyFiles::shinyFilesButton("filein",
+                                   "Select a file",
+                                   title = "Select a harpSpatial sqlite file",
+                                   multiple = FALSE,
+                                   buttonType = "default",
+                                   viewtype = "list")
+    } else {
+      shiny::fileInput("filein", "Choose file (sqlite)",
+                multiple = FALSE, accept = c(".sqlite"))
+    }
   })
 
   # getData is a list! getData()$verif_data is a tibble and getData()$scores is a vector
@@ -61,7 +115,7 @@ server <- function(input, output, session) {
   outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
 
   observe({
-    req(input$filein)
+    shiny::req(getData())
     verif_data <- getData()$verif_data
     scores <- getData()$scores
     update_options(verif_data,scores,session)
@@ -77,38 +131,46 @@ server <- function(input, output, session) {
   output$plot <- renderPlot({
 
     req(input$showdata)
-    score <- isolate(input$score)
-    models <- isolate(input$model)
-    leadtimes <- isolate(input$leadtime)
-    fcdate_range <- isolate(input$dates)
-#    thresholds <- isolate(input$threshold) #TODO, coming with plotting options
-#    scales <- isolate(input$scale)         #TODO, coming with plotting options
-    params <- isolate(input$param)
+    # This if avoids error when changing selected file
+    if (nrow(filein()) == 1) { 
+      score <- isolate(input$score)
+      models <- isolate(input$model)
+      leadtimes <- isolate(input$leadtime)
+      fcdate_range <- isolate(input$dates)
+  #    thresholds <- isolate(input$threshold) #TODO, coming with plotting options
+  #    scales <- isolate(input$scale)         #TODO, coming with plotting options
+      params <- isolate(input$param)
+      
+      fcbdate <- fcdate_range[1]
+      fcedate <- fcdate_range[2]
+  
+      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      filter_by <- vars(
+        model    %in% models, 
+        leadtime %in% leadtimes,
+        as_date(fcdate) >= as_date(fcbdate) & as_date(fcdate) <= as_date(fcedate),
+  #      threshold   %in% thresholds,         #TODO, dependent on score 
+  #      scale   %in% scales,                 #TODO, dependent on score 
+        prm      %in% params,
+      )
+      #plot_opts = ...                        # TODO, include plotting options to interface
+
+      harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by)
+    } else {
+      return()
+    }
     
-    fcbdate <- fcdate_range[1]
-    fcedate <- fcdate_range[2]
-
-    verif_data <- read_sql(input$filein$datapath, score)$verif_data
-    filter_by <- vars(
-      model    %in% models, 
-      leadtime %in% leadtimes,
-      as_date(fcdate) >= as_date(fcbdate) & as_date(fcdate) <= as_date(fcedate),
-#      threshold   %in% thresholds,         #TODO, dependent on score 
-#      scale   %in% scales,                 #TODO, dependent on score 
-      prm      %in% params,
-    )
-    #plot_opts = ...                        # TODO, include plotting options to interface
-
-    harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by)
-
   },width = 1000, height = 600)
-
   output$table <- renderDataTable({
 
     req(input$showdata)
-    score <- input$score
-    verif_data <- read_sql(input$filein$datapath, score)$verif_data
-    return(verif_data)
+    if (nrow(filein()) == 1) {
+      score <- input$score
+      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      return(verif_data)
+    } else {
+      return()
+    }
   })
 
 }

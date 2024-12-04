@@ -2,6 +2,7 @@
 
 font_link <- shiny::tags$link("")
 is_online <- shiny::getShinyOption("online")
+app_start_dir <- shiny::getShinyOption("app_start_dir")
 if (is.null(is_online)) {
   is_online <- TRUE
 }
@@ -69,11 +70,17 @@ ui <- shiny::tags$html(
         # Sidebar panel for inputs ----
         sidebarPanel(width = 3,
 
-			# Input: Select a file ----
-			fileInput("filein", "Choose file (sqlite)", multiple = FALSE, accept = c(".sqlite")),
+    		    # Input: Select a file ----
+    		    shiny::uiOutput("frt"),
             
             conditionalPanel(
             condition = "output.fileUploaded != 0",
+            
+                # Indicate what file is chosen
+                br(),
+                h5(shiny::textOutput("inputfile")),
+                br(),
+            
                 # Input: Select score
                 selectInput("score", "Select score",
                               choices = list("NA" = 1),
