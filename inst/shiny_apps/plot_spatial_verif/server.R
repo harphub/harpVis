@@ -14,6 +14,16 @@ read_sql <- function(filepath,score=NULL){
     scores <- dbListTables(sql_object)
     if(is.null(score)) {score=scores[1]}
     verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
+    verif_data <- verif_data %>% dplyr::mutate(
+      dates = lubridate::as_datetime(fcdate,
+                                     origin = lubridate::origin,
+                                     tz = "UTC")
+    )
+    if (!("fcst_cycle" %in% names(verif_data))) {
+      verif_data <- verif_data %>% dplyr::mutate(
+        fcst_cycle = substr(harpIO::YMDh(dates),9,10)
+      )
+    }
     harpIO:::dbclose(sql_object)
     items <- list("verif_data" = verif_data, "scores" = scores)
     return(items) #returns a list of dataframe and list of scores
@@ -21,9 +31,8 @@ read_sql <- function(filepath,score=NULL){
 
 update_options <- function(input,scores,session) {
     #TODO: this function might need a more appropriate name
-    dates <- unique(lubridate::as_datetime(input$fcdate,
-                                           origin = lubridate::origin,
-                                           tz = "UTC"))
+    dates  <- unique(input$dates)
+    cycles <- sort(unique(input$fcst_cycle))
     models <- sort(unique(input$model))
     params <- unique(input$prm)
     params_pcp <- params[grepl("AccPcp",params,fixed=T)]
@@ -42,6 +51,9 @@ update_options <- function(input,scores,session) {
                                             max=max(dates))
     updateSelectInput(session,'model',      choices=c(models),
                                                 selected=c(models)[1])
+    updateSelectInput(session,'cycle',
+                      choices = c(cycles),
+                      selected = c(cycles))
     updateSelectInput(session,'leadtime',   choices=c(leadtimes),
                                                 selected = c(leadtimes))
     updateSelectInput(session,'param',      choices=c(params),
@@ -107,7 +119,7 @@ server <- function(input, output, session) {
                                    title = "Select a harpSpatial sqlite file",
                                    multiple = FALSE,
                                    buttonType = "default",
-                                   viewtype = "list")
+                                   viewtype = "detail")
     } else {
       shiny::fileInput("filein", "Choose file (sqlite)",
                 multiple = FALSE, accept = c(".sqlite"))
@@ -143,6 +155,7 @@ server <- function(input, output, session) {
       score <- isolate(input$score)
       models <- isolate(input$model)
       leadtimes <- isolate(input$leadtime)
+      cycles    <- isolate(input$cycle)
       fcdate_range <- isolate(input$dates)
   #    thresholds <- isolate(input$threshold) #TODO, coming with plotting options
   #    scales <- isolate(input$scale)         #TODO, coming with plotting options
@@ -155,6 +168,7 @@ server <- function(input, output, session) {
       filter_by <- vars(
         model    %in% models, 
         leadtime %in% leadtimes,
+        fcst_cycle %in% cycles,
         as_date(fcdate) >= as_date(fcbdate) & as_date(fcdate) <= as_date(fcedate),
   #      threshold   %in% thresholds,         #TODO, dependent on score 
   #      scale   %in% scales,                 #TODO, dependent on score 

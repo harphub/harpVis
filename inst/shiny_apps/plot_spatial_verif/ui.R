@@ -93,6 +93,12 @@ ui <- shiny::tags$html(
                 selectInput("model", "Select model(s)",
                               choices = list("NA" = 1),
                                         selected = 1),
+            
+                # Input: Select cycles
+                selectInput("cycle", "Select cycles",
+                            choices = list("NA" = 1),
+                            selected = 1,
+                            multiple = TRUE),
 
                 # Input: Select leadtimes
                 selectInput("leadtime", "Select leadtimes (hours)",

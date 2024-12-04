@@ -170,6 +170,13 @@ plot_spatial_verif <- function(
   if (is.element("prm", names(plot_data)) && length(unique(plot_data$prm)) > 1) {
     message("Multiple parameters found: ", paste(unique(plot_data$prm), collapse = " "))
   }
+  
+  # Add in filtered valid hours
+  if ("fcst_cycle" %in% names(plot_data)){
+    filtered_valid_hours <- as.integer(unique(plot_data$fcst_cycle))
+  } else {
+    filtered_valid_hours <- valid_hours
+  }
 
   if (show_info) {
       message("================================")
@@ -219,18 +226,18 @@ plot_spatial_verif <- function(
   ####
   if (my_plot_func == "plot_spatial_line") {
     plot_subtitle <- paste("Period:", fcbdate, "-", fcedate,
-                           ":: Hours {", paste(c(sprintf("%02d", valid_hours)),
+                           ":: Hours {", paste(c(sprintf("%02d", filtered_valid_hours)),
                            collapse = ", "), "}")
   } else {
     ldts <- unique(plot_data$leadtime)
     # truncate leadtimes if there are too many
     if (length(ldts) > 5) {
       plot_subtitle <- paste("Period:", fcbdate, "-", fcedate,
-                             ":: Hours {", paste(c(sprintf("%02d", valid_hours)), collapse = ", "), "}",
+                             ":: Hours {", paste(c(sprintf("%02d", filtered_valid_hours)), collapse = ", "), "}",
                              ":: Leadtimes {", paste(ldts[1:3], collapse = ", "), ", ...,", ldts[length(ldts)], "}")
     } else {
       plot_subtitle <- paste("Period:", fcbdate, "-", fcedate,
-                             ":: Hours {", paste(c(sprintf("%02d", valid_hours)), collapse = ", "), "}",
+                             ":: Hours {", paste(c(sprintf("%02d", filtered_valid_hours)), collapse = ", "), "}",
                              ":: Leadtimes {", paste(ldts, collapse = ", "), "}")
     }
   }
