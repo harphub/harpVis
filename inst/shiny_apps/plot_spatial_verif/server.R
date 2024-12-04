@@ -24,9 +24,16 @@ update_options <- function(input,scores,session) {
     dates <- unique(lubridate::as_datetime(input$fcdate,
                                            origin = lubridate::origin,
                                            tz = "UTC"))
-    models <- unique(input$model)
+    models <- sort(unique(input$model))
     params <- unique(input$prm)
-    leadtimes <- unique(input$leadtime)/3600
+    params_pcp <- params[grepl("AccPcp",params,fixed=T)]
+    params_oth <- params[!grepl("AccPcp",params,fixed=T)]
+    if (length(params_pcp) > 0){
+      params_ord <- order(as.numeric(gsub("h","",gsub("AccPcp","",params_pcp))))
+      params_pcp <- params_pcp[params_ord]
+    }
+    params    <- c(params_pcp,params_oth)
+    leadtimes <- sort(unique(input$leadtime)/3600)
     updateSelectInput(session,'score',      choices=c(scores),
                                                 selected=c(scores)[1])
     updateDateRangeInput(session,'dates',   start=dates[1],
