@@ -135,8 +135,8 @@ plot_spatial_nact <- function(
 
   gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data),
                                        y = value,
-                                       colour = as.character(get(colour_by)))) +
-        ggplot2::scale_x_continuous(breaks = unique(plot_data$threshold)) +
+                                       colour = forcats::fct_inorder(as.character(get(colour_by))))) +
+        ggplot2::scale_x_continuous(breaks = unique(plot_data$threshold), minor_breaks = F) +
         ggplot2::geom_line(size = line_width) +
         ggplot2::geom_point(size = point_size) +
         ggplot2::labs(title = paste("Scores from", score_name,
