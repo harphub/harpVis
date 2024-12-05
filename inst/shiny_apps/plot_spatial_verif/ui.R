@@ -2,7 +2,6 @@
 
 font_link <- shiny::tags$link("")
 is_online <- shiny::getShinyOption("online")
-app_start_dir <- shiny::getShinyOption("app_start_dir")
 if (is.null(is_online)) {
   is_online <- TRUE
 }
