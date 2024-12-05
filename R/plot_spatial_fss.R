@@ -66,6 +66,9 @@ plot_spatial_fss <- function(
                                             limits   = c(0, 1),
                                             midpoint = 0.5,
                                             name     = score_name)
+        if (length(unique(plot_data$model)) > 1) {
+          gg <- gg + facet_wrap(~model)
+        }
   }
   if (plot_type == "line") {
         gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data),
@@ -78,7 +81,7 @@ plot_spatial_fss <- function(
   }
 
   gg <- gg + ggplot2::labs(title = paste("Score: ", score_name,
-                                       ", Model: ", unique(plot_data$model),
+                                       ", Model: ", paste0(unique(plot_data$model),collapse=","),
                                        ", Param: ", unique(plot_data$prm)),
                            x = stringr::str_to_title(x_data),
                            y = stringr::str_to_title(y_data))

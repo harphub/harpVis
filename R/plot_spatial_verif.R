@@ -146,11 +146,6 @@ plot_spatial_verif <- function(
     plot_data <- plot_data %>% dplyr::mutate(leadtime = leadtime / ldtconv)
   }
 
-  # apply filtering
-  used_models <- paste(unique(plot_data$model), sep = "-")
-  used_params <- paste(unique(plot_data$prm), sep = "-")
-
-
   if (filtering) {
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
     ## forecast dates, find limits again in case it was specified in filtering
@@ -160,6 +155,10 @@ plot_spatial_verif <- function(
     savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
     saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
   }
+
+  # This should be done after filtering
+  used_models <- paste(unique(plot_data$model), sep = "-")
+  used_params <- paste(unique(plot_data$prm), sep = "-")
 
   if (is.element("leadtime", names(plot_data)) && length(unique(plot_data$leadtime)) > 1) {
     message("Multiple leadtimes found: ", paste(unique(plot_data$leadtime), collapse = " "))

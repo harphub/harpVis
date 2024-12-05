@@ -91,8 +91,9 @@ ui <- shiny::tags$html(
 
                 # Input: Select model
                 selectInput("model", "Select model(s)",
-                              choices = list("NA" = 1),
-                                        selected = 1),
+                            choices = list("NA" = 1),
+                            selected = 1,
+                            multiple = TRUE),
             
                 # Input: Select cycles
                 selectInput("cycle", "Select cycles",
