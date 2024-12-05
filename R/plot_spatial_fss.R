@@ -18,6 +18,7 @@ plot_spatial_fss <- function(
   point_size        = 1.2,
   line_width        = 1,
   num_facet_cols    = NULL,
+  ref_model         = NULL,
 
   ...) {
 
@@ -51,23 +52,64 @@ plot_spatial_fss <- function(
   plot_data <- plot_data %>%
                dplyr::group_by(model, prm, threshold, scale) %>%
                dplyr::summarize_at("fss", mean, na.rm = TRUE)
-
+  
+  pt <- paste0(unique(plot_data$model),collapse=",")
+  if (plot_type == "area") {
+    
+    # Is ref_model provided and valid?
+    plot_diff <- F
+    if (!is.null(ref_model)) {
+      if ((ref_model %in% unique(plot_data$model)) & (length(unique(plot_data$model)) > 1)) {
+            plot_diff <- T
+          }
+    }
+    
+    if (plot_diff) {
+      ref_data  <- plot_data %>% dplyr::filter(model == ref_model) %>%
+        dplyr::mutate(fss_ref = fss) %>% dplyr::ungroup() %>% 
+        dplyr::select(-model,-fss)
+      plot_data <- plot_data %>% dplyr::filter(model != ref_model)
+      plot_data <- dplyr::inner_join(plot_data,
+                                     ref_data,
+                                     by=setdiff(names(plot_data),c("fss","model")),
+                                     relationship = "many-to-many") %>% 
+        dplyr::mutate(fss_diff = fss - fss_ref)
+      score_name <- "FSS Diff"
+      score <- "fss_diff"
+      c_low <- "red"
+      c_mid <- "white"
+      c_hig <- "blue"
+      c_lim <- c(-0.5,0.5)
+      mid   <- 0
+      pt    <- paste0(paste0(unique(plot_data$model),collapse=","),
+                      " compared to ",ref_model)
+    } else {
+      score <- "fss"
+      c_low <- "red"
+      c_mid <- "yellow"
+      c_hig <- "darkgreen"
+      c_lim <- c(0,1)
+      mid   <- 0.5
+    }
+  }
+  
   if (plot_type == "area") {
         gg <- ggplot2::ggplot(plot_data, aes(x = as.factor(get(x_data)),
                                              y = as.factor(get(y_data)),
-                                             fill = fss,
-                                             label = sprintf("%1.2f", fss))) +
+                                             fill = get(score),
+                                             label = sprintf("%1.2f", get(score)))) +
               ggplot2::geom_tile() +
               ggplot2::geom_text(colour = "black",
                                  size   = 4) +
-              ggplot2::scale_fill_gradient2(low      = "red",
-                                            mid      = "yellow",
-                                            high     = "darkgreen",
-                                            limits   = c(0, 1),
-                                            midpoint = 0.5,
+              ggplot2::scale_fill_gradient2(low      = c_low,
+                                            mid      = c_mid,
+                                            high     = c_hig,
+                                            limits   = c_lim,
+                                            midpoint = mid,
+                                            oob      = scales::squish,
                                             name     = score_name)
         if (length(unique(plot_data$model)) > 1) {
-          gg <- gg + facet_wrap(~model)
+          gg <- gg + ggplot2::facet_wrap(~model)
         }
   }
   if (plot_type == "line") {
@@ -81,7 +123,7 @@ plot_spatial_fss <- function(
   }
 
   gg <- gg + ggplot2::labs(title = paste("Score: ", score_name,
-                                       ", Model: ", paste0(unique(plot_data$model),collapse=","),
+                                       ", Model: ", pt,
                                        ", Param: ", unique(plot_data$prm)),
                            x = stringr::str_to_title(x_data),
                            y = stringr::str_to_title(y_data))

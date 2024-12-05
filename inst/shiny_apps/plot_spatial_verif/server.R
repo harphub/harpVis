@@ -34,6 +34,7 @@ update_options <- function(input,scores,session) {
     dates  <- unique(input$dates)
     cycles <- sort(unique(input$fcst_cycle))
     models <- sort(unique(input$model))
+    ref_models <- c("NA",models)
     params <- unique(input$prm)
     params_pcp <- params[grepl("AccPcp",params,fixed=T)]
     params_oth <- params[!grepl("AccPcp",params,fixed=T)]
@@ -51,6 +52,9 @@ update_options <- function(input,scores,session) {
                                             max=max(dates))
     updateSelectInput(session,'model',      choices=c(models),
                                                 selected=c(models)[1])
+    updateSelectInput(session,'ref_model',
+                      choices=c(ref_models),
+                      selected=c(ref_models)[1])
     updateSelectInput(session,'cycle',
                       choices = c(cycles),
                       selected = c(cycles))
@@ -154,6 +158,7 @@ server <- function(input, output, session) {
     if (nrow(filein()) == 1) { 
       score <- isolate(input$score)
       models <- isolate(input$model)
+      ref_model <- isolate(input$ref_model)
       leadtimes <- isolate(input$leadtime)
       cycles    <- isolate(input$cycle)
       fcdate_range <- isolate(input$dates)
@@ -176,7 +181,8 @@ server <- function(input, output, session) {
       )
       #plot_opts = ...                        # TODO, include plotting options to interface
 
-      harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by)
+      harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by,
+                                   plot_opts = list(ref_model = ref_model))
     } else {
       return()
     }

@@ -152,12 +152,12 @@ plot_spatial_nact <- function(
                       x = x_label,
                       colour = str_to_title(colour_by))
   if (colour_by == "model") {
-    gg <- gg + facet_grid(scale ~ score,
-                          labeller = labeller(score = toupper))
+    gg <- gg + ggplot2::facet_grid(scale ~ score,
+                                  labeller = labeller(score = toupper))
   } else {
-    gg <- gg + facet_wrap(. ~ score,
-                          ncol = num_facet_cols,
-                          labeller = labeller(score = toupper))
+    gg <- gg + ggplot2::facet_wrap(. ~ score,
+                                   ncol = num_facet_cols,
+                                   labeller = labeller(score = toupper))
   }
 
   ## Other settings

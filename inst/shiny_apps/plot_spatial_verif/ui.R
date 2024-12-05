@@ -95,6 +95,14 @@ ui <- shiny::tags$html(
                             selected = 1,
                             multiple = TRUE),
             
+                conditionalPanel(
+                  condition = "input.score == 'FSS'",
+                  selectInput("ref_model", "Reference model",
+                              choices = list("NA" = 1),
+                              selected = 1,
+                              multiple = FALSE),
+                ),
+            
                 # Input: Select cycles
                 selectInput("cycle", "Select cycles",
                             choices = list("NA" = 1),
