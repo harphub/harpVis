@@ -4,6 +4,8 @@ harpVis_data <- new.env()
 
 score_colnames <- c(
   "num_cases",
+  "mean_fcst",
+  "mean_obs",
   "mean_bias",
   "stde",
   "rmse",
