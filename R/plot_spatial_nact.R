@@ -61,6 +61,12 @@ plot_spatial_nact <- function(
     x_data      <- "threshold"
   }
 
+  if (length(unique(plot_data$model)) > 1) {
+    message(paste("Overwrite colour_by to use model as mutliple models available"))
+    colour_by   <- "model"
+    x_data      <- "threshold"
+  }
+  
   message("Plotting score: ", paste(nact_scores, collapse = ", "))
 
   plot_data <- plot_data %>%
@@ -135,18 +141,24 @@ plot_spatial_nact <- function(
 
   gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data),
                                        y = value,
-                                       colour = as.character(get(colour_by)))) +
-        ggplot2::scale_x_continuous(breaks = unique(plot_data$threshold)) +
+                                       colour = forcats::fct_inorder(as.character(get(colour_by))))) +
+        ggplot2::scale_x_continuous(breaks = unique(plot_data$threshold), minor_breaks = F) +
         ggplot2::geom_line(size = line_width) +
         ggplot2::geom_point(size = point_size) +
         ggplot2::labs(title = paste("Scores from", score_name,
+				    ", Model: ", paste0(unique(plot_data$model),collapse=","),
                                     ", Param: ", unique(plot_data$prm)),
                       y = y_label,
                       x = x_label,
-                      colour = str_to_title(colour_by)) +
-        facet_wrap(. ~ score,
-                   ncol = num_facet_cols,
-                   labeller = labeller(score = toupper))
+                      colour = str_to_title(colour_by))
+  if (colour_by == "model") {
+    gg <- gg + ggplot2::facet_grid(scale ~ score,
+                                  labeller = labeller(score = toupper))
+  } else {
+    gg <- gg + ggplot2::facet_wrap(. ~ score,
+                                   ncol = num_facet_cols,
+                                   labeller = labeller(score = toupper))
+  }
 
   ## Other settings
 

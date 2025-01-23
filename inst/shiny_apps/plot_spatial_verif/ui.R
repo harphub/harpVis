@@ -69,11 +69,17 @@ ui <- shiny::tags$html(
         # Sidebar panel for inputs ----
         sidebarPanel(width = 3,
 
-			# Input: Select a file ----
-			fileInput("filein", "Choose file (sqlite)", multiple = FALSE, accept = c(".sqlite")),
+    		    # Input: Select a file ----
+    		    shiny::uiOutput("frt"),
             
             conditionalPanel(
             condition = "output.fileUploaded != 0",
+            
+                # Indicate what file is chosen
+                br(),
+                h5(shiny::textOutput("inputfile")),
+                br(),
+            
                 # Input: Select score
                 selectInput("score", "Select score",
                               choices = list("NA" = 1),
@@ -84,8 +90,23 @@ ui <- shiny::tags$html(
 
                 # Input: Select model
                 selectInput("model", "Select model(s)",
+                            choices = list("NA" = 1),
+                            selected = 1,
+                            multiple = TRUE),
+            
+                conditionalPanel(
+                  condition = "input.score == 'FSS'",
+                  selectInput("ref_model", "Reference model",
                               choices = list("NA" = 1),
-                                        selected = 1),
+                              selected = 1,
+                              multiple = FALSE),
+                ),
+            
+                # Input: Select cycles
+                selectInput("cycle", "Select cycles",
+                            choices = list("NA" = 1),
+                            selected = 1,
+                            multiple = TRUE),
 
                 # Input: Select leadtimes
                 selectInput("leadtime", "Select leadtimes (hours)",

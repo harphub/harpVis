@@ -60,7 +60,7 @@ plot_spatial_line <- function(
 
   ## Other settings
 
-  if (extend_y_to_zero) {gg <- gg + ggplot2::ylim(-0.025, NA)}
+  if (extend_y_to_zero) {gg <- gg + ggplot2::ylim(min(min(plot_data$score_name)-0.025,-0.025), NA)}
   if (flip_axes) {gg <- gg + ggplot2::coord_flip()}
   if (y_label == "auto") {gg <- gg + ggplot2::labs(y = score_lab)}
   if (x_label == "auto") {gg <- gg + ggplot2::labs(x = "Forecast length")}

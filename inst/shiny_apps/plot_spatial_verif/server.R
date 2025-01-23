@@ -14,6 +14,16 @@ read_sql <- function(filepath,score=NULL){
     scores <- dbListTables(sql_object)
     if(is.null(score)) {score=scores[1]}
     verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
+    verif_data <- verif_data %>% dplyr::mutate(
+      dates = lubridate::as_datetime(fcdate,
+                                     origin = lubridate::origin,
+                                     tz = "UTC")
+    )
+    if (!("fcst_cycle" %in% names(verif_data))) {
+      verif_data <- verif_data %>% dplyr::mutate(
+        fcst_cycle = substr(harpIO::YMDh(dates),9,10)
+      )
+    }
     harpIO:::dbclose(sql_object)
     items <- list("verif_data" = verif_data, "scores" = scores)
     return(items) #returns a list of dataframe and list of scores
@@ -21,12 +31,19 @@ read_sql <- function(filepath,score=NULL){
 
 update_options <- function(input,scores,session) {
     #TODO: this function might need a more appropriate name
-    dates <- unique(lubridate::as_datetime(input$fcdate,
-                                           origin = lubridate::origin,
-                                           tz = "UTC"))
-    models <- unique(input$model)
+    dates  <- unique(input$dates)
+    cycles <- sort(unique(input$fcst_cycle))
+    models <- sort(unique(input$model))
+    ref_models <- c("NA",models)
     params <- unique(input$prm)
-    leadtimes <- unique(input$leadtime)/3600
+    params_pcp <- params[grepl("AccPcp",params,fixed=T)]
+    params_oth <- params[!grepl("AccPcp",params,fixed=T)]
+    if (length(params_pcp) > 0){
+      params_ord <- order(as.numeric(gsub("h","",gsub("AccPcp","",params_pcp))))
+      params_pcp <- params_pcp[params_ord]
+    }
+    params    <- c(params_pcp,params_oth)
+    leadtimes <- sort(unique(input$leadtime)/3600)
     updateSelectInput(session,'score',      choices=c(scores),
                                                 selected=c(scores)[1])
     updateDateRangeInput(session,'dates',   start=dates[1],
@@ -35,6 +52,12 @@ update_options <- function(input,scores,session) {
                                             max=max(dates))
     updateSelectInput(session,'model',      choices=c(models),
                                                 selected=c(models)[1])
+    updateSelectInput(session,'ref_model',
+                      choices=c(ref_models),
+                      selected=c(ref_models)[1])
+    updateSelectInput(session,'cycle',
+                      choices = c(cycles),
+                      selected = c(cycles))
     updateSelectInput(session,'leadtime',   choices=c(leadtimes),
                                                 selected = c(leadtimes))
     updateSelectInput(session,'param',      choices=c(params),
@@ -48,9 +71,63 @@ server <- function(input, output, session) {
   ############################################################
   # LOAD DATA                                                #
   ############################################################
-  getData <- reactive({
-    if(is.null(input$filein)) return(NULL)
-    read_sql(input$filein$datapath)
+  app_start_dir <- shiny::getShinyOption("app_start_dir")
+  if (!is.null(app_start_dir)) {
+    
+      if (dir.exists(app_start_dir)) {
+        volumes <- unclass(fs::path(app_start_dir))
+        names(volumes)[1] <- app_start_dir
+      } else {
+        stop("app_start_dir not found on the system")
+      }
+      shinyFiles::shinyFileChoose(input,
+                                  'filein',
+                                  roots = volumes,
+                                  filetypes = c('sqlite'))
+      filein <- shiny::reactiveVal()
+      shiny::observeEvent(input$filein, {
+        filein(shinyFiles::parseFilePaths(volumes, input$filein))
+      })
+      
+      getData <- shiny::reactiveVal()
+      shiny::observeEvent(filein(),{
+        shiny::req(filein())
+        if (nrow(filein()) == 1) {
+          getData(read_sql((filein()$datapath)))
+        } else {
+          return()
+        }
+      })
+      
+  } else {
+    
+    getData <- reactive({
+      if(is.null(input$filein)) return(NULL)
+      read_sql(input$filein$datapath)
+    })
+    filein <- shiny::reactiveVal()
+    shiny::observeEvent(input$filein, {
+      filein(input$filein)
+    })
+  
+  }
+  
+  output$inputfile <- shiny::renderText({
+    paste0("Selected file: ",as.character(filein()$name))
+  })
+
+  output$frt <- shiny::renderUI({
+    if (!is.null(app_start_dir)){
+      shinyFiles::shinyFilesButton("filein",
+                                   "Select a file",
+                                   title = "Select a harpSpatial sqlite file",
+                                   multiple = FALSE,
+                                   buttonType = "default",
+                                   viewtype = "detail")
+    } else {
+      shiny::fileInput("filein", "Choose file (sqlite)",
+                multiple = FALSE, accept = c(".sqlite"))
+    }
   })
 
   # getData is a list! getData()$verif_data is a tibble and getData()$scores is a vector
@@ -61,7 +138,7 @@ server <- function(input, output, session) {
   outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
 
   observe({
-    req(input$filein)
+    shiny::req(getData())
     verif_data <- getData()$verif_data
     scores <- getData()$scores
     update_options(verif_data,scores,session)
@@ -77,38 +154,50 @@ server <- function(input, output, session) {
   output$plot <- renderPlot({
 
     req(input$showdata)
-    score <- isolate(input$score)
-    models <- isolate(input$model)
-    leadtimes <- isolate(input$leadtime)
-    fcdate_range <- isolate(input$dates)
-#    thresholds <- isolate(input$threshold) #TODO, coming with plotting options
-#    scales <- isolate(input$scale)         #TODO, coming with plotting options
-    params <- isolate(input$param)
+    # This if avoids error when changing selected file
+    if (nrow(filein()) == 1) { 
+      score <- isolate(input$score)
+      models <- isolate(input$model)
+      ref_model <- isolate(input$ref_model)
+      leadtimes <- isolate(input$leadtime)
+      cycles    <- isolate(input$cycle)
+      fcdate_range <- isolate(input$dates)
+  #    thresholds <- isolate(input$threshold) #TODO, coming with plotting options
+  #    scales <- isolate(input$scale)         #TODO, coming with plotting options
+      params <- isolate(input$param)
+      
+      fcbdate <- fcdate_range[1]
+      fcedate <- fcdate_range[2]
+  
+      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      filter_by <- vars(
+        model    %in% models, 
+        leadtime %in% leadtimes,
+        fcst_cycle %in% cycles,
+        as_date(fcdate) >= as_date(fcbdate) & as_date(fcdate) <= as_date(fcedate),
+  #      threshold   %in% thresholds,         #TODO, dependent on score 
+  #      scale   %in% scales,                 #TODO, dependent on score 
+        prm      %in% params,
+      )
+      #plot_opts = ...                        # TODO, include plotting options to interface
+
+      harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by,
+                                   plot_opts = list(ref_model = ref_model))
+    } else {
+      return()
+    }
     
-    fcbdate <- fcdate_range[1]
-    fcedate <- fcdate_range[2]
-
-    verif_data <- read_sql(input$filein$datapath, score)$verif_data
-    filter_by <- vars(
-      model    %in% models, 
-      leadtime %in% leadtimes,
-      as_date(fcdate) >= as_date(fcbdate) & as_date(fcdate) <= as_date(fcedate),
-#      threshold   %in% thresholds,         #TODO, dependent on score 
-#      scale   %in% scales,                 #TODO, dependent on score 
-      prm      %in% params,
-    )
-    #plot_opts = ...                        # TODO, include plotting options to interface
-
-    harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by)
-
   },width = 1000, height = 600)
-
   output$table <- renderDataTable({
 
     req(input$showdata)
-    score <- input$score
-    verif_data <- read_sql(input$filein$datapath, score)$verif_data
-    return(verif_data)
+    if (nrow(filein()) == 1) {
+      score <- input$score
+      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      return(verif_data)
+    } else {
+      return()
+    }
   })
 
 }
