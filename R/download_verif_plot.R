@@ -390,7 +390,8 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
           )
         group_data <- filter_for_x(
           group_data, score_options()$x_axis,
-          flip_axes = score_options()$flip_axes
+          flip_axes = score_options()$flip_axes,
+          facet_vars = score_options()$facets
         )
         score_plot <- score_plot +
           ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
@@ -532,7 +533,8 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
             )
           group_data <- filter_for_x(
             group_data, score_options()$x_axis,
-            flip_axes = score_options()$flip_axes
+            flip_axes = score_options()$flip_axes,
+            facet_vars = score_options()$facets
           )
           score_plot <- score_plot +
             ggplot2::geom_line(data  = group_data, colour = group_colour, size = 1.1) +
