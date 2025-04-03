@@ -306,6 +306,8 @@ dashboard_point_verif <- function(
         )
 
         times <- unique(thresh_data_to_plot()[[thresh_table()]][[time_var]])
+        times <- times[!times %in% "All"]
+        if (length(times) > 0) {
         times <- parse_times(times, time_var)
         shiny::insertUI(
           selector = paste0("#", ns("thresh_selectors")),
@@ -320,6 +322,7 @@ dashboard_point_verif <- function(
               )
           #)
         )
+        }
       }
 
     }
@@ -380,7 +383,9 @@ dashboard_point_verif <- function(
         plot_data <- plot_data_thresh
       }
 
-      if (nrow(plot_data[[thresh_table()]]) < 1) {
+      tavals <- unique(plot_data[[thresh_table()]][[time_axis()]])
+      tavals <- tavals[!tavals %in% "All"]
+      if ( (nrow(plot_data[[thresh_table()]]) < 1) || (length(tavals) < 1)) {
         dashboard_plots[[paste0("thresh_", i)]] <- NULL
       } else {
         dashboard_plots[[paste0("thresh_", i)]] <- harpVis::plot_point_verif(
