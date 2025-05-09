@@ -1219,6 +1219,7 @@ make_score_list <- function(verif_list) {
   # Add derived scores if the required data are available in verif_list
 
   if (!is.null(verif_list$det_summary_scores)) {
+
     if (
       "bias" %in% verif_names$det_summary_scores &&
       "rmse" %in% verif_names$det_summary_scores
@@ -1227,6 +1228,25 @@ make_score_list <- function(verif_list) {
         verif_names$det_summary_scores, "bias_rmse"
       )
     }
+
+    if (
+      "bias" %in% verif_names$det_summary_scores &&
+      "stde" %in% verif_names$det_summary_scores
+    ) {
+      verif_names$det_summary_scores <- c(
+        verif_names$det_summary_scores, "bias_stde"
+      )
+    }
+
+    if (
+      "mean_fcst" %in% verif_names$det_summary_scores &&
+      "mean_obs" %in% verif_names$det_summary_scores
+    ) {
+      verif_names$det_summary_scores <- c(
+        verif_names$det_summary_scores, "fcst_obs"
+      )
+    }
+
   }
 
   if (!is.null(verif_list$ens_summary_scores)) {

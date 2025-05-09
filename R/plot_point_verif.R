@@ -327,7 +327,7 @@ plot_point_verif <- function(
     )
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
-    derived_summary_scores <- "bias_rmse"
+    derived_summary_scores <- c("bias_rmse", "bias_stde", "fcst_obs")
     derived_thresh_scores  <- ""
   }
 
@@ -438,6 +438,37 @@ plot_point_verif <- function(
       linetype_by_quo  <- rlang::quo(component)
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
+      score_name       <- "bias ; rmse"
+    },
+
+    "bias_stde" = {
+      plot_data <- tidyr::pivot_longer(
+        plot_data,
+        cols      = tidyr::all_of(c("stde", "bias")),
+        names_to  = "component",
+        values_to = "bias ; stde"
+      )
+      y_axis_name      <- "bias ; stde"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+      score_name       <- "bias ; stde"
+    },
+
+    "fcst_obs" = {
+      plot_data <- tidyr::pivot_longer(
+        plot_data,
+        cols      = tidyr::all_of(c("mean_fcst", "mean_obs")),
+        names_to  = "component",
+        values_to = "fcst ; obs"
+      )
+      y_axis_name      <- "fcst ; obs"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+      score_name       <- "fcst ; obs"
     },
 
     "spread_skill" = {
@@ -447,6 +478,7 @@ plot_point_verif <- function(
       linetype_by_quo  <- rlang::quo(component)
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
+      score_name       <- "spread ; skill"
     },
 
     "spread_stde" = {
@@ -457,6 +489,7 @@ plot_point_verif <- function(
       linetype_by_quo     <- rlang::quo(component)
       linetype_by_name    <- rlang::quo_name(linetype_by_quo)
       linetyping          <- TRUE
+      score_name          <- "spread ; stde"
     },
 
 
@@ -470,6 +503,7 @@ plot_point_verif <- function(
       linetype_by_quo  <- rlang::quo(component)
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
+      sore_name        <- "spread ; skill"
     },
 
     "spread_skill_dropped_only" = {
@@ -482,6 +516,7 @@ plot_point_verif <- function(
       linetype_by_quo  <- rlang::quo(component)
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
+      sore_name        <- "spread ; skill"
     },
 
     "spread_skill_ratio" = {
