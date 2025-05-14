@@ -40,8 +40,8 @@
 #' @param hex_colour The outline colour of hexagons for hexbin plots. The
 #'   default is "grey20".
 #' @param hex_trans Transformation to apply to `hex_palette`. The default is
-#'   `"identity"` meaning that no transformation is done. To better see the
-#'   variability for bins with smaller values, set to e.g. `"log2"`. See
+#'  `"log10"` to better see variability at the small scales. Set to `"identity"`
+#'  for no transformation to be done (i.e. a linear colour scale). See
 #'   \code{\link[ggplot2]{scale_fill_gradient}} for more information about the
 #'   `transform` argument.
 #' @param extend_y_to_zero Logical. Whether to extend the y-axis to include
@@ -132,7 +132,7 @@ plot_point_verif <- function(
   colour_table             = NULL,
   hex_palette              = viridisLite::plasma(256),
   hex_colour               = "grey20",
-  hex_trans                = "identity",
+  hex_trans                = "log10",
   extend_y_to_zero         = TRUE,
   highlight_zero           = TRUE,
   plot_num_cases           = TRUE,
@@ -388,6 +388,7 @@ plot_point_verif <- function(
     }
   }
 
+
   plot_data <- filter_for_x(plot_data, x_axis_name, flip_axes, facet_vars)
 
   if (nrow(plot_data) < 1) {
@@ -620,19 +621,19 @@ plot_point_verif <- function(
           facet_vars <- c(facet_vars, "member")
         }
         facet_vars <- facet_vars[vapply(facet_vars, nchar, integer(1)) > 0]
-        if (!all(nchar(facet_vars)) == 0) {
+        if (!all(nchar(facet_vars) == 0)) {
           faceting <- TRUE
         }
       }
       num_facet_cols <- NULL
 
-      if (faceting) {
+      #if (faceting) {
         plot_data <- dplyr::summarise(
           plot_data,
           hexbin  = list(combine_hexbins(.data[["hexbin"]])),
           .by     = dplyr::all_of(facet_vars)
         )
-      }
+      #}
 
       if (nrow(plot_data) < 2) {
         faceting <- FALSE
@@ -1321,7 +1322,7 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
     ) {
       plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
     }
-    return(plot_data)
+    return(dplyr::distinct(plot_data))
   }
 
   x_axes_lengths <- vapply(
@@ -1334,7 +1335,9 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
 
   if (length(possible_x_axes) > 1) {
     other_x_names <- possible_x_axes[possible_x_axes != x_axis_name]
-    if (all_cols_all(list(a = plot_data), "a")) {
+    if (all_cols_all(
+      structure(list(a = plot_data), group_vars = other_x_names), "a"
+    )) {
       plot_data <- dplyr::filter(
         plot_data, dplyr::if_all(other_x_names, ~grepl("All|;", .x))
       )
@@ -1349,6 +1352,10 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
     }
     # If axes are flipped further filtering should be done elsewhere
     if (!flip_axes) {
+      # If all of the x_axis values = "All", keep one (possibly) varying x-axis
+      if (all(grepl("All|;", plot_data[[x_axis_name]]))) {
+        other_x_names <- other_x_names[1:length(other_x_names) - 1]
+      }
       plot_data <- dplyr::filter(
         plot_data,
         dplyr::if_all(other_x_names, ~ grepl("All|; ", .x))
@@ -1357,7 +1364,7 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
   }
   if (!flip_axes) {
     if (any(grepl("All|;", plot_data[[x_axis_name]]))) {
-      return(plot_data)
+      return(dplyr::distinct(plot_data))
     }
     if (grepl("dttm", x_axis_name)) {
       plot_data[[x_axis_name]] <- do.call(
@@ -1368,7 +1375,7 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
     }
   }
 
-  plot_data
+  dplyr::distinct(plot_data)
 }
 
 # Function for combining a list of hexbins into a single hexbin
