@@ -62,7 +62,18 @@ update_options <- function(input,scores,session) {
                                                 selected = c(leadtimes))
     updateSelectInput(session,'param',      choices=c(params),
                                                 selected=c(params)[1])
-
+    if ("scale" %in% names(input)) {
+      scales <- sort(unique(input$scale))
+      updateSelectInput(session,'scales',
+                        choices=c(scales),
+                        selected=c(scales))
+    }
+    if ("threshold" %in% names(input)) {
+      thresholds <- sort(unique(input$threshold))
+      updateSelectInput(session,'thresholds',
+                        choices=c(thresholds),
+                        selected=c(thresholds))
+    }
 }
 
 server <- function(input, output, session) {
@@ -150,6 +161,32 @@ server <- function(input, output, session) {
 
   ## needs to check selection on the form and pass them as plotting options to plot_spatial_verif!
   ## if score name changes with selection then read_sql needs to be called again to get the correct dataframe!
+  
+  figsize <- reactive({
+    
+    req(input$showdata)
+    if (nrow(filein()) == 1) { 
+      fw <- 1000
+      fh <- 600
+      if (isolate(input$score) == "NACT") {
+        fw <- 1200
+        fh <- 800
+        if (length(isolate(input$model)) > 1) {
+          fw <- 1600
+        }
+      } else if (isolate(input$score) == "FSS") {
+        if (length(isolate(input$model)) > 2) {
+          fw <- 1200
+          fh <- 800
+        }
+      } 
+      list("fw" = fw,
+           "fh" = fh)
+    } else {
+      list("fw" = 1000,
+           "fh" = 600)
+    }
+  })
 
   output$plot <- renderPlot({
 
@@ -157,6 +194,9 @@ server <- function(input, output, session) {
     # This if avoids error when changing selected file
     if (nrow(filein()) == 1) { 
       score <- isolate(input$score)
+      nact_score <- isolate(input$nact_score)
+      scales <- isolate(input$scales)
+      thresholds <- isolate(input$thresholds)
       models <- isolate(input$model)
       ref_model <- isolate(input$ref_model)
       leadtimes <- isolate(input$leadtime)
@@ -180,14 +220,29 @@ server <- function(input, output, session) {
         prm      %in% params,
       )
       #plot_opts = ...                        # TODO, include plotting options to interface
+      if ("scale" %in% names(verif_data)) {
+        filter_by <- c(filter_by,
+                       vars(scale %in% scales))
+      }
+      if ("threshold" %in% names(verif_data)) {
+        filter_by <- c(filter_by,
+                       vars(threshold %in% thresholds))
+      }
 
       harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by,
-                                   plot_opts = list(ref_model = ref_model))
+                                   plot_num_cases = input$showcases,
+                                   plot_opts = list(ref_model = ref_model,
+                                                    nact_scores = nact_score))
     } else {
       return()
     }
     
-  },width = 1000, height = 600)
+  })
+  
+  output$plot.ui <- renderUI({
+    plotOutput("plot",width=figsize()$fw,height=figsize()$fh)
+  })
+  
   output$table <- renderDataTable({
 
     req(input$showdata)
