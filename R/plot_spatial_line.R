@@ -27,22 +27,30 @@ plot_spatial_line <- function(
 
   if (is.null(plot_data)) stop("No data found.")
   if (is.null(score_name)) stop("No score_name given.")
-  if (any(!is.element(score_name, names(plot_data)))) {
+  if (any(!is.element(score_name, c(names(plot_data),"num_cases")))) {
     stop("plot_data must have columns named ", score_name, " !")
   }
 
   message("Plotting score: ", score_name)
   ### grouping across all fcdates by leadtime, parameter and model
-  plot_data <- plot_data %>%
-               group_by(model, prm, leadtime) %>%
-               summarise(score_name = mean(get(score_name), na.rm = TRUE))
-
   if (score_name %in% c("mse", "mae", "rmse", "stde")) {
-       score_lab <- toupper(score_name)
+    score_lab <- toupper(score_name)
+  } else if (score_name == "num_cases") {
+    score_lab <- "Num. cases"
   } else {
-       score_lab <- str_to_title(score_name)
+    score_lab <- str_to_title(score_name)
   }
-
+  
+  plot_data <- plot_data %>%
+               group_by(model, prm, leadtime)
+  if (score_name == "num_cases") {
+    plot_data <- plot_data %>% summarise(score_name = n())
+    title_str <- ""
+  } else {
+    plot_data <- plot_data %>% summarise(score_name = mean(get(score_name),na.rm = TRUE))
+    title_str <- paste("Score: ", score_lab,", Param: ", unique(plot_data$prm))
+  }
+  
   gg <- ggplot2::ggplot(plot_data, aes(x = leadtime,
                                        y = score_name,
                                        colour = model)) +
@@ -52,18 +60,19 @@ plot_spatial_line <- function(
             breaks = seq(min(plot_data$leadtime),
                          max(plot_data$leadtime, na.rm = TRUE),
                          by = plot_data$leadtime[2] - plot_data$leadtime[1])) +
-        ggplot2::labs(title = paste("Score: ", score_lab,
-                                  ", Param: ", unique(plot_data$prm)),
+        ggplot2::labs(title = title_str,
                       y = y_label,
                       x = x_label,
                       colour = "Model")
-
+  
   ## Other settings
 
-  if (extend_y_to_zero) {gg <- gg + ggplot2::ylim(min(min(plot_data$score_name)-0.025,-0.025), NA)}
+  if ((extend_y_to_zero) && (score_name != "num_cases")) {gg <- gg + ggplot2::ylim(min(min(plot_data$score_name)-0.025,-0.025), NA)}
   if (flip_axes) {gg <- gg + ggplot2::coord_flip()}
   if (y_label == "auto") {gg <- gg + ggplot2::labs(y = score_lab)}
   if (x_label == "auto") {gg <- gg + ggplot2::labs(x = "Forecast length")}
-
+  if (score_name == "num_cases") {gg <- gg + ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1))}
+  
   gg
+
 }
