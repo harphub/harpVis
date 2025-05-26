@@ -150,12 +150,17 @@ plot_spatial_verif <- function(
 
   if (filtering) {
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    # Apply common cases after filtering
+    plot_data <- spatial_common_cases(plot_data)
     ## forecast dates, find limits again in case it was specified in filtering
     fcbdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
     fcedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
     ## filename dates
     savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
     saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
+  } else {
+    # Apply common cases even if no filtering is done
+    plot_data <- spatial_common_cases(plot_data)
   }
 
   # This should be done after filtering
