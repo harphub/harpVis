@@ -100,7 +100,7 @@ ui <- shiny::tags$html(
                 ),
                 # Allow for a selection of scales/thresholds for NACT and FSS
                 conditionalPanel(
-                  condition = "input.score == 'NACT' || input.score == 'FSS'",
+                  condition = "input.score == 'NACT' || input.score == 'FSS' || input.score == 'FSSp'",
                   selectInput("scales", "Scales",
                               choices = list("NA" = 1),
                               selected = 1,
@@ -121,7 +121,7 @@ ui <- shiny::tags$html(
                             multiple = TRUE),
             
                 conditionalPanel(
-                  condition = "input.score == 'FSS'",
+                  condition = "input.score == 'FSS' || input.score == 'FSSp'",
                   selectInput("ref_model", "Reference model",
                               choices = list("NA" = 1),
                               selected = 1,

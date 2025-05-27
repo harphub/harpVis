@@ -13,6 +13,7 @@ read_sql <- function(filepath,score=NULL){
     sql_object <- harpIO:::dbopen(gsub("\\\\","/",filepath))
     scores <- dbListTables(sql_object)
     if(is.null(score)) {score=scores[1]}
+    if (!(score %in% scores)) {score=scores[1]}
     verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
     verif_data <- verif_data %>% dplyr::mutate(
       dates = lubridate::as_datetime(fcdate,
@@ -29,8 +30,9 @@ read_sql <- function(filepath,score=NULL){
     return(items) #returns a list of dataframe and list of scores
 }
 
-update_options <- function(input,scores,session) {
+update_options <- function(input,scores,session,st_only=F) {
     #TODO: this function might need a more appropriate name
+    if (!st_only) {
     dates  <- unique(input$dates)
     cycles <- sort(unique(input$fcst_cycle))
     models <- sort(unique(input$model))
@@ -62,6 +64,7 @@ update_options <- function(input,scores,session) {
                                                 selected = c(leadtimes))
     updateSelectInput(session,'param',      choices=c(params),
                                                 selected=c(params)[1])
+    }
     if ("scale" %in% names(input)) {
       scales <- sort(unique(input$scale))
       updateSelectInput(session,'scales',
@@ -153,6 +156,20 @@ server <- function(input, output, session) {
     verif_data <- getData()$verif_data
     scores <- getData()$scores
     update_options(verif_data,scores,session)
+  })
+  
+  # Options could change based on the input$score. For now just allow for 
+  # changes in scales/thresholds
+  shiny::observe({
+    shiny::req(getData())
+    score <- input$score
+    if (nrow(filein()) == 1) {
+      td  <- read_sql(filein()$datapath, score)
+      update_options(td$verif_data,
+                     td$scores,
+                     session,
+                     st_only = T)
+    }
   })
     
   ############################################################

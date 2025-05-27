@@ -115,7 +115,7 @@ plot_spatial_fss <- function(
   } else {
     if (plot_diff) {
       score <- "fss_diff"
-      score_name <- "FSS diff"
+      score_name <- paste0(score_name," diff")
     } else {
       score <- "fss"
     }

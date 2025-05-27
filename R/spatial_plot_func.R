@@ -13,8 +13,10 @@ spatial_plot_func <- function(
         "bias"   = "plot_spatial_line",
         "mse"    = "plot_spatial_line",
         "mae"    = "plot_spatial_line",
+        "rmse"   = "plot_spatial_line",
         "SAL"    = "plot_spatial_sal",
         "FSS"    = "plot_spatial_fss",
+        "FSSp"   = "plot_spatial_fss",
         "NACT"   = "plot_spatial_nact",
         "hira_me"    = "plot_spatial_nact",
         #"hira_pragm" = "plot_spatial_fss", #TODO: coming soon
