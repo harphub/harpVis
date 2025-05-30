@@ -71,14 +71,14 @@ ui <- shiny::tags$html(
 
     		    # Input: Select a file ----
     		    shiny::uiOutput("frt"),
-            
+    		    
+      		  # Indicate what file is chosen
+      		  br(),
+      		  h5(shinycssloaders::withSpinner(shiny::textOutput("inputfile"))),
+      		  br(),
+  
             conditionalPanel(
             condition = "output.fileUploaded != 0",
-            
-                # Indicate what file is chosen
-                br(),
-                h5(shiny::textOutput("inputfile")),
-                br(),
             
                 # Input: Select score
                 selectInput("score", "Select score",

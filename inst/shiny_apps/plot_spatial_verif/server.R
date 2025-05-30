@@ -8,25 +8,28 @@ library("DBI")
 options(shiny.maxRequestSize=20*1024^2)
 Sys.setenv(TZ='UTC')
 
-read_sql <- function(filepath,score=NULL){
+read_sql <- function(filepath){
     #TODO: this function might need a more appropriate name
     sql_object <- harpIO:::dbopen(gsub("\\\\","/",filepath))
     scores <- dbListTables(sql_object)
-    if(is.null(score)) {score=scores[1]}
-    if (!(score %in% scores)) {score=scores[1]}
-    verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
+    verif_all <- NULL
+    for (score in scores){
+    verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score)))
     verif_data <- verif_data %>% dplyr::mutate(
       dates = lubridate::as_datetime(fcdate,
                                      origin = lubridate::origin,
-                                     tz = "UTC")
+                                     tz = "UTC"),
+      ccs   = paste(prm,fcdate,leadtime,sep="_")
     )
     if (!("fcst_cycle" %in% names(verif_data))) {
       verif_data <- verif_data %>% dplyr::mutate(
-        fcst_cycle = substr(harpIO::YMDh(dates),9,10)
+        fcst_cycle = substr(harpCore::as_YMDh(dates),9,10)
       )
     }
+    verif_all[[score]] <- verif_data
+    }
     harpIO:::dbclose(sql_object)
-    items <- list("verif_data" = verif_data, "scores" = scores)
+    items <- list("verif_data" = verif_all, "scores" = scores)
     return(items) #returns a list of dataframe and list of scores
 }
 
@@ -153,7 +156,7 @@ server <- function(input, output, session) {
 
   observe({
     shiny::req(getData())
-    verif_data <- getData()$verif_data
+    verif_data <- getData()$verif_data[[1]]
     scores <- getData()$scores
     update_options(verif_data,scores,session)
   })
@@ -164,9 +167,8 @@ server <- function(input, output, session) {
     shiny::req(getData())
     score <- input$score
     if (nrow(filein()) == 1) {
-      td  <- read_sql(filein()$datapath, score)
-      update_options(td$verif_data,
-                     td$scores,
+      update_options(getData()$verif_data[[score]],
+                     getData()$scores,
                      session,
                      st_only = T)
     }
@@ -226,7 +228,7 @@ server <- function(input, output, session) {
       fcbdate <- fcdate_range[1]
       fcedate <- fcdate_range[2]
   
-      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      verif_data <- getData()$verif_data[[score]]
       filter_by <- vars(
         model    %in% models, 
         leadtime %in% leadtimes,
@@ -257,7 +259,7 @@ server <- function(input, output, session) {
   })
   
   output$plot.ui <- renderUI({
-    plotOutput("plot",width=figsize()$fw,height=figsize()$fh)
+    shinycssloaders::withSpinner(plotOutput("plot",width=figsize()$fw,height=figsize()$fh))
   })
   
   output$table <- renderDataTable({
@@ -265,7 +267,7 @@ server <- function(input, output, session) {
     req(input$showdata)
     if (nrow(filein()) == 1) {
       score <- input$score
-      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      verif_data <- getData()$verif_data[[score]]
       return(verif_data)
     } else {
       return()

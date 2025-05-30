@@ -7,7 +7,9 @@
 spatial_common_cases <- function(verif_data) {
   
   # add string of prm_fcdata_leadtime 
-  verif_data <- verif_data %>% dplyr::mutate(ccs = paste(prm,fcdate,leadtime,sep="_"))
+  if (!("ccs" %in% names(verif_data))) {
+    verif_data <- verif_data %>% dplyr::mutate(ccs = paste(prm,fcdate,leadtime,sep="_"))
+  }
   
   # Get ccs common to all models
   ccs_vec <- NULL
