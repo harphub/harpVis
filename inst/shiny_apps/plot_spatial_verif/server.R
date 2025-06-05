@@ -36,7 +36,7 @@ read_sql <- function(filepath){
 update_options <- function(input,scores,session,st_only=F) {
     #TODO: this function might need a more appropriate name
     if (!st_only) {
-    dates  <- unique(input$dates)
+    dates  <- unique(input$dates) %>% sort()
     cycles <- sort(unique(input$fcst_cycle))
     models <- sort(unique(input$model))
     ref_models <- c("NA",models)
