@@ -132,7 +132,7 @@ plot_spatial_verif <- function(
     savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
     saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
 
-    valid_hours <- unique(lubridate::hour(plot_data$fcdate))
+    valid_hours <- unique(lubridate::hour(plot_data$fcdate)) %>% sort()
   }
 
   # leadtimes in the dataframe are usually in seconds,
@@ -179,7 +179,7 @@ plot_spatial_verif <- function(
   
   # Add in filtered valid hours
   if ("fcst_cycle" %in% names(plot_data)){
-    filtered_valid_hours <- as.integer(unique(plot_data$fcst_cycle))
+    filtered_valid_hours <- as.integer(unique(plot_data$fcst_cycle)) %>% sort()
   } else {
     filtered_valid_hours <- valid_hours
   }
