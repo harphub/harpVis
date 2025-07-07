@@ -41,7 +41,7 @@ plot_spatial_nact <- function(
                       names(plot_data)))) {
     stop("plot_data must have columns named threshold, scale, hit, fa, miss and cr!")
   }
-  if ("all" %in% nact_scores || is.na(nact_scores) || length(nact_scores) < 1) {
+  if ("all" %in% nact_scores || is.na(nact_scores[[1]]) || length(nact_scores) < 1) {
     #list all available scores
     nact_scores <- list("fbias",
                         "pod",
@@ -77,7 +77,8 @@ plot_spatial_nact <- function(
                dplyr::summarise(hit  = mean(hit,  na.rm = TRUE),
                                 fa   = mean(fa,   na.rm = TRUE),
                                 miss = mean(miss, na.rm = TRUE),
-                                cr   = mean(cr,   na.rm = TRUE))
+                                cr   = mean(cr,   na.rm = TRUE),
+                                num_cases = n())
 
   A <- plot_data$hit
   B <- plot_data$fa
@@ -120,6 +121,13 @@ plot_spatial_nact <- function(
   ## N-number of scores (columns) from above
 
   #convert to long table for facet_wrap
+  if (score_name == "num_cases") {
+    nact_scores <- list("num_cases")
+    score_name  <- "NACT"
+    ylab        <- "Num. cases"
+  } else {
+    ylab        <- "Score"
+  }
   plot_data <- plot_data %>%
                gather("score",
                       "value",
@@ -137,6 +145,18 @@ plot_spatial_nact <- function(
         )
   } else {
       score_name <- toupper(score_name)
+  }
+  
+  # Check if number of cases is constant for each forecast model
+  # If so, just filter to one scale for readability
+  if ("num_cases" %in% nact_scores) {
+    qwe <- plot_data %>% 
+      filter(score == "num_cases") %>%
+      group_by(model, prm, threshold, scale) %>% 
+      summarise(nu = length(unique(value)))
+    if (length(unique(qwe$nu)) <= length(unique(qwe$model))) {
+      plot_data <- plot_data %>% ungroup("scale") %>% filter(scale == min(scale))
+    }
   }
 
   gg <- ggplot2::ggplot(plot_data, aes(x = get(x_data),
@@ -162,10 +182,11 @@ plot_spatial_nact <- function(
 
   ## Other settings
 
-  if (extend_y_to_zero) {gg <- gg + ggplot2::ylim(-0.025, NA)}
+  if ((extend_y_to_zero) && (!("num_cases" %in% nact_scores))) {gg <- gg + ggplot2::ylim(-0.025, NA)}
   if (flip_axes) {gg <- gg + ggplot2::coord_flip()}
-  if (y_label == "auto") {gg <- gg + ggplot2::labs(y = str_to_title("Score"))}
+  if (y_label == "auto") {gg <- gg + ggplot2::labs(y = str_to_title(ylab))}
   if (x_label == "auto") {gg <- gg + ggplot2::labs(x = str_to_title(x_data))}
+  if ("num_cases" %in% nact_scores) {gg <- gg + ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1))}
 
   gg
 }

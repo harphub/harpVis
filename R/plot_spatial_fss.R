@@ -51,6 +51,8 @@ plot_spatial_fss <- function(
   ### calculate mean of every threshold/scale pair
   plot_data <- plot_data %>%
                dplyr::group_by(model, prm, threshold, scale) %>%
+               dplyr::mutate(num_cases = n()) %>%
+               dplyr::group_by(model, prm, threshold, scale, num_cases) %>%
                dplyr::summarize_at("fss", mean, na.rm = TRUE)
   
   pt <- paste0(unique(plot_data$model),collapse=",")
@@ -66,16 +68,15 @@ plot_spatial_fss <- function(
     
     if (plot_diff) {
       ref_data  <- plot_data %>% dplyr::filter(model == ref_model) %>%
-        dplyr::mutate(fss_ref = fss) %>% dplyr::ungroup() %>% 
-        dplyr::select(-model,-fss)
+        dplyr::mutate(fss_ref = fss, num_cases_ref = num_cases) %>% dplyr::ungroup() %>% 
+        dplyr::select(-model,-fss,-num_cases)
       plot_data <- plot_data %>% dplyr::filter(model != ref_model)
       plot_data <- dplyr::inner_join(plot_data,
                                      ref_data,
-                                     by=setdiff(names(plot_data),c("fss","model")),
+                                     by=setdiff(names(plot_data),c("fss","model","num_cases")),
                                      relationship = "many-to-many") %>% 
-        dplyr::mutate(fss_diff = fss - fss_ref)
-      score_name <- "FSS Diff"
-      score <- "fss_diff"
+        dplyr::mutate(fss_diff = fss - fss_ref,
+                      num_cases_diff = num_cases - num_cases_ref)
       c_low <- "red"
       c_mid <- "white"
       c_hig <- "blue"
@@ -84,7 +85,6 @@ plot_spatial_fss <- function(
       pt    <- paste0(paste0(unique(plot_data$model),collapse=","),
                       " compared to ",ref_model)
     } else {
-      score <- "fss"
       c_low <- "red"
       c_mid <- "yellow"
       c_hig <- "darkgreen"
@@ -93,14 +93,44 @@ plot_spatial_fss <- function(
     }
   }
   
+  if (score_name == "num_cases") {
+    if (plot_diff) {
+      score <- "num_cases_diff"
+      score_name <- "FSS cases diff"
+    } else {
+      score <- "num_cases"
+      score_name <- "FSS cases"
+    }
+    c_lim <- c(NA,NA)
+    tl    <- "%1.0f"
+    ts    <- 4
+    # Check if number of cases is constant for each forecast model
+    # If so, just filter to one scale for readability
+    qwe <- plot_data %>% 
+      group_by(model, prm, threshold, scale) %>% 
+      summarise(nu = length(unique(num_cases)))
+    if (length(unique(qwe$nu)) <= length(unique(qwe$model))) {
+      plot_data <- plot_data %>% ungroup("scale") %>% filter(scale == min(scale))
+    }
+  } else {
+    if (plot_diff) {
+      score <- "fss_diff"
+      score_name <- paste0(score_name," diff")
+    } else {
+      score <- "fss"
+    }
+    tl <- "%1.2f"
+    ts <- 4
+  }
+  
   if (plot_type == "area") {
         gg <- ggplot2::ggplot(plot_data, aes(x = as.factor(get(x_data)),
                                              y = as.factor(get(y_data)),
                                              fill = get(score),
-                                             label = sprintf("%1.2f", get(score)))) +
+                                             label = sprintf(tl, get(score)))) +
               ggplot2::geom_tile() +
               ggplot2::geom_text(colour = "black",
-                                 size   = 4) +
+                                 size   = ts) +
               ggplot2::scale_fill_gradient2(low      = c_low,
                                             mid      = c_mid,
                                             high     = c_hig,

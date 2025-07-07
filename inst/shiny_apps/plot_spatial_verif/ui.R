@@ -71,19 +71,45 @@ ui <- shiny::tags$html(
 
     		    # Input: Select a file ----
     		    shiny::uiOutput("frt"),
-            
+    		    
+      		  # Indicate what file is chosen
+      		  br(),
+      		  h5(shinycssloaders::withSpinner(shiny::textOutput("inputfile"))),
+      		  br(),
+  
             conditionalPanel(
             condition = "output.fileUploaded != 0",
-            
-                # Indicate what file is chosen
-                br(),
-                h5(shiny::textOutput("inputfile")),
-                br(),
             
                 # Input: Select score
                 selectInput("score", "Select score",
                               choices = list("NA" = 1),
                                         selected = 1),
+                # Allow for a selection of NACT scores
+                conditionalPanel(
+                  condition = "input.score == 'NACT'",
+                  selectInput("nact_score", "NACT score",
+                              choices = list("All" = "all",
+                                             "Freq bias" = "fbias",
+                                             "POD"  = "pod",
+                                             "FAR"  = "far",
+                                             "PSS"  = "pss",
+                                             "HSS"  = "hss",
+                                             "SEDI" = "sedi"),
+                              selected = "all",
+                              multiple = TRUE),
+                ),
+                # Allow for a selection of scales/thresholds for NACT and FSS
+                conditionalPanel(
+                  condition = "input.score == 'NACT' || input.score == 'FSS' || input.score == 'FSSp'",
+                  selectInput("scales", "Scales",
+                              choices = list("NA" = 1),
+                              selected = 1,
+                              multiple = TRUE),
+                  selectInput("thresholds", "Thresholds",
+                              choices = list("NA" = 1),
+                              selected = 1,
+                              multiple = TRUE),
+                ),
 
                 # Input: Select a daterange
                 dateRangeInput("dates","Date range"),
@@ -95,7 +121,7 @@ ui <- shiny::tags$html(
                             multiple = TRUE),
             
                 conditionalPanel(
-                  condition = "input.score == 'FSS'",
+                  condition = "input.score == 'FSS' || input.score == 'FSSp'",
                   selectInput("ref_model", "Reference model",
                               choices = list("NA" = 1),
                               selected = 1,
@@ -118,6 +144,9 @@ ui <- shiny::tags$html(
                 selectInput("param", "Select parameter",
                               choices = list("NA" = 1),
                                         selected = 1),
+            
+                # Input: Show num cases if applicable
+                checkboxInput("showcases","Show number of cases",FALSE),
 
                 # Input: Plot/Show data using selections above
                 actionButton("showdata","Show Data")
@@ -128,7 +157,7 @@ ui <- shiny::tags$html(
         mainPanel(
         # Output: Data file ----
           tabsetPanel(id = "tab_panel",
-                        tabPanel("Plot", plotOutput("plot")),
+                        tabPanel("Plot", uiOutput("plot.ui")),
                         tabPanel("Table", DT::dataTableOutput("table")),
           )
         ) # end of main panel

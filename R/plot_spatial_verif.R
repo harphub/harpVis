@@ -31,6 +31,7 @@
 #' @param leadtimes_by Leadtimes in scores are by default expected to be in seconds
 #'   but there is an option to view leadtimes as hours, minutes or seconds.
 #' @param save_image Saves the plot as a .png file without a preset path.
+#' @param plot_num_cases Also plot the number of cases (not available for SAL).
 #' @return A plot (interactive or saved image)
 #' @import ggplot2
 #' @export
@@ -59,6 +60,7 @@ plot_spatial_verif <- function(
   plot_caption      = "auto",
   leadtimes_by      = "hours",
   save_image        = FALSE,
+  plot_num_cases    = FALSE,
 
   ...) {
 
@@ -130,7 +132,7 @@ plot_spatial_verif <- function(
     savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
     saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
 
-    valid_hours <- unique(lubridate::hour(plot_data$fcdate))
+    valid_hours <- unique(lubridate::hour(plot_data$fcdate)) %>% sort()
   }
 
   # leadtimes in the dataframe are usually in seconds,
@@ -148,12 +150,17 @@ plot_spatial_verif <- function(
 
   if (filtering) {
     plot_data <- dplyr::filter(plot_data, !!! filter_by)
+    # Apply common cases after filtering
+    plot_data <- spatial_common_cases(plot_data)
     ## forecast dates, find limits again in case it was specified in filtering
     fcbdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
     fcedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%d-%m-%Y %H:%M")
     ## filename dates
     savebdate <- strftime(min(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
     saveedate <- strftime(max(plot_data$fcdate, na.rm = TRUE), format = "%Y%m%d%H%M")
+  } else {
+    # Apply common cases even if no filtering is done
+    plot_data <- spatial_common_cases(plot_data)
   }
 
   # This should be done after filtering
@@ -172,7 +179,7 @@ plot_spatial_verif <- function(
   
   # Add in filtered valid hours
   if ("fcst_cycle" %in% names(plot_data)){
-    filtered_valid_hours <- as.integer(unique(plot_data$fcst_cycle))
+    filtered_valid_hours <- as.integer(unique(plot_data$fcst_cycle)) %>% sort()
   } else {
     filtered_valid_hours <- valid_hours
   }
@@ -246,6 +253,26 @@ plot_spatial_verif <- function(
   }
 
   gg <- gg + ggplot2::labs(subtitle = plot_subtitle, caption = plot_caption)
+  
+  if ((plot_num_cases) && 
+      (my_plot_func %in% c("plot_spatial_line","plot_spatial_nact","plot_spatial_fss"))) {
+    num_cases_name <- "num_cases"
+    num_cases_name <- rlang::enquo(num_cases_name)
+    num_cases_name <- rlang::quo_name(num_cases_name)
+    p_nc <- do.call(my_plot_func, c(list(plot_data, num_cases_name), plot_opts))
+    p_nc <- p_nc + theme_func(
+      base_size      = base_size,
+      base_family    = base_family,
+      base_line_size = base_line_size,
+      base_rect_size = base_rect_size
+    )
+    if (my_plot_func == "plot_spatial_fss") {
+      h1 <- 3
+    } else {
+      h1 <- 4
+    }
+    gg <- gridExtra::grid.arrange(gg,p_nc,ncol=1,heights=c(h1,1))
+  }
 
   # finished
   if (save_image) {

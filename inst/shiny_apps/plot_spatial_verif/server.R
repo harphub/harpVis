@@ -8,30 +8,35 @@ library("DBI")
 options(shiny.maxRequestSize=20*1024^2)
 Sys.setenv(TZ='UTC')
 
-read_sql <- function(filepath,score=NULL){
+read_sql <- function(filepath){
     #TODO: this function might need a more appropriate name
     sql_object <- harpIO:::dbopen(gsub("\\\\","/",filepath))
     scores <- dbListTables(sql_object)
-    if(is.null(score)) {score=scores[1]}
-    verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score))) #can choose first score as default
+    verif_all <- NULL
+    for (score in scores){
+    verif_data <- as.data.frame(harpIO:::dbquery(sql_object, paste("SELECT * FROM ",score)))
     verif_data <- verif_data %>% dplyr::mutate(
       dates = lubridate::as_datetime(fcdate,
                                      origin = lubridate::origin,
-                                     tz = "UTC")
+                                     tz = "UTC"),
+      ccs   = paste(prm,fcdate,leadtime,sep="_")
     )
     if (!("fcst_cycle" %in% names(verif_data))) {
       verif_data <- verif_data %>% dplyr::mutate(
-        fcst_cycle = substr(harpIO::YMDh(dates),9,10)
+        fcst_cycle = substr(harpCore::as_YMDh(dates),9,10)
       )
     }
+    verif_all[[score]] <- verif_data
+    }
     harpIO:::dbclose(sql_object)
-    items <- list("verif_data" = verif_data, "scores" = scores)
+    items <- list("verif_data" = verif_all, "scores" = scores)
     return(items) #returns a list of dataframe and list of scores
 }
 
-update_options <- function(input,scores,session) {
+update_options <- function(input,scores,session,st_only=F) {
     #TODO: this function might need a more appropriate name
-    dates  <- unique(input$dates)
+    if (!st_only) {
+    dates  <- unique(input$dates) %>% sort()
     cycles <- sort(unique(input$fcst_cycle))
     models <- sort(unique(input$model))
     ref_models <- c("NA",models)
@@ -62,7 +67,19 @@ update_options <- function(input,scores,session) {
                                                 selected = c(leadtimes))
     updateSelectInput(session,'param',      choices=c(params),
                                                 selected=c(params)[1])
-
+    }
+    if ("scale" %in% names(input)) {
+      scales <- sort(unique(input$scale))
+      updateSelectInput(session,'scales',
+                        choices=c(scales),
+                        selected=c(scales))
+    }
+    if ("threshold" %in% names(input)) {
+      thresholds <- sort(unique(input$threshold))
+      updateSelectInput(session,'thresholds',
+                        choices=c(thresholds),
+                        selected=c(thresholds))
+    }
 }
 
 server <- function(input, output, session) {
@@ -139,9 +156,22 @@ server <- function(input, output, session) {
 
   observe({
     shiny::req(getData())
-    verif_data <- getData()$verif_data
+    verif_data <- getData()$verif_data[[1]]
     scores <- getData()$scores
     update_options(verif_data,scores,session)
+  })
+  
+  # Options could change based on the input$score. For now just allow for 
+  # changes in scales/thresholds
+  shiny::observe({
+    shiny::req(getData())
+    score <- input$score
+    if (nrow(filein()) == 1) {
+      update_options(getData()$verif_data[[score]],
+                     getData()$scores,
+                     session,
+                     st_only = T)
+    }
   })
     
   ############################################################
@@ -150,6 +180,32 @@ server <- function(input, output, session) {
 
   ## needs to check selection on the form and pass them as plotting options to plot_spatial_verif!
   ## if score name changes with selection then read_sql needs to be called again to get the correct dataframe!
+  
+  figsize <- reactive({
+    
+    req(input$showdata)
+    if (nrow(filein()) == 1) { 
+      fw <- 1000
+      fh <- 600
+      if (isolate(input$score) == "NACT") {
+        fw <- 1200
+        fh <- 800
+        if (length(isolate(input$model)) > 1) {
+          fw <- 1600
+        }
+      } else if (isolate(input$score) == "FSS") {
+        if (length(isolate(input$model)) > 2) {
+          fw <- 1200
+          fh <- 800
+        }
+      } 
+      list("fw" = fw,
+           "fh" = fh)
+    } else {
+      list("fw" = 1000,
+           "fh" = 600)
+    }
+  })
 
   output$plot <- renderPlot({
 
@@ -157,6 +213,9 @@ server <- function(input, output, session) {
     # This if avoids error when changing selected file
     if (nrow(filein()) == 1) { 
       score <- isolate(input$score)
+      nact_score <- isolate(input$nact_score)
+      scales <- isolate(input$scales)
+      thresholds <- isolate(input$thresholds)
       models <- isolate(input$model)
       ref_model <- isolate(input$ref_model)
       leadtimes <- isolate(input$leadtime)
@@ -169,7 +228,7 @@ server <- function(input, output, session) {
       fcbdate <- fcdate_range[1]
       fcedate <- fcdate_range[2]
   
-      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      verif_data <- getData()$verif_data[[score]]
       filter_by <- vars(
         model    %in% models, 
         leadtime %in% leadtimes,
@@ -180,20 +239,35 @@ server <- function(input, output, session) {
         prm      %in% params,
       )
       #plot_opts = ...                        # TODO, include plotting options to interface
+      if ("scale" %in% names(verif_data)) {
+        filter_by <- c(filter_by,
+                       vars(scale %in% scales))
+      }
+      if ("threshold" %in% names(verif_data)) {
+        filter_by <- c(filter_by,
+                       vars(threshold %in% thresholds))
+      }
 
       harpVis:::plot_spatial_verif(verif_data, {{score}}, filter_by = filter_by,
-                                   plot_opts = list(ref_model = ref_model))
+                                   plot_num_cases = input$showcases,
+                                   plot_opts = list(ref_model = ref_model,
+                                                    nact_scores = nact_score))
     } else {
       return()
     }
     
-  },width = 1000, height = 600)
+  })
+  
+  output$plot.ui <- renderUI({
+    shinycssloaders::withSpinner(plotOutput("plot",width=figsize()$fw,height=figsize()$fh))
+  })
+  
   output$table <- renderDataTable({
 
     req(input$showdata)
     if (nrow(filein()) == 1) {
       score <- input$score
-      verif_data <- read_sql(filein()$datapath, score)$verif_data
+      verif_data <- getData()$verif_data[[score]]
       return(verif_data)
     } else {
       return()
