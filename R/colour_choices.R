@@ -149,11 +149,12 @@ colour_choices <- function(input, output, session, verif_data) {
     fcst_models <- unique(unlist(
       lapply(verif_data(), function(x) unique(x[[fcst_model_col]]))
     ))
+
     colour_table_modal(
       dplyr::rename_with(
         data.frame(
           mname = fcst_models,
-          colour = palette_colours()[1:length(fcst_models)],
+          colour = palette_colours()[seq_along(fcst_models)],
           stringsAsFactors = FALSE
         ),
         ~gsub("mname", fcst_model_col, .x),
