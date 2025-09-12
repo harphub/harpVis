@@ -19,6 +19,7 @@ plot_spatial_verif(
   plot_caption = "auto",
   leadtimes_by = "hours",
   save_image = FALSE,
+  plot_num_cases = FALSE,
   ...
 )
 }
@@ -61,6 +62,8 @@ generate the caption. Anything else inside quotes will be used as the plot capti
 but there is an option to view leadtimes as hours, minutes or seconds.}
 
 \item{save_image}{Saves the plot as a .png file without a preset path.}
+
+\item{plot_num_cases}{Also plot the number of cases (not available for SAL).}
 }
 \value{
 A plot (interactive or saved image)

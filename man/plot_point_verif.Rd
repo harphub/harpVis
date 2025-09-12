@@ -16,7 +16,7 @@ plot_point_verif(
   colour_table = NULL,
   hex_palette = viridisLite::plasma(256),
   hex_colour = "grey20",
-  hex_trans = "identity",
+  hex_trans = "log10",
   extend_y_to_zero = TRUE,
   highlight_zero = TRUE,
   plot_num_cases = TRUE,
@@ -92,8 +92,8 @@ vector of colours. The default is \link[viridisLite]{plasma}.}
 default is "grey20".}
 
 \item{hex_trans}{Transformation to apply to \code{hex_palette}. The default is
-\code{"identity"} meaning that no transformation is done. To better see the
-variability for bins with smaller values, set to e.g. \code{"log2"}. See
+\code{"log10"} to better see variability at the small scales. Set to \code{"identity"}
+for no transformation to be done (i.e. a linear colour scale). See
 \code{\link[ggplot2]{scale_fill_gradient}} for more information about the
 \code{transform} argument.}
 

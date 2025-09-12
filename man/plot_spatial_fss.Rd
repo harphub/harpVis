@@ -12,6 +12,7 @@ plot_spatial_fss(
   point_size = 1.2,
   line_width = 1,
   num_facet_cols = NULL,
+  ref_model = NULL,
   ...
 )
 }

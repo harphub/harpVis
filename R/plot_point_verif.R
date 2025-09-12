@@ -836,7 +836,7 @@ plot_point_verif <- function(
     "none" = "",
     x_label
   )
-  if (nchar(x_unit) > 0) {
+  if (!is.null(x_unit) && nchar(x_unit) > 0) {
     x_label <- paste0(x_label, " [", x_unit, "]")
   }
   y_label <- switch(tolower(y_label),
