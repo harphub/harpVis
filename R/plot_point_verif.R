@@ -391,6 +391,8 @@ plot_point_verif <- function(
 
   plot_data <- filter_for_x(plot_data, x_axis_name, flip_axes, facet_vars)
 
+  x_unit <- attr(plot_data, "x_unit")
+
   if (nrow(plot_data) < 1) {
     cli::cli_warn("No data to plot after filtering.")
     return()
@@ -834,6 +836,9 @@ plot_point_verif <- function(
     "none" = "",
     x_label
   )
+  if (nchar(x_unit) > 0) {
+    x_label <- paste0(x_label, " [", x_unit, "]")
+  }
   y_label <- switch(tolower(y_label),
     "auto" = totitle(gsub("_", " ", rlang::quo_name(y_axis_quo))),
     "none" = "",
@@ -1371,7 +1376,15 @@ filter_for_x <- function(plot_data, x_axis_name, flip_axes, facet_vars) {
         c, lapply(plot_data[[x_axis_name]], as.POSIXct, tz = "UTC")
       )
     } else {
-      plot_data[[x_axis_name]] <- as.numeric(plot_data[[x_axis_name]])
+      if (x_axis_name == "lead_time") {
+        lead_unit <- unique(regmatches(
+          plot_data[[x_axis_name]], regexpr("[a-z]*$", plot_data[[x_axis_name]])
+        ))
+        attr(plot_data, "x_unit") <- lead_unit
+      }
+      plot_data[[x_axis_name]] <- harpCore::extract_numeric(
+        plot_data[[x_axis_name]]
+      )
     }
   }
 
