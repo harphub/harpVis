@@ -1,6 +1,6 @@
 Package: harpVis
 Title: Visualisation functions for harp.
-Version: 0.2.2.9019
+Version: 0.3.0
 Authors@R: as.person(c(
     "Andrew Singleton <andrewts@met.no> [aut, cre]"
   ))
