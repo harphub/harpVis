@@ -332,7 +332,12 @@ interactive_point_verif <- function(
       )
 
       lt <- unique(verif_data()$ens_threshold_scores[[lead_time_var]])
-      lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
+      chr_leads  <- lt[lt != "All"]
+      num_leads  <- harpCore::extract_numeric(chr_leads)
+      lead_times <- c(
+        lt[lt == "All"],
+        chr_leads[order(match(num_leads, sort(num_leads)))]
+      )
       thresholds <- parse_thresholds(
         unique(verif_data()$ens_threshold_scores$threshold)
       )
@@ -561,7 +566,12 @@ interactive_point_verif <- function(
             colnames(verif_data()[["ens_threshold_scores"]])
           )
           lt <- unique(verif_data()$ens_threshold_scores[[lead_time_var]])
-          lead_times <- c(lt[lt == "All"], sort(as.numeric(lt[lt != "All"])))
+          chr_leads  <- lt[lt != "All"]
+          num_leads  <- harpCore::extract_numeric(chr_leads)
+          lead_times <- c(
+            lt[lt == "All"],
+            chr_leads[order(match(num_leads, sort(num_leads)))]
+          )
           shiny::removeUI(paste0("#", ns("ens-cat-choose-x-thresh")))
           shiny::insertUI(
             selector = paste0("#", ns("ens-cat-choose-x")),
@@ -1328,7 +1338,7 @@ make_score_list <- function(verif_list) {
 get_ui_type <- function(verif_name) {
 
   ens_cat_choose_x <- paste(
-    c("brier", "roc_area", "threshold", "climatology"), collapse = "|"
+    c("brier", "roc_area", "threshold", "climatology", "tw_crps"), collapse = "|"
   )
 
   if (grepl("ens_summary", verif_name)) {

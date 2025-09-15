@@ -29,6 +29,8 @@ score_colnames <- c(
   "spread_skill_ratio",
   "dropped_members_spread_skill_ratio",
   "dropped_members_spread",
+  "dropped_members_rmse",
+  "tw_crps",
   "fair_crps",
   "fair_brier_score",
   "reliability",

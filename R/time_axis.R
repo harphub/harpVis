@@ -220,7 +220,8 @@ parse_times <- function(times_in, time_var) {
     times <- times[order(match(times, times_dttm))]
     names(times) <- format(times_dttm, "%H:%M %d %b %Y")
   } else {
-    times <- sort(as.numeric(times))
+    times_num <- harpCore::extract_numeric(times)
+    times     <- times[order(match(times_num, sort(times_num)))]
   }
   if (has_all) {
     times <- c(times_in[all_el[1]], times)
