@@ -409,7 +409,6 @@ GeomXsHeight <- ggproto("GeomXsHeight", GeomRaster,
       data[data$y == middle_y, ], vert_res, FALSE
     )
 
-    browser()
     grid::gList(
       GeomRaster$draw_panel(
         data, panel_params, coord, interpolate = interpolate,
