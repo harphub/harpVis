@@ -587,6 +587,23 @@ interactive_point_verif <- function(
               )
             )
           )
+
+          if (thresh_types()) {
+            shiny::insertUI(
+              selector = paste0("#", ns("ens-cat-choose-x-lead")),
+              where    = "afterBegin",
+              ui       = shiny::tags$div(
+                id = ns("ens-cat-x-type"),
+                shiny::selectInput(
+                  ns("ens-cat-x-type-select"),
+                  "Type",
+                  type_names,
+                  type_names[1]
+                )
+              )
+            )
+          }
+
         }
 
       }
@@ -694,6 +711,7 @@ interactive_point_verif <- function(
       input[["ens-cat-choose-x-threshold"]],
       input[["ens-cat-leadtime"]],
       input[["ens-cat-threshold"]],
+      input[["ens-cat-x-type-select"]],
       input[["det-extend-to-zero"]],
       input[["det-summary-num-cases"]],
       input[["det-member"]],
@@ -838,6 +856,11 @@ interactive_point_verif <- function(
             facets  <- ggplot2::vars(leadtime)
             filters <- ggplot2::vars(as.character(leadtime) %in% leadtimes)
           }
+          if (thresh_types()) {
+            thresh_type <- shiny::req(input[["ens-cat-x-type-select"]])
+            filters <- c(filters, vars(Type == thresh_type))
+          }
+
         }
 
       } else if (ui_type() == "ens_cat") {
