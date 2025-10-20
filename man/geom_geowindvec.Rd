@@ -93,7 +93,7 @@ default, \code{FALSE}, is to retain vectors that are relative to the grid.}
 \item{max_vec}{The magnitude of a vector with a length equal to \code{skip + 1}
 grid squares.}
 
-\item{skip_from}{The location of the grid square within a neighborhood of
+\item{skip_from}{The location of the grid square within a neighbourhood of
 skipped grid squares.}
 
 \item{arrow}{specification for arrow heads, as created by \code{\link[grid:arrow]{grid::arrow()}}.}

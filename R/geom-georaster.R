@@ -21,8 +21,8 @@
 #' @inheritParams ggplot2::geom_raster
 #'
 #' @section Aesthetics:
-#' `geom_raster()` understands the following aesthetics (required aesthetics are
-#' in bold):
+#' `geom_georaster()` understands the following aesthetics (required aesthetics
+#' are in bold):
 #' * \strong{geofield}
 #' * alpha
 #'

@@ -66,7 +66,7 @@ StatGeowindvec <- ggproto("StatGeowindvec", Stat,
 #' @param skip The number of grid squares to skip between each vector.
 #' @param max_vec The magnitude of a vector with a length equal to `skip + 1`
 #'   grid squares.
-#' @param skip_from The location of the grid square within a neighborhood of
+#' @param skip_from The location of the grid square within a neighbourhood of
 #'   skipped grid squares.
 #' @inheritParams ggplot2::geom_segment
 #'

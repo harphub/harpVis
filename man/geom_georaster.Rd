@@ -135,8 +135,8 @@ probably sufficient, especially for faceted plots.
 }
 \section{Aesthetics}{
 
-\code{geom_raster()} understands the following aesthetics (required aesthetics are
-in bold):
+\code{geom_georaster()} understands the following aesthetics (required aesthetics
+are in bold):
 \itemize{
 \item \strong{geofield}
 \item alpha
