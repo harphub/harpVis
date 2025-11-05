@@ -120,14 +120,14 @@ plot.harp_grid_df <- function(
   ...
 ) {
 
-  col <- rlang::enquo(col)
-  if (rlang::quo_is_null(col)) {
+  col_quo <- rlang::enquo(col)
+  if (rlang::quo_is_null(col_quo)) {
     geolist_cols <- find_geolist_cols(x)
   } else {
     geolist_cols <- gsub(
       "c\\(| |\\)",
       "",
-      strsplit(rlang::quo_name(col), ",")[[1]]
+      strsplit(rlang::quo_name(col_quo), ",")[[1]]
     )
   }
 
@@ -140,25 +140,55 @@ plot.harp_grid_df <- function(
     ))
   }
 
-  if (rlang::quo_is_null(col)) {
-    col <- rlang::sym(geolist_cols)
+  if (rlang::quo_is_null(col_quo)) {
+    col_quo <- rlang::sym(geolist_cols)
   }
   col_name <- colnames(x)[
-    vapply(colnames(x), grepl, rlang::quo_name(col), FUN.VALUE = logical(1))
+    vapply(colnames(x), grepl, rlang::quo_name(col_quo), FUN.VALUE = logical(1))
   ]
+
+  if (length(col_name) < 1) {
+    cli::cli_abort(c(
+      "Requested column not found in data!",
+      "x" = "You supplied {.arg col} = {rlang::quo_name(col)}.",
+      "i" = "{.arg col} should be one of {.or find_geolist_cols(x)}."
+    ))
+  }
+
+  # For a 1 row data frame with no valid_dttm column, we can remove the
+  # need to facet
 
   facet_col      <- rlang::enquo(facet_col)
   facet_col_name <- rlang::quo_name(facet_col)
 
-  plot_land <- match.arg(plot_land)
+  faceting <- TRUE
+  if (!is.element("valid_dttm", colnames(x)) && facet_col_name == "valid_dttm") {
+    faceting <- FALSE
+  }
+  if (rlang::quo_is_null(facet_col)) {
+    faceting <- FALSE
+  }
 
-  if (!is.element(facet_col_name, colnames(x))) {
+  if (faceting && !is.element(facet_col_name, colnames(x))) {
+    faceting_cols <- setdiff(colnames(x), geolist_cols(x))
+    if (length(faceting_cols) < 1) {
+      info_msg <- paste(
+        "Either filter your data to a single row, or add a column that can be",
+        "used for faceting"
+      )
+    } else {
+      info_msg <- "{.arg facet_col} should be one of {.or faceting_cols}."
+    }
     cli::cli_abort(c(
-
+      "Requested faceting column not found in data!",
+      "x" = "You supplied {.arg facet_col} = {facet_col_name}",
+      "i" = info_msg
     ))
   }
 
-  land_map <- get_map(x, map = map_db, polygon = poly, col = {{col_name}})
+  plot_land <- match.arg(plot_land)
+
+  land_map <- get_map(x, map = map_db, polygon = poly, col = !!col_quo)
   if (!is.element("group", colnames(land_map))) {
     poly = FALSE
   }
@@ -195,7 +225,7 @@ plot.harp_grid_df <- function(
 
   gg <- gg +
     geom_georaster(
-      mapping        = ggplot2::aes(geofield = !!col),
+      mapping        = ggplot2::aes(geofield = .data[[col_name]]),
       data           = x,
       upscale_factor = upscale_factor,
       upscale_method = upscale_method,
@@ -225,7 +255,7 @@ plot.harp_grid_df <- function(
     }
   }
 
-  if (nrow(x) > 1) {
+  if (faceting) {
     gg <- gg + ggplot2::facet_wrap(facet_col_name)
   }
 
