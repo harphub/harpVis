@@ -143,9 +143,7 @@ plot.harp_grid_df <- function(
   if (rlang::quo_is_null(col_quo)) {
     col_quo <- rlang::sym(geolist_cols)
   }
-  col_name <- colnames(x)[
-    vapply(colnames(x), grepl, rlang::quo_name(col_quo), FUN.VALUE = logical(1))
-  ]
+  col_name <- grep(rlang::quo_name(col_quo), colnames(x), value = TRUE)
 
   if (length(col_name) < 1) {
     cli::cli_abort(c(
