@@ -153,6 +153,14 @@ plot.harp_grid_df <- function(
     ))
   }
 
+  if (length(col_name) > 1) {
+    cli::cli_abort(c(
+      "Cannot plot data from more than one column!",
+      "x" = "You supplied {.arg col} = {rlang::quo_name(col)}.",
+      "i" = "{.arg col} should be ONE of {.or find_geolist_cols(x)}."
+    ))
+  }
+
   # For a 1 row data frame with no valid_dttm column, we can remove the
   # need to facet
 
