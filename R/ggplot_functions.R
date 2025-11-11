@@ -38,7 +38,7 @@
 #' @export
 #' @examples
 #' \dontrun{
-#'   # This example reads open data from the Norwegian Meteorogical Institute.
+#'   # This example reads open data from the Norwegian Meteorological Institute.
 #'   # The ncdf4 and harpIO packages are required.
 #'
 #'   library(harpIO)
@@ -405,4 +405,111 @@ squish_low_censor_high <- function(x, range = c(0, 1), only.finite = TRUE) {
 abs_range <- function(x) {
   stopifnot(is.numeric(x))
   c(-max(abs(x)), max(abs(x)))
+}
+
+# Scales
+
+#' Special colour scales
+#'
+#' These colour scales modify _ggplot_ colour scales for specific purposes.
+#' `scale_fill_diff` modifies \code{\link[ggplot2]{scale_fill_gradient2}} by
+#' making the colour scale even both sides of zero, rather than the range each
+#' side of zero. `scale_fill_precip` modifies
+#' \code{\link[ggplot2]{scale_fill_gradientn}}, creating a continuous colour
+#' scale that is suitable for showing precipitation on a map - it uses a log2
+#' transformation such that the colours scale with powers of 2. It also sets
+#' a minimum limit of 0.1 and squishes an upper limit of 32,
+#' `scale_fill_precip2_b` is the binned variant of this scale and modifies
+#' \code{\link[ggplot2]{scale_fill_stepsn}}.
+#'
+#' @name colour_scales
+NULL
+
+#' @inheritParams ggplot2::scale_fill_gradient2
+#' @rdname colour_scales
+#' @export
+#'
+#' @examples
+#' # scale_fill_diff has an even colour bar
+#' df <- expand.grid(x = 1:100, y = 1:100)
+#' df$value <- rnorm(nrow(df), -2)
+#'
+#' p <- ggplot(df, aes(x, y, fill = value)) +
+#'   geom_raster()
+#'
+#' p + scale_fill_diff()
+#'
+#' # Compare with legend for scale_fill_gradient2()
+#' p + scale_fill_gradient2()
+scale_fill_diff <- function(
+  ...,
+  name = "difference",
+  limits = abs_range,
+  low = scales::muted("red"),
+  mid = "white",
+  high = scales::muted("blue")
+) {
+  ggplot2::scale_fill_gradient2(
+    ..., name = name, limits = limits, low = low, mid = mid, high = high
+  )
+}
+
+#' @inheritParams ggplot2::scale_fill_gradientn
+#' @rdname colour_scales
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   # Read in some precipitation data from the Norwegian Meteorological
+#'   # Institute Thredds server
+#'   library(harpIO)
+#'   precip <- read_grid(
+#'     "https://thredds.met.no/thredds/dodsC/metpparchive/2024/07/24/met_analysis_1_0km_nordic_20240724T15Z.nc",
+#'     "precipitation_amount",
+#'     file_format      = "netcdf",
+#'     file_format_opts = netcdf_opts(proj4_var = "projection_lcc"),
+#'     data_frame       = TRUE
+#'   )
+#'
+#'   p <- plot(precip)
+#'   p
+#'
+#'   # Use scale_fill_precip()
+#'   p + scale_fill_precip()
+#'
+#'   # With the banded variant
+#'   p + scale_fill_precip_b()
+#' }
+scale_fill_precip <- function(
+  ...,
+  name      = "mm",
+  transform = "log2",
+  colours   = viridisLite::viridis(256, option = "G", direction = -1),
+  limits    = c(0.1, 32),
+  oob       = censor_low_squish_high,
+  na.value  = NA
+) {
+  scale_fill_gradientn(
+    ..., name = name, transform = transform, colours = colours, limits = limits,
+    oob = oob, na.value = na.value
+  )
+}
+
+#' @inheritParams ggplot2::scale_fill_stepsn
+#' @rdname colour_scales
+#' @export
+scale_fill_precip_b <- function(
+  ...,
+  name      = "mm",
+  transform = "log2",
+  colours   = viridisLite::viridis(256, option = "G", direction = -1),
+  limits    = c(0.1, 32),
+  oob       = censor_low_squish_high,
+  na.value  = NA,
+  n.breaks  = 8
+) {
+  scale_fill_stepsn(
+    ..., name = name, transform = transform, colours = colours, limits = limits,
+    oob = oob, na.value = na.value, n.breaks = n.breaks
+  )
 }

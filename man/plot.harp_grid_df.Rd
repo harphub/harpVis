@@ -70,7 +70,7 @@ that no upscaling is done prior to plotting.
 }
 \examples{
 \dontrun{
-  # This example reads open data from the Norwegian Meteorogical Institute.
+  # This example reads open data from the Norwegian Meteorological Institute.
   # The ncdf4 and harpIO packages are required.
 
   library(harpIO)
