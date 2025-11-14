@@ -155,7 +155,7 @@ plot_scorecard <- function(
   check_length(significance_breaks, shapes)
   check_length(significance_breaks, sizes)
 
-  if (length(legend_labels == 1) && legend_labels == "auto") {
+  if ((length(legend_labels) == 1) && (legend_labels == "auto")) {
     legend_labels <- generate_labels(fcst_model, ref_model, significance_breaks)
   } else {
     check_length(significance_breaks, legend_labels)
@@ -191,11 +191,11 @@ plot_scorecard <- function(
       size   = .data[["class"]]
     )
   ) +
-    ggplot2::geom_point() +
-    ggplot2::scale_fill_manual(values = fills, breaks = legend_labels, drop = FALSE) +
-    ggplot2::scale_colour_manual(values = colours, breaks = legend_labels, drop = FALSE) +
-    ggplot2::scale_shape_manual(values = shapes, breaks = legend_labels, drop = FALSE) +
-    ggplot2::scale_size_manual(values = sizes, breaks = legend_labels, drop = FALSE) +
+    ggplot2::geom_point(show.legend = TRUE) +
+    ggplot2::scale_fill_manual(values = fills, breaks = unname(legend_labels), drop = FALSE) +
+    ggplot2::scale_colour_manual(values = colours, breaks = unname(legend_labels), drop = FALSE) +
+    ggplot2::scale_shape_manual(values = shapes, breaks = unname(legend_labels), drop = FALSE) +
+    ggplot2::scale_size_manual(values = sizes, breaks = unname(legend_labels), drop = FALSE) +
     ggplot2::guides(
       fill   = ggplot2::guide_legend(NULL, nrow = ceiling(length(fills) / 2)),
       colour = ggplot2::guide_legend(NULL, nrow = ceiling(length(fills) / 2)),
