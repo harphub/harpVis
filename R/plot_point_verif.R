@@ -323,7 +323,7 @@ plot_point_verif <- function(
       "spread_skill", "spread_skill_ratio", "spread_skill_with_dropped",
       "spread_skill_dropped_only", "spread_skill_ratio_with_dropped",
       "spread_skill_ratio_dropped_only", "normalized_rank_histogram",
-      "spread_stde", "spread_stde_ratio"
+      "spread_stde", "spread_stde_ratio", "uui_spread_skill"
     )
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
@@ -520,6 +520,16 @@ plot_point_verif <- function(
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
       sore_name        <- "spread ; skill"
+    },
+
+    "uui_spread_skill" = {
+      plot_data        <- tidyr::gather(plot_data, .data$uui_skill, .data$uui_spread, key = "component", value = "UUI spread ; skill")
+      y_axis_name      <- "UUI spread ; skill"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+      score_name       <- "UUI spread ; skill"
     },
 
     "spread_skill_ratio" = {
@@ -1093,16 +1103,16 @@ plot_point_verif <- function(
               !!linetype_by_quo, !!colour_by_quo
             )
           ),
-          size = line_width
+          linewidth = line_width
         )
       } else {
         gg <- gg + ggplot2::geom_line(
           ggplot2::aes(lty = !! linetype_by_quo),
-          size = line_width
+          linewidth = line_width
         )
       }
     } else {
-      gg <- gg + ggplot2::geom_line(size = line_width)
+      gg <- gg + ggplot2::geom_line(linewidth = line_width)
     }
 
     if (point_size > 0) {
@@ -1124,7 +1134,7 @@ plot_point_verif <- function(
         aes(x = factor(!!x_axis_quo)), size = point_size, position = position_dodge(width = 1)) +
       ggplot2::geom_linerange(
         ggplot2::aes(x = factor(!!x_axis_quo), ymin = 0, ymax = !!y_axis_quo),
-        size      = line_width,
+        linewidth = line_width,
         position  = position_dodge(width = 1),
         key_glyph = "point"
       ) +
