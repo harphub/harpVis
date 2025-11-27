@@ -176,7 +176,7 @@ plot.harp_grid_df <- function(
   }
 
   if (faceting && !is.element(facet_col_name, colnames(x))) {
-    faceting_cols <- setdiff(colnames(x), geolist_cols(x))
+    faceting_cols <- setdiff(colnames(x), geolist_cols)
     if (length(faceting_cols) < 1) {
       info_msg <- paste(
         "Either filter your data to a single row, or add a column that can be",
