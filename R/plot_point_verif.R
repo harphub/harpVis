@@ -398,6 +398,9 @@ plot_point_verif <- function(
     return()
   }
 
+  # Should be the correct number of stations after filtering!
+  num_stations <- suppressWarnings(max(plot_data[["num_stations"]]))
+
   plot_geom <- "line"
 
   if (grepl("rank_histogram", score_name) && nrow(plot_data) > 0 && is.element("rank_histogram", colnames(plot_data))) {
@@ -865,8 +868,8 @@ plot_point_verif <- function(
   )
   plot_subtitle <- switch(tolower(plot_subtitle),
     "auto" = {
-      if (is.element("num_stations", colnames(plot_data))) {
-        paste(max(plot_data[["num_stations"]]), "stations")
+      if (is.finite(num_stations)) {
+        paste(num_stations, "stations")
       } else {
         attrs[["num_stations"]]
       }
@@ -955,12 +958,14 @@ plot_point_verif <- function(
   gg <- gg + ggplot2::ylab(y_label)
   gg <- gg + ggplot2::theme(legend.position = legend_position)
 
-  fill_guide <- ggplot2::guide_legend
+  fill_guide <- function(title) ggplot2::guide_legend(
+    title = title, nrow = num_legend_rows, byrow = TRUE
+  )
   if (score_name == "hexbin") {
-    fill_guide <- ggplot2::guide_colourbar
+    fill_guide <- function(title) ggplot2::guide_colourbar(title = title)
   }
   gg <- gg + ggplot2::guides(
-    fill     = fill_guide(title = NULL, nrow = num_legend_rows, byrow = TRUE),
+    fill     = fill_guide(title = NULL),
     colour   = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     shape    = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
     linetype = ggplot2::guide_legend(title = NULL)
