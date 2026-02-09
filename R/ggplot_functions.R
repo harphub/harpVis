@@ -427,6 +427,7 @@ NULL
 
 #' @inheritParams ggplot2::scale_fill_gradient2
 #' @rdname colour_scales
+#' @param direction Either `1` or `-1`. If `-1` the palette will be reversed.
 #' @export
 #'
 #' @examples
@@ -442,16 +443,22 @@ NULL
 #' # Compare with legend for scale_fill_gradient2()
 #' p + scale_fill_gradient2()
 scale_fill_diff <- function(
-  ...,
   name = "difference",
+  ...,
   limits = abs_range,
   low = scales::muted("red"),
   mid = "white",
-  high = scales::muted("blue")
+  high = scales::muted("blue"),
+  direction = c(1, -1)
 ) {
-  ggplot2::scale_fill_gradient2(
-    ..., name = name, limits = limits, low = low, mid = mid, high = high
-  )
+  if (direction == 1) {
+    return(ggplot2::scale_fill_gradient2(
+      ..., name = name, limits = limits, low = low, mid = mid, high = high
+    ))
+  }
+  return(ggplot2::scale_fill_gradient2(
+    ..., name = name, limits = limits, low = high, mid = mid, high = low
+  ))
 }
 
 #' @inheritParams ggplot2::scale_fill_gradientn

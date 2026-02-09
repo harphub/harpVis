@@ -10,6 +10,8 @@ plot_point_verif(
   verif_type = c("ens", "det"),
   x_axis = lead_time,
   y_axis = rlang::enquo(score),
+  map = FALSE,
+  map_opts = point_map_opts(),
   rank_is_relative = FALSE,
   rank_hist_type = c("bar", "lollipop", "line"),
   colour_by = fcst_model,
@@ -69,6 +71,13 @@ versions.}
 
 \item{y_axis}{The y-axis for the plot. The default is to take the same as the
 score input, and for most scores this is overrided.}
+
+\item{map}{Logical. Whether to plot the scores on a map. Requires that
+verification has been done with map groupings. Default is \code{FALSE}.}
+
+\item{map_opts}{Options for plotting verification scores on a map when
+\code{map = TRUE}. Should be a named list that is best generated using
+\code{\link{map_opts()}}.}
 
 \item{rank_is_relative}{Logical. If TRUE rank histograms are plotted with the
 relative rank (between 0 and 1) on the x-axis. The default is FALSE.}

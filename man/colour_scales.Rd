@@ -8,12 +8,13 @@
 \title{Special colour scales}
 \usage{
 scale_fill_diff(
-  ...,
   name = "difference",
+  ...,
   limits = abs_range,
   low = scales::muted("red"),
   mid = "white",
-  high = scales::muted("blue")
+  high = scales::muted("blue"),
+  direction = c(1, -1)
 )
 
 scale_fill_precip(
@@ -38,6 +39,11 @@ scale_fill_precip_b(
 )
 }
 \arguments{
+\item{name}{The name of the scale. Used as the axis or legend title. If
+\code{waiver()}, the default, the name of the scale is taken from the first
+mapping used for that aesthetic. If \code{NULL}, the legend title will be
+omitted.}
+
 \item{...}{
   Arguments passed on to \code{\link[ggplot2:continuous_scale]{continuous_scale}}
   \describe{
@@ -116,14 +122,11 @@ bounds values with \code{NA}.
     \item{\code{super}}{The super class to use for the constructed scale}
   }}
 
-\item{name}{The name of the scale. Used as the axis or legend title. If
-\code{waiver()}, the default, the name of the scale is taken from the first
-mapping used for that aesthetic. If \code{NULL}, the legend title will be
-omitted.}
-
 \item{low, high}{Colours for low and high ends of the gradient.}
 
 \item{mid}{colour for mid point}
+
+\item{direction}{Either \code{1} or \code{-1}. If \code{-1} the palette will be reversed.}
 
 \item{transform}{For continuous scales, the name of a transformation object
 or the object itself. Built-in transformations include "asn", "atanh",
