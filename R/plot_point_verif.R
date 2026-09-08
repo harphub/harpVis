@@ -21,6 +21,11 @@
 #'   also be threshold. For some scores this is overrided. Note that leadtime
 #'   will be treated exactly the same as lead_time for compatibility with older
 #'   versions.
+#' @param map Logical. Whether to plot the scores on a map. Requires that
+#'   verification has been done with map groupings. Default is `FALSE`.
+#' @param map_opts Options for plotting verification scores on a map when
+#'   `map = TRUE`. Should be a named list that is best generated using
+#'   \code{\link{map_opts()}}.
 #' @param y_axis The y-axis for the plot. The default is to take the same as the
 #'   score input, and for most scores this is overrided.
 #' @param rank_is_relative Logical. If TRUE rank histograms are plotted with the
@@ -126,6 +131,8 @@ plot_point_verif <- function(
   verif_type               = c("ens", "det"),
   x_axis                   = lead_time,
   y_axis                   = rlang::enquo(score),
+  map                      = FALSE,
+  map_opts                 = point_map_opts(),
   rank_is_relative         = FALSE,
   rank_hist_type           = c("bar", "lollipop", "line"),
   colour_by                = fcst_model,
@@ -313,17 +320,35 @@ plot_point_verif <- function(
     stop("Input does not look like a harpPoint verification.", call. = FALSE)
   }
 
-  summary_table      <- purrr::pluck(verif_data, paste0(fcst_type, "_summary_scores"))
-  thresh_table       <- purrr::pluck(verif_data, paste0(fcst_type, "_threshold_scores"))
+  # If map plotting is selected, check if it's available
+  tbl_prefix = ""
+  if (map) {
+    has_map_data <- any(grepl("^map_", score_tables))
+    if (!has_map_data) {
+      cli::cli_abort(c(
+        "{.arg map} is selected, but no map data found.",
+        "i" = "You need to have verified with {.arg map_groupings}."
+      ))
+    }
+    tbl_prefix = "map_"
+  }
 
-  summary_scores     <- names(summary_table)
-  thresh_scores      <- names(thresh_table)
+  summary_table <- verif_data[[
+    paste0(tbl_prefix, fcst_type, "_summary_scores")
+  ]]
+  thresh_table  <- verif_data[[
+    paste0(tbl_prefix, fcst_type, "_threshold_scores")
+  ]]
+
+  summary_scores <- names(summary_table)
+  thresh_scores  <- names(thresh_table)
+
   if (fcst_type == "ens") {
     derived_summary_scores <- c(
       "spread_skill", "spread_skill_ratio", "spread_skill_with_dropped",
       "spread_skill_dropped_only", "spread_skill_ratio_with_dropped",
       "spread_skill_ratio_dropped_only", "normalized_rank_histogram",
-      "spread_stde", "spread_stde_ratio"
+      "spread_stde", "spread_stde_ratio", "uui_spread_skill"
     )
     derived_thresh_scores  <- c("brier_score_decomposition", "sharpness")
   } else {
@@ -396,6 +421,14 @@ plot_point_verif <- function(
   if (nrow(plot_data) < 1) {
     cli::cli_warn("No data to plot after filtering.")
     return()
+  }
+
+  # Should be the correct number of stations after filtering!
+  num_stations <- suppressWarnings(max(plot_data[["num_stations"]]))
+  if (map) {
+    num_stations <- length(
+      unique(paste(plot_data$lon, plot_data$lat, sep = ","))
+    )
   }
 
   plot_geom <- "line"
@@ -520,6 +553,16 @@ plot_point_verif <- function(
       linetype_by_name <- rlang::quo_name(linetype_by_quo)
       linetyping       <- TRUE
       sore_name        <- "spread ; skill"
+    },
+
+    "uui_spread_skill" = {
+      plot_data        <- tidyr::gather(plot_data, .data$uui_skill, .data$uui_spread, key = "component", value = "UUI spread ; skill")
+      y_axis_name      <- "UUI spread ; skill"
+      y_axis_quo       <- rlang::sym(y_axis_name)
+      linetype_by_quo  <- rlang::quo(component)
+      linetype_by_name <- rlang::quo_name(linetype_by_quo)
+      linetyping       <- TRUE
+      score_name       <- "UUI spread ; skill"
     },
 
     "spread_skill_ratio" = {
@@ -715,12 +758,25 @@ plot_point_verif <- function(
 
   ### Ensure that x and y axes are numeric
 
-  if (!grepl("rank_histogram", score_name)  && x_axis_name == "lead_time") {
+  if (!map && !grepl("rank_histogram", score_name)  && x_axis_name == "lead_time") {
     plot_data <- dplyr::mutate(
       plot_data,
       {{x_axis_name}} := as.numeric(!! x_axis_quo),
       {{y_axis_name}} := as.numeric(!! y_axis_quo)
     )
+  }
+
+  ##########################################################################
+  # FOR MAP PLOTTING WE NEED TO STRAIGHT TO THE MAP PLOTTING FUNCTION!
+  ##########################################################################
+
+  if (map) {
+    gg <- do.call(
+      plot_point_map,
+      c(list(.data = plot_data, col = score_name), map_opts)
+    )
+    colour_by_name <- "none"
+    score_type     <- "map"
   }
 
   ###########################################################################
@@ -855,8 +911,8 @@ plot_point_verif <- function(
   )
   plot_subtitle <- switch(tolower(plot_subtitle),
     "auto" = {
-      if (is.element("num_stations", colnames(plot_data))) {
-        paste(max(plot_data[["num_stations"]]), "stations")
+      if (is.finite(num_stations)) {
+        paste(num_stations, "stations")
       } else {
         attrs[["num_stations"]]
       }
@@ -892,159 +948,255 @@ plot_point_verif <- function(
 
 
   # Plot background
-  if (tolower(colour_by_name == "none")) {
-    gg <- ggplot2::ggplot(
-      plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, ...)
+  if (!map) {
+    if (tolower(colour_by_name == "none")) {
+      gg <- ggplot2::ggplot(
+        plot_data, ggplot2::aes(!! x_axis_quo, !! y_axis_quo, ...)
+      )
+    } else {
+      if (x_comparator_thresholds) {
+        gg <- ggplot2::ggplot(
+          plot_data,
+          ggplot2::aes(
+            !! x_axis_quo,
+            !! y_axis_quo,
+            colour = !! colour_by_quo,
+            fill   = !! colour_by_quo,
+            group  = !! colour_by_quo,
+            ...
+          )
+        )
+      } else {
+        gg <- ggplot2::ggplot(
+          plot_data,
+          ggplot2::aes(
+            !! x_axis_quo,
+            !! y_axis_quo,
+            colour = !! colour_by_quo,
+            fill   = !! colour_by_quo,
+            ...
+          )
+        )
+      }
+    }
+
+    if (is.function(colour_theme)) {
+      theme_func <- colour_theme
+    } else {
+      if (!grepl("^theme_[[:alpha:]]", colour_theme)) colour_theme <- paste0("theme_", colour_theme)
+      if (grepl("harp", colour_theme)) {
+        function_env <- "harpVis"
+      } else {
+        function_env <- "ggplot2"
+      }
+      theme_func <- get(colour_theme, envir = asNamespace(function_env))
+    }
+
+    gg <- gg + theme_func(
+      base_size      = base_size,
+      base_family    = base_family,
+      base_line_size = base_line_size,
+      base_rect_size = base_rect_size
     )
-  } else {
-    if (x_comparator_thresholds) {
-      gg <- ggplot2::ggplot(
-        plot_data,
-        ggplot2::aes(
-          !! x_axis_quo,
-          !! y_axis_quo,
-          colour = !! colour_by_quo,
-          fill   = !! colour_by_quo,
-          group  = !! colour_by_quo,
-          ...
-        )
-      )
+    gg <- gg + ggplot2::xlab(x_label)
+    gg <- gg + ggplot2::ylab(y_label)
+    gg <- gg + ggplot2::theme(legend.position = legend_position)
+
+    fill_guide <- function(title) ggplot2::guide_legend(
+      title = title, nrow = num_legend_rows, byrow = TRUE
+    )
+    if (score_name == "hexbin") {
+      fill_guide <- function(title) ggplot2::guide_colourbar(title = title)
+    }
+    gg <- gg + ggplot2::guides(
+      fill     = fill_guide(title = NULL),
+      colour   = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
+      shape    = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
+      linetype = ggplot2::guide_legend(title = NULL)
+    )
+
+    # Axes
+    if (log_scale_x) {
+      gg <- gg + ggplot2::scale_x_log10()
     } else {
-      gg <- ggplot2::ggplot(
-        plot_data,
-        ggplot2::aes(
-          !! x_axis_quo,
-          !! y_axis_quo,
-          colour = !! colour_by_quo,
-          fill   = !! colour_by_quo,
-          ...
+      if (x_axis_name %in% c("lead_time", "valid_hour")) {
+        break_step <- switch(
+          x_axis_name,
+          "lead_time"  = 6,
+          "valid_hour" = 3
         )
-      )
+        gg <- gg + ggplot2::scale_x_continuous(breaks = seq(0, 1800, break_step))
+      }
+      if (x_comparator_thresholds) {
+        gg <- gg +
+          ggplot2::scale_x_discrete(
+            labels = thresh_labels(levels(plot_data[["threshold"]]))
+          )
+      }
     }
-  }
-
-  if (is.function(colour_theme)) {
-    theme_func <- colour_theme
-  } else {
-    if (!grepl("^theme_[[:alpha:]]", colour_theme)) colour_theme <- paste0("theme_", colour_theme)
-    if (grepl("harp", colour_theme)) {
-      function_env <- "harpVis"
-    } else {
-      function_env <- "ggplot2"
+    if (log_scale_y) {
+      gg <- gg + ggplot2::scale_y_log10()
     }
-    theme_func <- get(colour_theme, envir = asNamespace(function_env))
-  }
-
-  gg <- gg + theme_func(
-    base_size      = base_size,
-    base_family    = base_family,
-    base_line_size = base_line_size,
-    base_rect_size = base_rect_size
-  )
-  gg <- gg + ggplot2::xlab(x_label)
-  gg <- gg + ggplot2::ylab(y_label)
-  gg <- gg + ggplot2::theme(legend.position = legend_position)
-
-  fill_guide <- ggplot2::guide_legend
-  if (score_name == "hexbin") {
-    fill_guide <- ggplot2::guide_colourbar
-  }
-  gg <- gg + ggplot2::guides(
-    fill     = fill_guide(title = NULL, nrow = num_legend_rows, byrow = TRUE),
-    colour   = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
-    shape    = ggplot2::guide_legend(title = NULL, nrow = num_legend_rows, byrow = TRUE),
-    linetype = ggplot2::guide_legend(title = NULL)
-  )
-
-  # Axes
-  if (log_scale_x) {
-    gg <- gg + ggplot2::scale_x_log10()
-  } else {
-    if (x_axis_name %in% c("lead_time", "valid_hour")) {
-      break_step <- switch(
-        x_axis_name,
-        "lead_time"  = 6,
-        "valid_hour" = 3
-      )
-      gg <- gg + ggplot2::scale_x_continuous(breaks = seq(0, 1800, break_step))
-    }
-    if (x_comparator_thresholds) {
+    if (aspect1_score) {
       gg <- gg +
-        ggplot2::scale_x_discrete(
-          labels = thresh_labels(levels(plot_data[["threshold"]]))
-        )
+        ggplot2::scale_x_continuous(limits = c(-0.1, 1.1)) +
+        ggplot2::scale_y_continuous(limits = c(-0.1, 1.1)) +
+        ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
     }
-  }
-  if (log_scale_y) {
-    gg <- gg + ggplot2::scale_y_log10()
-  }
-  if (aspect1_score) {
-    gg <- gg +
-      ggplot2::scale_x_continuous(limits = c(-0.1, 1.1)) +
-      ggplot2::scale_y_continuous(limits = c(-0.1, 1.1)) +
-      ggplot2::coord_fixed(1, c(0, 1), c(0, 1), expand = FALSE)
-  }
 
-  if (score_name == "hexbin") {
-    lims <- range(
-      range(plot_data[["observed"]]), range(plot_data[["forecast"]])
-    )
-    gg <- gg + ggplot2::coord_equal(xlim = lims, ylim = lims)
-    aspect1_score <- TRUE
-  }
-
-  if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
-    y_values <- dplyr::filter(plot_data, panel != "Number of Cases") %>%
-      dplyr::pull(!! y_axis_quo)
-  } else {
-    y_values <- dplyr::pull(plot_data, !! y_axis_quo)
-  }
-  range_y  <- range(y_values, na.rm = TRUE)
-  min_y    <- min(range_y)
-  max_y    <- max(range_y)
-  if (extend_y_to_zero & !aspect1_score) { #& plot_geom == "line"
-    if (range_y[1] > 0) {
-      min_y <- 0
-    }
-    if (range_y[2] < 0) {
-      max_y <- 0
-    }
-  }
-  if (!log_scale_y & !aspect1_score) {
-    if (highlight_zero) {
-      grid_col <- theme_func()$panel.grid$colour
-      grid_red <- grDevices::col2rgb(grid_col)[1]
-      mult     <- 0.8 #ifelse(grid_red <= 127, 0.8, 1.2)
-      line_col <- grDevices::adjustcolor(
-        grid_col, red.f = mult, green.f = mult, blue.f = mult
+    if (score_name == "hexbin") {
+      lims <- range(
+        range(plot_data[["observed"]]), range(plot_data[["forecast"]])
       )
-      gg <- gg + ggplot2::geom_hline(
-        yintercept = 0,
-        colour = line_col,
-        linewidth = theme_func()$line$linewidth * 2
-      )
+      gg <- gg + ggplot2::coord_equal(xlim = lims, ylim = lims)
+      aspect1_score <- TRUE
     }
-    gg <- gg + ggplot2::scale_y_continuous(limits = c(min_y, max_y))
-  }
 
-  ###########################################################################
-  # GEOMS
-  ###########################################################################
-
-  if (score_name == "hexbin") {
-    gg <- gg + ggplot2::scale_fill_gradientn(
-      colours = hex_palette, transform = hex_trans
-    )
-  } else {
-    colour_vec <- colour_table[["colour"]]
-    names(colour_vec) <- colour_table[[colour_by_name]]
-    if (plot_geom %in% c("line", "lollipop")) {
-      gg                <- gg + ggplot2::scale_colour_manual(values = colour_vec)#table$colour)
+    if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
+      y_values <- dplyr::filter(plot_data, panel != "Number of Cases") %>%
+        dplyr::pull(!! y_axis_quo)
     } else {
-      gg                <- gg + ggplot2::scale_fill_manual(values = colour_vec)#table$colour)
+      y_values <- dplyr::pull(plot_data, !! y_axis_quo)
+    }
+    range_y  <- range(y_values, na.rm = TRUE)
+    min_y    <- min(range_y)
+    max_y    <- max(range_y)
+    if (extend_y_to_zero & !aspect1_score) { #& plot_geom == "line"
+      if (range_y[1] > 0) {
+        min_y <- 0
+      }
+      if (range_y[2] < 0) {
+        max_y <- 0
+      }
+    }
+    if (!log_scale_y & !aspect1_score) {
+      if (highlight_zero) {
+        grid_col <- theme_func()$panel.grid$colour
+        grid_red <- grDevices::col2rgb(grid_col)[1]
+        mult     <- 0.8 #ifelse(grid_red <= 127, 0.8, 1.2)
+        line_col <- grDevices::adjustcolor(
+          grid_col, red.f = mult, green.f = mult, blue.f = mult
+        )
+        gg <- gg + ggplot2::geom_hline(
+          yintercept = 0,
+          colour = line_col,
+          linewidth = theme_func()$line$linewidth * 2
+        )
+      }
+      gg <- gg + ggplot2::scale_y_continuous(limits = c(min_y, max_y))
+    }
+
+    ###########################################################################
+    # GEOMS
+    ###########################################################################
+
+    if (score_name == "hexbin") {
+      gg <- gg + ggplot2::scale_fill_gradientn(
+        colours = hex_palette, transform = hex_trans
+      )
+    } else {
+      colour_vec <- colour_table[["colour"]]
+      names(colour_vec) <- colour_table[[colour_by_name]]
+      if (plot_geom %in% c("line", "lollipop")) {
+        gg                <- gg + ggplot2::scale_colour_manual(values = colour_vec)#table$colour)
+      } else {
+        gg                <- gg + ggplot2::scale_fill_manual(values = colour_vec)#table$colour)
+      }
+    }
+
+    if (plot_geom == "line") {
+
+      if (plot_diagonal) {
+        gg <- gg + ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey80", size = line_width * 0.5)
+      }
+
+      if (plot_attributes) {
+        gg <- gg +
+          ggplot2::geom_smooth(
+            ggplot2::aes(y = .data$bss_ref_climatology),
+            method    = "lm",
+            formula   = y ~ x,
+            se        = FALSE,
+            fullrange = TRUE,
+            colour    = "grey80",
+            size      = line_width * 0.5,
+            lty       = 2
+          ) +
+          ggplot2::geom_smooth(
+            ggplot2::aes(y = .data$no_skill),
+            method    = "lm",
+            formula   = y ~ x,
+            se        = FALSE,
+            fullrange = TRUE,
+            colour    = "grey80",
+            size      = line_width * 0.5,
+            lty       = 3
+          )
+      }
+
+      if (linetyping) {
+        if (x_comparator_thresholds) {
+          gg <- gg + ggplot2::geom_line(
+            ggplot2::aes(
+              lty = !!linetype_by_quo, group = paste(
+                !!linetype_by_quo, !!colour_by_quo
+              )
+            ),
+            linewidth = line_width
+          )
+        } else {
+          gg <- gg + ggplot2::geom_line(
+            ggplot2::aes(lty = !! linetype_by_quo),
+            linewidth = line_width
+          )
+        }
+      } else {
+        gg <- gg + ggplot2::geom_line(linewidth = line_width)
+      }
+
+      if (point_size > 0) {
+        gg <- gg + ggplot2::geom_point(size = point_size)
+      }
+
+    } else if (plot_geom == "bar") {
+
+      gg <- gg + ggplot2::geom_col(
+        ggplot2::aes(x = factor(!!x_axis_quo)),
+        position = ggplot2::position_dodge(preserve = "single"), colour = "transparent"
+      ) +
+        ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo), n = 10))
+
+    } else if (plot_geom == "lollipop") {
+
+      gg <- gg +
+        ggplot2::geom_point(
+          aes(x = factor(!!x_axis_quo)), size = point_size, position = position_dodge(width = 1)) +
+        ggplot2::geom_linerange(
+          ggplot2::aes(x = factor(!!x_axis_quo), ymin = 0, ymax = !!y_axis_quo),
+          linewidth = line_width,
+          position  = position_dodge(width = 1),
+          key_glyph = "point"
+        ) +
+        ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo)))
+
+    } else if (plot_geom == "hex") {
+      gg <- gg + ggplot2::geom_hex(
+        aes(fill = .data[["count"]]), stat = "identity", colour = hex_colour
+      )
+      if (plot_diagonal) {
+        gg <- gg + ggplot2::geom_abline(
+          slope = 1, intercept = 0, colour = "grey20", size = line_width * 0.5
+        )
+      }
+
+    } else {
+
+      stop(paste("Unknown geom:", plot_geom), call. = FALSE)
+
     }
   }
 
+  # Plot title
   if (nchar(gsub("[[:space:]]", "", plot_title)) > 0) {
     gg <- gg + ggplot2::labs(title    = plot_title)
   }
@@ -1055,97 +1207,7 @@ plot_point_verif <- function(
     gg <- gg + ggplot2::labs(caption  = plot_caption)
   }
 
-  if (plot_geom == "line") {
-
-    if (plot_diagonal) {
-      gg <- gg + ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey80", size = line_width * 0.5)
-    }
-
-    if (plot_attributes) {
-      gg <- gg +
-        ggplot2::geom_smooth(
-          ggplot2::aes(y = .data$bss_ref_climatology),
-          method    = "lm",
-          formula   = y ~ x,
-          se        = FALSE,
-          fullrange = TRUE,
-          colour    = "grey80",
-          size      = line_width * 0.5,
-          lty       = 2
-        ) +
-        ggplot2::geom_smooth(
-          ggplot2::aes(y = .data$no_skill),
-          method    = "lm",
-          formula   = y ~ x,
-          se        = FALSE,
-          fullrange = TRUE,
-          colour    = "grey80",
-          size      = line_width * 0.5,
-          lty       = 3
-        )
-    }
-
-    if (linetyping) {
-      if (x_comparator_thresholds) {
-        gg <- gg + ggplot2::geom_line(
-          ggplot2::aes(
-            lty = !!linetype_by_quo, group = paste(
-              !!linetype_by_quo, !!colour_by_quo
-            )
-          ),
-          size = line_width
-        )
-      } else {
-        gg <- gg + ggplot2::geom_line(
-          ggplot2::aes(lty = !! linetype_by_quo),
-          size = line_width
-        )
-      }
-    } else {
-      gg <- gg + ggplot2::geom_line(size = line_width)
-    }
-
-    if (point_size > 0) {
-      gg <- gg + ggplot2::geom_point(size = point_size)
-    }
-
-  } else if (plot_geom == "bar") {
-
-    gg <- gg + ggplot2::geom_col(
-      ggplot2::aes(x = factor(!!x_axis_quo)),
-      position = ggplot2::position_dodge(preserve = "single"), colour = "transparent"
-    ) +
-      ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo), n = 10))
-
-  } else if (plot_geom == "lollipop") {
-
-    gg <- gg +
-      ggplot2::geom_point(
-        aes(x = factor(!!x_axis_quo)), size = point_size, position = position_dodge(width = 1)) +
-      ggplot2::geom_linerange(
-        ggplot2::aes(x = factor(!!x_axis_quo), ymin = 0, ymax = !!y_axis_quo),
-        size      = line_width,
-        position  = position_dodge(width = 1),
-        key_glyph = "point"
-      ) +
-      ggplot2::scale_x_discrete(breaks = pretty(dplyr::pull(plot_data, !!x_axis_quo)))
-
-  } else if (plot_geom == "hex") {
-    gg <- gg + ggplot2::geom_hex(
-      aes(fill = .data[["count"]]), stat = "identity", colour = hex_colour
-    )
-    if (plot_diagonal) {
-      gg <- gg + ggplot2::geom_abline(
-        slope = 1, intercept = 0, colour = "grey20", size = line_width * 0.5
-      )
-    }
-
-  } else {
-
-    stop(paste("Unknown geom:", plot_geom), call. = FALSE)
-
-  }
-
+  # Handle faceting
   facet_vars <- suppressWarnings(harpCore::psub(
     facet_vars,
     c("^leadtime$", "^mname$"),
@@ -1167,6 +1229,7 @@ plot_point_verif <- function(
     free_scale <- "y"
   }
 
+  # Add num_cases subplot - note this does not return a modifiable ggplot
   if (score_type == "summary" & plot_num_cases & plot_geom == "line") {
 
     num_cases_position <- match.arg(num_cases_position)

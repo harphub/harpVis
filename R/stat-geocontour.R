@@ -23,15 +23,10 @@ StatGeocontour <- ggproto("StatGeocontour", StatContour,
       na.rm               = na.rm
     )
 
-    breaks <- ggplot2:::contour_breaks(z.range, bins, binwidth, breaks)
-
-    isolines <- ggplot2:::xyz_to_isolines(data, breaks)
-    path_df <- ggplot2:::iso_to_path(isolines, data$group[1])
-
-    path_df$level <- as.numeric(path_df$level)
-    path_df$nlevel <- scales::rescale_max(path_df$level)
-
-    path_df
+    ggplot2::StatContour$compute_group(
+      data = data, scales = scales, z.range = z.range, bins = bins,
+      binwidth = binwidth, breaks = breaks, na.rm = na.rm
+    )
 
   }
 )
@@ -61,19 +56,10 @@ StatGeocontourFilled <- ggproto("StatGeocontourFilled", StatContour,
       na.rm          = na.rm
     )
 
-    breaks <- ggplot2:::contour_breaks(z.range, bins, binwidth, breaks)
-
-    isobands <- ggplot2:::xyz_to_isobands(data, breaks)
-    names(isobands) <- ggplot2:::pretty_isoband_levels(names(isobands))
-    path_df <- ggplot2:::iso_to_polygon(isobands, data$group[1])
-
-    path_df$level <- ordered(path_df$level, levels = names(isobands))
-    path_df$level_low <- breaks[as.numeric(path_df$level)]
-    path_df$level_high <- breaks[as.numeric(path_df$level) + 1]
-    path_df$level_mid <- 0.5*(path_df$level_low + path_df$level_high)
-    path_df$nlevel <- scales::rescale_max(path_df$level_high)
-
-    path_df
+    ggplot2::StatContourFilled$compute_group(
+      data = data, scales = scales, z.range = z.range, bins = bins,
+      binwidth = binwidth, breaks = breaks, na.rm = na.rm
+    )
 
   }
 )

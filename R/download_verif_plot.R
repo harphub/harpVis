@@ -110,8 +110,8 @@ download_verif_plot <- function(input, output, session, verif_data, score_option
       c("mname", "fcst_model"),
       Reduce(union, lapply(verif_data(), colnames))
     )
-    plot_options$subtitle <- attrs[["num_stations"]]
-    plot_options$caption  <- attrs[["param"]]
+    plot_options$subtitle <- "auto"
+    plot_options$caption  <- "auto"
     plot_models <- Reduce(
       union, purrr::map(verif_data(), ~ unique(.x[[fcst_model_col]]))
     )

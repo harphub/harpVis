@@ -2,6 +2,7 @@
 # NATIVE COORDINATES ###########################################################
 ################################################################################
 
+#' @export
 StatXs <-  ggproto("StatXs", Stat,
   required_aes = "xs",
 
@@ -43,6 +44,7 @@ StatXs <-  ggproto("StatXs", Stat,
 
 )
 
+#' @export
 geom_xs <- function(
   mapping        = NULL,
   data           = NULL,
@@ -407,7 +409,6 @@ GeomXsHeight <- ggproto("GeomXsHeight", GeomRaster,
       data[data$y == middle_y, ], vert_res, FALSE
     )
 
-    browser()
     grid::gList(
       GeomRaster$draw_panel(
         data, panel_params, coord, interpolate = interpolate,
@@ -479,6 +480,7 @@ extend_topo <- function(data, vert_res, reverse) {
 # SECTION MAP ##################################################################
 ################################################################################
 
+#' @export
 StatXsMap <- ggproto("StatXsMap", Stat,
   required_aes = "xs",
 
@@ -598,6 +600,7 @@ StatXsMap <- ggproto("StatXsMap", Stat,
 
 )
 
+#' @export
 geom_xs_map <- function(
   mapping                  = NULL,
   data                     = NULL,
@@ -661,6 +664,7 @@ geom_xs_map <- function(
   )
 }
 
+#' @export
 GeomXsMap <- ggproto("GeomXsMap", GeomPath,
 
   draw_panel = function(data, panel_params, coord) {

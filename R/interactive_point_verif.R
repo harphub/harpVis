@@ -1305,6 +1305,12 @@ make_score_list <- function(verif_list) {
         "spread_skill_ratio_with_dropped"
       )
     }
+    if ("uui_spread" %in% verif_names$ens_summary_scores && "uui_skill" %in% verif_names$ens_summary_scores) {
+      verif_names$ens_summary_scores <- c(
+        verif_names$ens_summary_scores,
+        "uui_spread_skill"
+      )
+    }
     if ("rank_histogram" %in% verif_names$ens_summary_scores) {
       verif_names$ens_summary_scores <- c(verif_names$ens_summary_scores, "normalized_rank_histogram")
     }
